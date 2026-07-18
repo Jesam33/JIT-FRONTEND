@@ -1,0 +1,6 @@
+<svg width="320" height="120" viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title>ECR</title>
+  <rect width="320" height="120" rx="16" fill="#0a0f15"/>
+  <text x="52" y="78" fill="#ffffff" font-family="Arial, sans-serif" font-size="58" font-weight="800" letter-spacing="6">ECR</text>
+  <rect x="44" y="86" width="170" height="6" rx="3" fill="#2e82b5"/>
+</svg>

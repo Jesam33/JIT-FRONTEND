@@ -1,0 +1,7 @@
+<svg width="320" height="120" viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title>Noirtech</title>
+  <rect width="320" height="120" rx="16" fill="#070b11"/>
+  <path d="M38 74V46h8l16 18V46h10v28h-8L48 56v18H38z" fill="#ffffff"/>
+  <text x="95" y="74" fill="#ffffff" font-family="Arial, sans-serif" font-size="38" font-weight="700" letter-spacing="1">NOIRTECH</text>
+  <circle cx="46" cy="32" r="6" fill="#ed180d"/>
+</svg>

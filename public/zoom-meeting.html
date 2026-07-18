@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Zoom Meeting</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; font-family: system-ui, -apple-system, sans-serif; }
+#zoom-meeting-container { width: 100vw; height: 100vh; position: relative; }
+/* Force Zoom Web SDK Component View to occupy 100% of container */
+#zoom-meeting-container > div,
+#zoom-meeting-container .react-draggable {
+  transform: none !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+}
+#zoom-meeting-container .react-resizable {
+  width: 100% !important;
+  height: 100% !important;
+}
+#loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; z-index: 999; }
+#loading .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.15); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading p { font-size: 14px; color: rgba(255,255,255,0.7); }
+#error { display: none; position: fixed; inset: 0; align-items: center; justify-content: center; background: #000; z-index: 999; padding: 24px; }
+#error div { max-width: 480px; text-align: center; }
+#error h2 { font-size: 18px; margin-bottom: 8px; color: #f87171; }
+#error p { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 16px; word-break: break-word; }
+#error pre { font-size: 11px; color: #fbbf24; background: rgba(0,0,0,0.5); border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: left; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; }
+#error button { background: #fff; color: #000; border: none; border-radius: 999px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div><p>Joining meeting...</p></div>
+<div id="password-prompt" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:#000;z-index:999;padding:24px;">
+  <div style="max-width:400px;width:100%;">
+    <h2 style="font-size:18px;margin-bottom:16px;text-align:center;">Enter Meeting Password</h2>
+    <input id="password-input" type="password" placeholder="Meeting password" style="width:100%;padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:16px;text-align:center;outline:none;margin-bottom:12px;" autocomplete="off" />
+    <p id="password-error" style="color:#f87171;font-size:13px;text-align:center;margin-bottom:12px;display:none;">Password is required.</p>
+    <button id="join-btn" style="width:100%;padding:12px;border-radius:999px;border:none;background:#fff;color:#000;font-size:16px;font-weight:600;cursor:pointer;">Join Meeting</button>
+  </div>
+</div>
+<div id="error">
+  <div>
+    <h2>Failed to join meeting</h2>
+    <p id="error-message"></p>
+    <pre id="error-detail" style="display:none"></pre>
+    <button onclick="window.parent.postMessage({type:'zoom-leave'},window.location.origin)">Close</button>
+  </div>
+</div>
+<div id="zoom-meeting-container"></div>
+
+<script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+  onerror="document.getElementById('loading').style.display='none';document.getElementById('error').style.display='flex';document.getElementById('error-message').textContent='Failed to load React from CDN.'">
+</script>
+<script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+  onerror="document.getElementById('error-message').textContent+=' ReactDOM also failed.'">
+</script>
+<script>
+(function() {
+  if (typeof React === 'undefined') {
+    document.getElementById('error').style.display='flex';
+    document.getElementById('error-message').textContent='React did not initialize. CDN may be blocked.';
+    document.getElementById('loading').style.display='none';
+  } else if (typeof ReactDOM === 'undefined') {
+    document.getElementById('error').style.display='flex';
+    document.getElementById('error-message').textContent='ReactDOM did not initialize. CDN may be blocked.';
+    document.getElementById('loading').style.display='none';
+  }
+})();
+</script>
+<script src="/zoomus-websdk-embedded.umd.min.js?v=2"></script>
+<script>
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const signature = params.get('signature');
+  const sdkKey = params.get('sdkKey');
+  const meetingNumber = parseInt(params.get('meetingNumber') ?? '', 10) || 0;
+  const passcode = params.get('passcode') || '';
+  const userName = params.get('userName') || 'Student';
+  const userEmail = params.get('userEmail') || '';
+
+  if (!signature || !sdkKey || !meetingNumber) {
+    showError('Missing required meeting parameters.');
+    return;
+  }
+
+  function post(type, detail) {
+    try {
+      window.parent.postMessage({ type: 'zoom-' + type, detail: detail || null }, window.location.origin);
+    } catch {}
+  }
+
+  function showError(msg, detail) {
+    var el = document.getElementById('error');
+    if (!el) return;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('password-prompt').style.display = 'none';
+    el.style.display = 'flex';
+    document.getElementById('error-message').textContent = msg || 'An unknown error occurred.';
+    var detailEl = document.getElementById('error-detail');
+    if (detail && detailEl) {
+      detailEl.textContent = detail;
+      detailEl.style.display = 'block';
+    }
+  }
+
+  function showLoading() {
+    var el = document.getElementById('error');
+    if (el) el.style.display = 'none';
+    document.getElementById('password-prompt').style.display = 'none';
+    var loading = document.getElementById('loading');
+    if (loading) loading.style.display = 'flex';
+  }
+
+  var pendingPassword = '';
+
+  function joinWithPassword() {
+    var pwd = document.getElementById('password-input').value.trim();
+    if (!pwd) {
+      document.getElementById('password-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('password-error').style.display = 'none';
+    pendingPassword = pwd;
+    document.getElementById('password-prompt').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+    initMeeting();
+  }
+
+  var clientReady = false;
+  var zoomClient = null;
+
+  async function initClient() {
+    if (typeof ReactWidgets === 'undefined') {
+      showError('Zoom SDK failed to load. React=' + (typeof React) + ' ReactDOM=' + (typeof ReactDOM));
+      return false;
+    }
+
+    var rootEl = document.getElementById('zoom-meeting-container');
+    if (!rootEl) return false;
+
+    try {
+      zoomClient = ReactWidgets.createClient();
+      console.log('[Zoom] createClient OK');
+    } catch (err) {
+      console.error('[Zoom] createClient failed:', err);
+      showError('createClient failed: ' + (err && err.message ? err.message : JSON.stringify(err)));
+      return false;
+    }
+
+    try {
+      const containerWidth = rootEl.clientWidth || window.innerWidth || 800;
+      const containerHeight = rootEl.clientHeight || window.innerHeight || 600;
+
+      await zoomClient.init({
+        zoomAppRoot: rootEl,
+        language: 'en-US',
+        patchJsMedia: true,
+        leaveOnPageUnload: true,
+        customize: {
+          video: {
+            isResizable: false,
+            popper: {
+              disableDraggable: true,
+            },
+            viewSizes: {
+              default: {
+                width: containerWidth,
+                height: containerHeight
+              },
+              ribbon: {
+                width: 320,
+                height: containerHeight
+              }
+            }
+          },
+          meetingInfo: [
+            'topic',
+            'host',
+            'mn',
+            'pwd',
+            'invite',
+            'participant',
+          ],
+        },
+      });
+      console.log('[Zoom] client.init OK');
+      clientReady = true;
+      return true;
+    } catch (err) {
+      console.error('[Zoom] client.init failed:', err);
+      var initMsg = 'client.init failed';
+      var initDetail = '';
+      if (err) {
+        if (err.message) initMsg += ': ' + err.message;
+        else if (typeof err === 'string') initMsg += ': ' + err;
+        if (err.errorCode) initMsg += ' (code: ' + err.errorCode + ')';
+        try { initDetail = JSON.stringify(err, Object.getOwnPropertyNames(err), 2); } catch {}
+      }
+      showError(initMsg, initDetail);
+      post('error', initMsg);
+      return false;
+    }
+  }
+
+  async function joinMeeting(pwd) {
+    try {
+      await zoomClient.join({
+        signature: signature,
+        sdkKey: sdkKey,
+        meetingNumber: meetingNumber,
+        password: pwd,
+        userName: userName,
+        userEmail: userEmail,
+      });
+      console.log('[Zoom] client.join OK');
+    } catch (err) {
+      console.error('[Zoom] client.join failed:', err);
+      var joinMsg = 'client.join failed';
+      var joinDetail = '';
+      if (err) {
+        if (err.message) joinMsg += ': ' + err.message;
+        else if (typeof err === 'string') joinMsg += ': ' + err;
+        if (err.errorCode) joinMsg += ' (code: ' + err.errorCode + ')';
+        try { joinDetail = JSON.stringify(err, Object.getOwnPropertyNames(err), 2); } catch {}
+      }
+      showError(joinMsg, joinDetail);
+      post('error', joinMsg);
+      return;
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    post('joined');
+  }
+
+  async function initMeeting() {
+    if (!clientReady) {
+      var ok = await initClient();
+      if (!ok) return;
+    }
+    await joinMeeting(pendingPassword);
+  }
+
+  document.getElementById('join-btn').addEventListener('click', joinWithPassword);
+  document.getElementById('password-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') joinWithPassword();
+  });
+
+  if (passcode) {
+    pendingPassword = passcode;
+    initMeeting();
+  } else {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('password-prompt').style.display = 'flex';
+    document.getElementById('password-input').focus();
+  }
+})();
+</script>
+</body>
+</html>

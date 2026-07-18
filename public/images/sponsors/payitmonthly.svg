@@ -1,0 +1,8 @@
+<svg width="320" height="120" viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title>Payitmonthly</title>
+  <rect width="320" height="120" rx="16" fill="#0b0b0b"/>
+  <text x="34" y="58" fill="#ffffff" font-family="Arial, sans-serif" font-size="36" font-weight="700">PAYIT</text>
+  <text x="34" y="90" fill="#9ad8ff" font-family="Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="2">MONTHLY</text>
+  <circle cx="263" cy="60" r="24" fill="#ed180d"/>
+  <path d="M255 60h16M263 52v16" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+</svg>
