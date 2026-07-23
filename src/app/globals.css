@@ -177,6 +177,8 @@ html.light {
   /* Cards background & borders */
   .bg-black\/30,
   .bg-black\/25,
+  .bg-black\/40,
+  .bg-black\/50,
   .bg-white\/\[0\.04\],
   .bg-white\/5 {
     background-color: var(--color-surface) !important;
@@ -184,9 +186,16 @@ html.light {
     box-shadow: none !important;
   }
 
+  .bg-white\/6 { background-color: rgba(15, 23, 42, 0.04) !important; }
+  .bg-white\/10 { background-color: rgba(15, 23, 42, 0.06) !important; }
+  .bg-white\/12 { background-color: rgba(15, 23, 42, 0.08) !important; }
+  .bg-white\/\[0\.08\] { background-color: rgba(15, 23, 42, 0.06) !important; }
+
   .border-white\/15,
   .border-white\/10,
-  .border-white\/6 {
+  .border-white\/6,
+  .border-white\/20,
+  .border-white\/18 {
     border-color: var(--color-border) !important;
   }
 
@@ -263,6 +272,20 @@ html.light {
   }
   .border-white\/20.text-white:hover {
     background-color: rgba(15, 23, 42, 0.04) !important;
+  }
+
+  /* Warning/Alert banners (amber) */
+  .bg-amber-500\/5 {
+    background-color: rgba(251, 191, 36, 0.12) !important;
+  }
+  .border-amber-500\/20 {
+    border-color: rgba(251, 191, 36, 0.35) !important;
+  }
+  .text-amber-200 {
+    color: #92400e !important;
+  }
+  .text-amber-200\/60 {
+    color: rgba(146, 64, 14, 0.7) !important;
   }
 
   /* ── Account Dropdown ──────────────────────────────── */

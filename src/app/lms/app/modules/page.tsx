@@ -33,6 +33,7 @@ const typeIcons: Record<string, string> = {
   text: "📝",
   code: "💻",
   file: "📁",
+  doc: "📄",
 };
 
 export default function StudentModulesPage() {

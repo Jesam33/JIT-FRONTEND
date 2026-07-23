@@ -42,6 +42,8 @@ export const STUDENT_API = {
   chatDmMessages: api("/api/frontend/lms/chats/dm/messages"),
   editDmMessage: (id: string | number) => api(`/api/frontend/lms/chats/dm/messages/${id}`),
   deleteDmMessage: (id: string | number) => api(`/api/frontend/lms/chats/dm/messages/${id}/delete`),
+  chatGroupMarkRead: api("/api/frontend/lms/chats/group/read"),
+  chatDmMarkRead: api("/api/frontend/lms/chats/dm/read"),
   chatUnread: api("/api/frontend/lms/chats/unread"),
 };
 
@@ -106,15 +108,20 @@ export const AGENT_API = {
   apply: api("/api/frontend/lms/agents/apply"),
   login: api("/api/frontend/lms/agents/login"),
   me: api("/api/frontend/lms/agents/me"),
+  profile: api("/api/frontend/lms/agents/profile"),
+  avatar: api("/api/frontend/lms/agents/avatar"),
   dashboard: api("/api/frontend/lms/agents/dashboard"),
   courses: api("/api/frontend/lms/agents/courses"),
   registerStudent: api("/api/frontend/lms/agents/register-student"),
   commissions: api("/api/frontend/lms/agents/commissions"),
+  registrations: api("/api/frontend/lms/agents/registrations"),
   withdrawals: api("/api/frontend/lms/agents/withdrawals"),
   notifications: api("/api/frontend/lms/agents/notifications"),
   notificationUnread: api("/api/frontend/lms/agents/notifications/unread"),
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/agents/notifications/${id}/read`),
   markAllNotificationsRead: api("/api/frontend/lms/agents/notifications/read-all"),
+  forgotPassword: api("/api/frontend/lms/agents/forgot-password"),
+  resetPassword: api("/api/frontend/lms/agents/reset-password"),
 };
 
 export const PUBLIC_API = {

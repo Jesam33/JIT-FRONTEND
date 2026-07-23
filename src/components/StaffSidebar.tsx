@@ -326,26 +326,27 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
         {open ? (
           <div className="fixed inset-0 z-50">
             <button className="absolute inset-0 bg-black/55" onClick={() => setOpen(false)} aria-label="Close menu backdrop" />
-            <aside className="absolute left-0 top-0 flex h-full w-[min(320px,88vw)] flex-col border-r border-white/15 bg-[#0b0b0b] p-6 text-white shadow-2xl">
-              <div className="mb-6">
-                <AccountDropdown
-                  teacher={teacher}
-                  initials={initials}
-                  onLogout={handleLogout}
-                  onClose={() => setOpen(false)}
-                />
+            <aside className="absolute left-0 top-0 flex h-full w-[min(320px,88vw)] flex-col border-r border-white/15 bg-[#0b0b0b] px-5 pb-6 pt-5 text-white shadow-2xl">
+              <div className="mb-5 flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <AccountDropdown
+                    teacher={teacher}
+                    initials={initials}
+                    onLogout={handleLogout}
+                    onClose={() => setOpen(false)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close menu"
+                  onClick={() => setOpen(false)}
+                  className="mt-1 shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/5 transition hover:bg-white/10"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
               </div>
-
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={() => setOpen(false)}
-                className="absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/25"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
 
               <nav className="flex-1 space-y-5 overflow-y-auto pr-0.5">
                 {groups.map((group) => (

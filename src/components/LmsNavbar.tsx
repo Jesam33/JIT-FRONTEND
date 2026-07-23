@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { STUDENT_API, STAFF_API } from "../lib/api";
+import { STUDENT_API, STAFF_API, AGENT_API } from "../lib/api";
 
 type LmsNavbarProps = {
   portalName: string;
@@ -45,9 +45,13 @@ export default function LmsNavbar({
 
   // Fetch unread count
   useEffect(() => {
-    const isStudent = portalName.toLowerCase().includes("student");
-    const tokenKey = isStudent ? "lms_student_token" : "lms_staff_token";
-    const apiEndpoint = isStudent ? STUDENT_API.chatUnread : STAFF_API.notificationUnread;
+    const name = portalName.toLowerCase();
+    const isStudent = name.includes("student");
+    const isAgent = name.includes("agent");
+    let tokenKey = "lms_staff_token";
+    let apiEndpoint = STAFF_API.notificationUnread;
+    if (isStudent) { tokenKey = "lms_student_token"; apiEndpoint = STUDENT_API.chatUnread; }
+    if (isAgent) { tokenKey = "lms_agent_token"; apiEndpoint = AGENT_API.notificationUnread; }
 
     const fetchUnread = () => {
       const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;

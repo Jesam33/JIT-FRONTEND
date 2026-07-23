@@ -34,6 +34,7 @@ type FormData = {
   email: string;
   whatsapp: string;
   learning_mode: "live" | "pre_recorded";
+  referral_code: string;
 };
 
 const initialForm: FormData = {
@@ -45,6 +46,7 @@ const initialForm: FormData = {
   email: "",
   whatsapp: "",
   learning_mode: "live",
+  referral_code: "",
 };
 
 export default function CourseRegisterClient({ course }: { course: CourseDetail }) {
@@ -67,7 +69,7 @@ export default function CourseRegisterClient({ course }: { course: CourseDetail 
       const regResponse = await fetch(PUBLIC_API.trainingRegister, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, course_id: course.id, course_name: course.title }),
+        body: JSON.stringify({ ...form, course_id: course.id, course_name: course.title, referral_code: form.referral_code }),
       });
 
       const regData = await regResponse.json();
@@ -153,6 +155,7 @@ export default function CourseRegisterClient({ course }: { course: CourseDetail 
             Pre-recorded
           </label>
         </div>
+        <input value={form.referral_code} onChange={(e) => updateField("referral_code", e.target.value)} placeholder="Referral Code (optional - get 5% discount)" className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
         <button type="submit" disabled={loading} className="w-full rounded-full bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-60">
           {loading ? "Processing..." : course.price <= 0 ? "Register — Free" : `Register & Pay ₦${course.price.toLocaleString()}`}
         </button>

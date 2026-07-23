@@ -1,11 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { AGENT_API } from "../../../lib/api";
+import { AGENT_API, PUBLIC_API } from "../../../lib/api";
+
+const qualifications = [
+  "SSCE / WAEC / NECO",
+  "GCE / O-Level",
+  "ND / OND",
+  "NCE",
+  "HND",
+  "Bachelor's Degree (B.Sc / B.A / B.Ed)",
+  "Postgraduate Diploma (PGD)",
+  "Master's Degree (M.Sc / M.A / M.Ed)",
+  "Doctorate (PhD)",
+  "Professional Certification",
+  "Others",
+];
+
+type Course = { id: number; slug: string; title: string };
 
 export default function AgentApplyPage() {
   const [step, setStep] = useState(1);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch(PUBLIC_API.instituteCourses)
+      .then((r) => r.json())
+      .then((data: Course[]) => setCourses(data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setForm((f) => ({ ...f, courses_to_promote: selectedCourses.join(", ") }));
+  }, [selectedCourses]);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -63,7 +92,7 @@ export default function AgentApplyPage() {
 
   if (done) {
     return (
-      <div className="relative min-h-screen bg-site-bg text-site-text flex items-center justify-center px-6 overflow-hidden">
+      <div className="relative min-h-screen site-shell flex items-center justify-center px-6 overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-red-600/5 blur-[120px] pointer-events-none" />
         
         <div className="max-w-md w-full text-center space-y-6 relative z-10 border border-site-border bg-site-surface p-8 md:p-10 rounded-3xl shadow-xl">
@@ -92,7 +121,7 @@ export default function AgentApplyPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-site-bg text-site-text overflow-hidden">
+    <div className="relative min-h-screen site-shell overflow-hidden">
       <div className="absolute top-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-red-600/5 blur-[120px]" />
 
       <div className="relative mx-auto max-w-6xl px-6 py-20 lg:py-28">
@@ -219,14 +248,17 @@ export default function AgentApplyPage() {
 
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-site-muted uppercase tracking-wider">Highest Educational Qualification *</label>
-                      <input
-                        type="text"
+                      <select
                         value={form.qualification}
                         onChange={(e) => update("qualification", e.target.value)}
                         required
-                        placeholder="e.g. B.Sc, HND, Diploma, High School"
-                        className="w-full rounded-xl border border-site-border bg-site-surface-soft px-4 py-3.5 text-sm text-site-text placeholder:text-site-muted/50 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition duration-200"
-                      />
+                        className="w-full rounded-xl border border-site-border bg-site-surface-soft px-4 py-3.5 text-sm text-site-text outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition duration-200"
+                      >
+                        <option value="">Select qualification</option>
+                        {qualifications.map((q) => (
+                          <option key={q} value={q}>{q}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 ) : (
@@ -260,14 +292,35 @@ export default function AgentApplyPage() {
 
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-site-muted uppercase tracking-wider">Which courses will you focus on promoting? *</label>
-                      <textarea
-                        value={form.courses_to_promote}
-                        onChange={(e) => update("courses_to_promote", e.target.value)}
-                        required
-                        rows={2}
-                        placeholder="e.g. Full Stack Web Development, UI/UX Design, Data Analysis..."
-                        className="w-full rounded-xl border border-site-border bg-site-surface-soft px-4 py-3.5 text-sm text-site-text placeholder:text-site-muted/50 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition duration-200 resize-none"
-                      />
+                      <div className="grid gap-2 max-h-48 overflow-y-auto rounded-xl border border-site-border bg-site-surface-soft p-2">
+                        {courses.length === 0 && (
+                          <p className="text-xs text-site-muted px-2 py-1">Loading courses...</p>
+                        )}
+                        {courses.map((c) => (
+                          <label
+                            key={c.id}
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition text-sm ${
+                              selectedCourses.includes(c.title)
+                                ? "bg-red-600/10 border border-red-500/30 text-site-text"
+                                : "bg-transparent border border-transparent text-site-muted hover:text-site-text"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedCourses.includes(c.title)}
+                              onChange={() => {
+                                setSelectedCourses((prev) =>
+                                  prev.includes(c.title)
+                                    ? prev.filter((t) => t !== c.title)
+                                    : [...prev, c.title]
+                                );
+                              }}
+                              className="h-4 w-4 rounded border-site-border accent-red-600"
+                            />
+                            {c.title}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

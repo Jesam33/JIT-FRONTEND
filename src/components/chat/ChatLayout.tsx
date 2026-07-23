@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { STAFF_API, STUDENT_API } from "../../lib/api";
 
 type AnyObj = Record<string, any>;
@@ -110,15 +111,59 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setMenuOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
+
+  function openMenu() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      // Open above the button
+      setMenuPos({ top: rect.top + window.scrollY - 4, left: rect.left + window.scrollX });
+    }
+    setMenuOpen((v) => !v);
+  }
+
+  const menuPortal = menuOpen && menuPos && typeof document !== "undefined"
+    ? createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, transform: "translateY(-100%)", zIndex: 9999 }}
+          className="w-28 rounded-xl border border-site-border bg-site-surface p-1 shadow-2xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white"
+        >
+          {onEdit && messageObj ? (
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onEdit(messageObj); }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-site-text hover:bg-site-surface-soft"
+            >
+              Edit
+            </button>
+          ) : null}
+          {onDelete && messageObj ? (
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onDelete(messageObj.id); }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-site-surface-soft"
+            >
+              Delete
+            </button>
+          ) : null}
+        </div>,
+        document.body
+      )
+    : null;
 
   return (
     <div className={`group relative flex items-end gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
@@ -157,20 +202,20 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
         ) : null}
       </div>
       {isMe && (onEdit || onDelete) ? (
-        <div className="relative self-start">
-          <button onClick={() => setMenuOpen((v) => !v)} className="mt-1 flex h-6 w-6 items-center justify-center rounded-full transition hover:bg-site-surface-soft text-site-muted hover:text-site-text">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        <div className="self-center">
+          <button
+            ref={btnRef}
+            type="button"
+            onClick={openMenu}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-site-muted transition hover:bg-site-surface hover:text-site-text"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="12" cy="19" r="2" />
+            </svg>
           </button>
-          {menuOpen ? (
-            <div ref={menuRef} className="absolute right-0 top-full z-50 mt-1 w-28 rounded-xl border border-site-border bg-site-surface p-1 shadow-xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white [html.light_&]:shadow-lg">
-              {onEdit && messageObj ? (
-                <button onClick={() => { setMenuOpen(false); onEdit(messageObj); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-site-text hover:bg-site-surface-soft">Edit</button>
-              ) : null}
-              {onDelete && messageObj ? (
-                <button onClick={() => { setMenuOpen(false); onDelete(messageObj.id); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-400 hover:bg-site-surface-soft">Delete</button>
-              ) : null}
-            </div>
-          ) : null}
+          {menuPortal}
         </div>
       ) : null}
     </div>
@@ -216,7 +261,7 @@ function MessageArea({ messages, showAvatarFn, getAvatarUrl, getSenderNameFn, on
             const name = getSenderNameFn(item);
 
               return (
-                  <div key={item.id ?? idx} className="mb-2">
+                  <div key={item.id ? `msg-${item.id}-${idx}` : `msg-idx-${idx}`} className="mb-2">
                     <ChatBubble
                       message={text}
                       role={role}
@@ -291,8 +336,9 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
     setMentionIndex(-1);
   };
 
-  const insertMention = (username: string, role: string) => {
-    const label = role === "teacher" ? "Tutor" : username;
+  const insertMention = (username?: string | null, role?: string | null) => {
+    const safeName = username || "user";
+    const label = role === "teacher" ? "Tutor" : safeName;
     const cursor = inputRef.current?.selectionStart ?? value.length;
     const beforeCursor = value.slice(0, cursor);
     const atMatch = beforeCursor.lastIndexOf("@");
@@ -327,7 +373,7 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
       }
       if (e.key === "Enter" && mentionIndex >= 0) {
         e.preventDefault();
-        insertMention(filtered[mentionIndex].username, filtered[mentionIndex].role);
+        insertMention(filtered[mentionIndex].username || filtered[mentionIndex].name, filtered[mentionIndex].role);
         return;
       }
       if (e.key === "Escape") {
@@ -345,7 +391,7 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
   return (
     <div className="relative space-y-2">
       {mentionQuery !== null ? (
-        <div className="absolute bottom-full left-0 right-0 z-50 mb-2 max-h-40 overflow-y-auto rounded-xl border border-site-border bg-site-surface p-1 shadow-xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white [html.light_&]:shadow-lg">
+        <div className="absolute bottom-full left-4 right-4 z-50 mb-2 max-h-40 overflow-y-auto rounded-xl border border-site-border bg-site-surface p-1 shadow-xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white [html.light_&]:shadow-lg">
           {filtered.length === 0 ? (
             <p className="px-3 py-2 text-xs text-site-muted">No users found</p>
           ) : (
@@ -353,7 +399,7 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
               <button
                 key={`${u.role}-${u.id}`}
                 type="button"
-                onMouseDown={(e) => { e.preventDefault(); insertMention(u.username, u.role); }}
+                onMouseDown={(e) => { e.preventDefault(); insertMention(u.username || u.name, u.role); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
                   i === mentionIndex
                     ? "bg-site-surface-soft text-site-text font-medium"
@@ -457,6 +503,8 @@ export default function ChatLayout(props: AnyObj) {
       sending,
       mentionableUsers,
       onRefresh,
+      unreadGroup = 0,
+      unreadDm = 0,
     } = props;
 
     const messages = chatTab === "track" ? groupMessages : dmMessages;
@@ -481,7 +529,7 @@ export default function ChatLayout(props: AnyObj) {
     }
 
     return (
-      <div className="flex h-[calc(100vh-11rem)] flex-col gap-4 lg:h-[calc(100vh-10rem)] lg:flex-row">
+      <div className="flex w-full min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <aside className="shrink-0 lg:w-72">
           <div className="flex h-full flex-col rounded-2xl border border-site-border bg-site-surface p-3">
             <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.18em] text-site-muted">Channels</p>
@@ -494,9 +542,16 @@ export default function ChatLayout(props: AnyObj) {
                     : "border-transparent bg-transparent hover:bg-site-surface-soft group"
                 }`}
               >
-                <p className={`text-sm font-semibold ${chatTab === "track" ? "text-site-text" : "text-site-muted group-hover:text-site-text"}`}>
-                  #track
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`text-sm font-semibold ${chatTab === "track" ? "text-site-text" : "text-site-muted group-hover:text-site-text"}`}>
+                    #track
+                  </p>
+                  {unreadGroup > 0 && chatTab !== "track" ? (
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-white">
+                      {unreadGroup > 99 ? "99+" : unreadGroup}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-0.5 truncate text-[11px] text-site-muted">
                   {chatBootstrap?.track?.name ?? "Class group"}
                 </p>
@@ -509,9 +564,16 @@ export default function ChatLayout(props: AnyObj) {
                     : "border-transparent bg-transparent hover:bg-site-surface-soft group"
                 }`}
               >
-                <p className={`text-sm font-semibold ${chatTab === "dm" ? "text-site-text" : "text-site-muted group-hover:text-site-text"}`}>
-                  @instructor
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`text-sm font-semibold ${chatTab === "dm" ? "text-site-text" : "text-site-muted group-hover:text-site-text"}`}>
+                    @instructor
+                  </p>
+                  {unreadDm > 0 && chatTab !== "dm" ? (
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-white">
+                      {unreadDm > 99 ? "99+" : unreadDm}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-0.5 truncate text-[11px] text-site-muted">
                   {chatBootstrap?.dm_thread?.instructor_name ?? "Direct message"}
                 </p>
@@ -520,7 +582,7 @@ export default function ChatLayout(props: AnyObj) {
           </div>
         </aside>
 
-        <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-site-border bg-site-surface">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl border border-site-border bg-site-surface">
           <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-3.5">
             <p className="text-sm font-semibold text-site-text">{channelName}</p>
             {onRefresh ? (
@@ -593,7 +655,7 @@ export default function ChatLayout(props: AnyObj) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-11rem)] flex-col gap-4 lg:h-[calc(100vh-10rem)] lg:flex-row">
+    <div className="flex w-full min-h-0 flex-1 flex-col gap-3 lg:flex-row">
       <aside className="shrink-0 lg:w-72">
         <div className="flex h-full flex-col rounded-2xl border border-site-border bg-site-surface p-3">
           <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.18em] text-site-muted">Students</p>
@@ -605,9 +667,12 @@ export default function ChatLayout(props: AnyObj) {
                 : null;
               const lastText = last ? (last.content ?? last.body ?? "") : "";
               const lastTime = formatTime(last?.created_at ?? last?.createdAt ?? null);
-              const unread = Array.isArray(thread.messages)
-                ? thread.messages.filter((m: AnyObj) => (m.sender_role ?? m.from_role) === "student" && !m.read).length
-                : 0;
+              const isSelected = activeThreadId === tid;
+              const unread = isSelected
+                ? 0
+                : (Array.isArray(thread.messages)
+                    ? thread.messages.filter((m: AnyObj) => (m.sender_role ?? m.from_role) === "student" && m.read === false).length
+                    : 0);
 
               return (
                 <button
@@ -649,7 +714,7 @@ export default function ChatLayout(props: AnyObj) {
         </div>
       </aside>
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-site-border bg-site-surface">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl border border-site-border bg-site-surface">
         {!activeThread ? (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-sm text-site-muted">Select a student to view messages.</p>

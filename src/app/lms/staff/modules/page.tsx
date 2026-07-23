@@ -55,7 +55,7 @@ const headers = (token: string) => ({
 const uploadableTypes = ["slides", "pdf", "file"];
 const typeLabels: Record<string, string> = {
   slides: "Slides", pdf: "PDF", video: "Video", link: "Link",
-  text: "Text", code: "Code", file: "File",
+  text: "Text", code: "Code", file: "File", doc: "Doc",
 };
 
 export default function StaffModulesPage() {
@@ -224,6 +224,7 @@ export default function StaffModulesPage() {
       if (!res.ok) { showToast("Upload failed", "error"); return; }
       const data = await res.json();
       setNewContentUrl(data.url);
+      setNewContentType("file");
       showToast("File uploaded", "success");
     } catch { showToast("Upload failed", "error"); }
     setUploadingFile(false);
@@ -401,112 +402,124 @@ export default function StaffModulesPage() {
   return (
     <section>
       <h1 className="text-2xl font-bold">Modules</h1>
-      <p className="text-sm text-white/70">Create course modules with content (slides, PDFs, videos, links, text, code) and schedule classes.</p>
+      <p className="mt-1 text-sm text-white/70">Create course modules with content (slides, PDFs, videos, links, text, code) and schedule classes.</p>
 
-      <div className="mt-4 mb-4 flex items-center gap-3">
-        <label className="text-xs text-white/60">Filter by course:</label>
-        <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="rounded border border-white/20 bg-black/30 px-3 py-1.5 text-sm">
-          <option value="">All courses</option>
-          {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-        </select>
+      {/* Filters */}
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-white/50">Filter by course</label>
+          <select value={courseFilter} onChange={(e) => setCourseFilter(e.target.value)} className="w-full rounded-lg border border-white/15 bg-white/[0.05] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/30 sm:w-auto">
+            <option value="">All courses</option>
+            {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1 sm:flex-1">
+          <label className="text-xs font-medium text-white/50">Search</label>
+          <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search modules..." className="w-full rounded-lg border border-white/15 bg-white/[0.05] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+        </div>
       </div>
 
-      <div className="mt-2 flex items-center gap-3">
-        <label className="text-xs text-white/60">Search:</label>
-        <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search modules..." className="rounded border border-white/20 bg-black/30 px-3 py-1.5 text-sm max-w-xs" />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr]">
-        <div className="space-y-4">
-          <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-            <h3 className="font-semibold">{editing ? "Edit Module" : "New Module"}</h3>
-            <div className="mt-2 grid gap-2">
-              <input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Module title" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-              <select value={formCourseId} onChange={(e) => setFormCourseId(e.target.value)} className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm">
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.5fr]">
+        {/* Left column */}
+        <div className="space-y-5">
+          {/* Create / Edit form */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <h3 className="text-base font-semibold">{editing ? "Edit Module" : "New Module"}</h3>
+            <div className="mt-3 flex flex-col gap-2.5">
+              <input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Module title" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+              <select value={formCourseId} onChange={(e) => setFormCourseId(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
                 <option value="">Select course...</option>
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
-              <textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)} placeholder="Description" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" rows={2} />
-              <textarea value={formObj} onChange={(e) => setFormObj(e.target.value)} placeholder="Learning objectives" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" rows={3} />
-              <select value={formStatus} onChange={(e) => setFormStatus(e.target.value as "draft" | "published")} className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm">
+              <textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)} placeholder="Description (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 resize-none" rows={2} />
+              <textarea value={formObj} onChange={(e) => setFormObj(e.target.value)} placeholder="Learning objectives (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 resize-none" rows={3} />
+              <select value={formStatus} onChange={(e) => setFormStatus(e.target.value as "draft" | "published")} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
               </select>
-              <div className="flex gap-2">
-                <button onClick={saveModule} disabled={saving || !formTitle.trim() || !formCourseId} className="rounded bg-white px-3 py-2 text-sm text-black disabled:opacity-60">
-                  {saving ? "Saving..." : editing ? "Update" : "Create"}
+              <div className="flex gap-2 pt-1">
+                <button onClick={saveModule} disabled={saving || !formTitle.trim() || !formCourseId} className="flex-1 rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
+                  {saving ? "Saving…" : editing ? "Update" : "Create"}
                 </button>
-                {editing ? <button onClick={resetForm} className="rounded border border-white/20 px-3 py-2 text-sm">Cancel</button> : null}
+                {editing ? <button onClick={resetForm} className="rounded-lg border border-white/20 px-3 py-2.5 text-sm transition hover:bg-white/5">Cancel</button> : null}
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-            <h3 className="font-semibold">Modules ({filteredModules.length})</h3>
-            {loading ? <p className="mt-2 text-sm text-white/60">Loading...</p> :
-              filteredModules.length === 0 ? <p className="mt-2 text-sm text-white/60">No modules.</p> :
-              <div className="mt-2 space-y-2 max-h-[500px] overflow-y-auto">
+          {/* Modules list */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <h3 className="text-base font-semibold">Modules ({filteredModules.length})</h3>
+            {loading ? (
+              <p className="mt-3 text-sm text-white/50">Loading…</p>
+            ) : filteredModules.length === 0 ? (
+              <p className="mt-3 text-sm text-white/50">No modules found.</p>
+            ) : (
+              <div className="mt-3 space-y-2 max-h-[480px] overflow-y-auto pr-0.5">
                 {filteredModules.map((m) => (
                   <div key={m.id}>
                     <button
                       onClick={() => { setSelectedId(m.id); editModule(m); }}
-                      className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${selectedId === m.id ? "border-white/30 bg-white/10" : "border-white/10 bg-white/[0.02] hover:bg-white/5"}`}
+                      className={`w-full rounded-lg border px-3 py-2.5 text-left text-sm transition ${selectedId === m.id ? "border-white/30 bg-white/10" : "border-white/10 bg-white/[0.02] hover:bg-white/5"}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{m.title}</span>
-                        <span className={`text-[10px] uppercase tracking-wider ${m.status === "published" ? "text-emerald-400" : "text-amber-400"}`}>{m.status}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium leading-snug">{m.title}</span>
+                        <span className={`shrink-0 text-[10px] uppercase tracking-wider ${m.status === "published" ? "text-emerald-400" : "text-amber-400"}`}>{m.status}</span>
                       </div>
-                      <p className="mt-0.5 text-xs text-white/50">{m.course?.title ?? `Course #${m.course_id}`} &middot; {m.contents.length} items</p>
+                      <p className="mt-0.5 text-xs text-white/45">{m.course?.title ?? `Course #${m.course_id}`} &middot; {m.contents.length} items</p>
                     </button>
                     <button onClick={() => setConfirmDelete(m.id)} className="mt-1 text-xs text-red-400 underline hover:text-red-300">Delete</button>
                   </div>
                 ))}
               </div>
-            }
+            )}
           </div>
         </div>
 
-        <div className="space-y-4">
+        {/* Right column */}
+        <div className="space-y-5">
           {selectedModule ? (
             <>
-              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-                <h3 className="font-semibold">Contents &mdash; {selectedModule.title}</h3>
+              {/* Contents */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <h3 className="text-base font-semibold">Contents &mdash; <span className="font-normal text-white/70">{selectedModule.title}</span></h3>
 
                 {selectedModule.contents.length === 0 ? (
-                  <p className="mt-2 text-sm text-white/60">No content yet.</p>
+                  <p className="mt-3 text-sm text-white/50">No content yet.</p>
                 ) : (
-                  <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto">
+                  <div className="mt-3 space-y-2 max-h-[400px] overflow-y-auto pr-0.5">
                     {selectedModule.contents.map((c, i) => {
                       const editing = editContentId === c.id;
                       return (
                       <div key={c.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
                         {editing ? (
-                          <div className="grid gap-2">
-                            <input value={editFormTitle} onChange={(e) => setEditFormTitle(e.target.value)} className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" />
-                            <select value={editFormType} onChange={(e) => setEditFormType(e.target.value)} className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs">
+                          <div className="flex flex-col gap-2">
+                            <input value={editFormTitle} onChange={(e) => setEditFormTitle(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
+                            <select value={editFormType} onChange={(e) => setEditFormType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
                               {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
-                            <input type="file" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setUploadingFile(true); try { const fd = new FormData(); fd.append("file", f); const r = await fetch(api(`/api/frontend/lms/staff/modules/${selectedModule.id}/contents/upload`), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd }); if (!r.ok) return; const d = await r.json(); setEditFormUrl(d.url); showToast("File uploaded", "success"); } catch {} finally { setUploadingFile(false); } }} className="w-full rounded border border-white/20 bg-black/30 px-2 py-1 text-xs file:mr-2 file:rounded file:border-0 file:bg-white/10 file:px-2 file:py-0.5 file:text-xs file:text-white" />
-                            <textarea value={editFormBody} onChange={(e) => setEditFormBody(e.target.value)} placeholder="Body" className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" rows={3} />
+                            <input type="file" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setUploadingFile(true); try { const fd = new FormData(); fd.append("file", f); const r = await fetch(api(`/api/frontend/lms/staff/modules/${selectedModule.id}/contents/upload`), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd }); if (!r.ok) return; const d = await r.json(); setEditFormUrl(d.url); showToast("File uploaded", "success"); } catch {} finally { setUploadingFile(false); } }} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs file:mr-2 file:rounded file:border-0 file:bg-white/10 file:px-2 file:py-0.5 file:text-xs file:text-white focus:outline-none" />
+                            <textarea value={editFormBody} onChange={(e) => setEditFormBody(e.target.value)} placeholder="Body" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs resize-none focus:outline-none" rows={3} />
                             <div className="flex gap-2">
-                              <button onClick={() => saveContentEdit(c.id)} disabled={saving} className="rounded bg-white px-2 py-1 text-xs text-black">{saving ? "Saving..." : "Save"}</button>
-                              <button onClick={() => setEditContentId(null)} className="rounded border border-white/20 px-2 py-1 text-xs">Cancel</button>
+                              <button onClick={() => saveContentEdit(c.id)} disabled={saving} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+                              <button onClick={() => setEditContentId(null)} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs">Cancel</button>
                             </div>
                           </div>
                         ) : (
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{c.title}</p>
-                            <p className="text-xs text-white/60">{typeLabels[c.type] ?? c.type} &middot; Order: {i}</p>
+                            <p className="text-sm font-medium leading-snug truncate">{c.title}</p>
+                            <p className="mt-0.5 text-xs text-white/50">{typeLabels[c.type] ?? c.type} &middot; #{i + 1}</p>
                             {c.content_url ? (
                               <a href={c.content_url} target="_blank" rel="noreferrer" className="mt-2 inline-block rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white transition hover:bg-white/20">Open file</a>
                             ) : null}
-                            {c.content_body ? <p className="mt-1 text-xs text-white/70 line-clamp-2">{c.content_body}</p> : null}
+                            {c.content_body ? <p className="mt-1 text-xs text-white/60 line-clamp-2">{c.content_body}</p> : null}
                           </div>
-                          <div className="flex shrink-0 items-center gap-1 ml-2">
+                          <div className="flex shrink-0 flex-col items-end gap-1">
                             <button onClick={() => startContentEdit(c)} className="text-xs text-blue-400 underline hover:text-blue-300">Edit</button>
-                            <button onClick={() => reorderContent(c.id, "up")} disabled={i === 0} className="text-white/40 hover:text-white/80 disabled:opacity-20 text-xs" title="Move up">&#x25B2;</button>
-                            <button onClick={() => reorderContent(c.id, "down")} disabled={i === selectedModule.contents.length - 1} className="text-white/40 hover:text-white/80 disabled:opacity-20 text-xs" title="Move down">&#x25BC;</button>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => reorderContent(c.id, "up")} disabled={i === 0} className="text-white/40 hover:text-white/80 disabled:opacity-20 text-xs" title="Move up">&#x25B2;</button>
+                              <button onClick={() => reorderContent(c.id, "down")} disabled={i === selectedModule.contents.length - 1} className="text-white/40 hover:text-white/80 disabled:opacity-20 text-xs" title="Move down">&#x25BC;</button>
+                            </div>
                             <button onClick={() => setConfirmContentDelete(c.id)} className="text-xs text-red-400 underline hover:text-red-300">Remove</button>
                           </div>
                         </div>
@@ -519,88 +532,94 @@ export default function StaffModulesPage() {
 
                 <div className="mt-4 border-t border-white/10 pt-4">
                   <h4 className="text-sm font-semibold">Add Content</h4>
-                  <div className="mt-2 grid gap-2">
-                    <input value={newContentTitle} onChange={(e) => setNewContentTitle(e.target.value)} placeholder="Content title" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                    <select value={newContentType} onChange={(e) => setNewContentType(e.target.value)} className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm">
+                  <div className="mt-3 flex flex-col gap-2.5">
+                    <input value={newContentTitle} onChange={(e) => setNewContentTitle(e.target.value)} placeholder="Content title" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                    <select value={newContentType} onChange={(e) => setNewContentType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
                       {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
-
-                    <div className="flex items-center gap-2">
-                      <input type="file" onChange={(e) => e.target.files?.[0] && handleFileUpload(selectedModule.id, e.target.files[0])} className="w-full rounded border border-white/20 bg-black/30 px-3 py-2 text-sm file:mr-2 file:rounded file:border-0 file:bg-white/10 file:px-2 file:py-1 file:text-xs file:text-white" />
-                      {uploadingFile ? <span className="text-xs text-white/60">Uploading...</span> : null}
+                    <div>
+                      <input type="file" onChange={(e) => e.target.files?.[0] && handleFileUpload(selectedModule.id, e.target.files[0])} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-white/10 file:px-2 file:py-1 file:text-xs file:text-white focus:outline-none" />
+                      {uploadingFile ? <p className="mt-1 text-xs text-white/50">Uploading…</p> : null}
                     </div>
-
-                    <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code entries)" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" rows={4} />
-                    <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim()} className="rounded bg-white px-3 py-2 text-sm text-black disabled:opacity-60">
-                      {saving ? "Adding..." : "Add Content"}
+                    <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={4} />
+                    <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim()} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
+                      {saving ? "Adding…" : "Add Content"}
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-                <h3 className="font-semibold">Schedule a Class</h3>
-                <p className="mt-1 text-xs text-white/60">Create a scheduled class for this module.</p>
-                <div className="mt-2 grid gap-2">
-                  <input value={schedTitle} onChange={(e) => setSchedTitle(e.target.value)} placeholder="Class title" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                  <textarea value={schedDesc} onChange={(e) => setSchedDesc(e.target.value)} placeholder="Description (optional)" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" rows={2} />
-                  <input value={schedStarts} onChange={(e) => setSchedStarts(e.target.value)} type="datetime-local" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                  {schedStarts ? <p className="text-[11px] text-white/50">Starts: {new Date(schedStarts).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
-                  <input value={schedEnds} onChange={(e) => setSchedEnds(e.target.value)} type="datetime-local" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                  {schedEnds ? <p className="text-[11px] text-white/50">Ends: {new Date(schedEnds).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
-                  <input value={schedMeetingId} onChange={(e) => setSchedMeetingId(e.target.value)} placeholder="Meeting ID" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                  <input value={schedMeetingPwd} onChange={(e) => setSchedMeetingPwd(e.target.value)} placeholder="Meeting password" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-                  <button onClick={() => scheduleClass(selectedModule.id)} disabled={saving || !schedTitle.trim() || !schedStarts || !schedEnds} className="rounded bg-white px-3 py-2 text-sm text-black disabled:opacity-60">
-                    {saving ? "Scheduling..." : "Schedule Class"}
+              {/* Schedule class */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <h3 className="text-base font-semibold">Schedule a Class</h3>
+                <p className="mt-1 text-xs text-white/50">Create a scheduled class for this module.</p>
+                <div className="mt-3 flex flex-col gap-2.5">
+                  <input value={schedTitle} onChange={(e) => setSchedTitle(e.target.value)} placeholder="Class title" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                  <textarea value={schedDesc} onChange={(e) => setSchedDesc(e.target.value)} placeholder="Description (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={2} />
+                  <div>
+                    <label className="mb-1 block text-xs text-white/45">Start time</label>
+                    <input value={schedStarts} onChange={(e) => setSchedStarts(e.target.value)} type="datetime-local" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30" />
+                    {schedStarts ? <p className="mt-1 text-[11px] text-white/40">{new Date(schedStarts).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-white/45">End time</label>
+                    <input value={schedEnds} onChange={(e) => setSchedEnds(e.target.value)} type="datetime-local" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30" />
+                    {schedEnds ? <p className="mt-1 text-[11px] text-white/40">{new Date(schedEnds).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
+                  </div>
+                  <input value={schedMeetingId} onChange={(e) => setSchedMeetingId(e.target.value)} placeholder="Meeting ID (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                  <input value={schedMeetingPwd} onChange={(e) => setSchedMeetingPwd(e.target.value)} placeholder="Meeting password (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                  <button onClick={() => scheduleClass(selectedModule.id)} disabled={saving || !schedTitle.trim() || !schedStarts || !schedEnds} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
+                    {saving ? "Scheduling…" : "Schedule Class"}
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-                <h3 className="font-semibold">Scheduled Classes for This Module ({moduleClasses.length})</h3>
+              {/* Scheduled classes list */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <h3 className="text-base font-semibold">Scheduled Classes <span className="text-white/40 font-normal text-sm">({moduleClasses.length})</span></h3>
                 {moduleClasses.length === 0 ? (
-                  <p className="mt-2 text-sm text-white/60">No classes scheduled for this module.</p>
+                  <p className="mt-3 text-sm text-white/50">No classes scheduled for this module.</p>
                 ) : (
-                  <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto">
+                  <div className="mt-3 space-y-2 max-h-[400px] overflow-y-auto pr-0.5">
                     {moduleClasses.map((c) => {
                       const editing = editClassId === c.id;
                       return editing ? (
                         <div key={c.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
-                          <div className="grid gap-2">
-                            <input value={editClassTitle} onChange={(e) => setEditClassTitle(e.target.value)} className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" />
-                            <textarea value={editClassDesc} onChange={(e) => setEditClassDesc(e.target.value)} className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" rows={2} />
-                            <input value={editClassStarts} onChange={(e) => setEditClassStarts(e.target.value)} type="datetime-local" className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" />
-                            {editClassStarts ? <p className="text-[10px] text-white/50">Starts: {new Date(editClassStarts).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
-                            <input value={editClassEnds} onChange={(e) => setEditClassEnds(e.target.value)} type="datetime-local" className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" />
-                            {editClassEnds ? <p className="text-[10px] text-white/50">Ends: {new Date(editClassEnds).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
-                            <input value={editClassMeetingId} onChange={(e) => setEditClassMeetingId(e.target.value)} placeholder="Meeting ID" className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" />
-                            <input value={editClassMeetingPwd} onChange={(e) => setEditClassMeetingPwd(e.target.value)} placeholder="Password" className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs" />
-                            <select value={editClassStatus} onChange={(e) => setEditClassStatus(e.target.value)} className="rounded border border-white/20 bg-black/30 px-2 py-1 text-xs">
+                          <div className="flex flex-col gap-2">
+                            <input value={editClassTitle} onChange={(e) => setEditClassTitle(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
+                            <textarea value={editClassDesc} onChange={(e) => setEditClassDesc(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs resize-none focus:outline-none" rows={2} />
+                            <input value={editClassStarts} onChange={(e) => setEditClassStarts(e.target.value)} type="datetime-local" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
+                            {editClassStarts ? <p className="text-[10px] text-white/40">{new Date(editClassStarts).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
+                            <input value={editClassEnds} onChange={(e) => setEditClassEnds(e.target.value)} type="datetime-local" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
+                            {editClassEnds ? <p className="text-[10px] text-white/40">{new Date(editClassEnds).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
+                            <input value={editClassMeetingId} onChange={(e) => setEditClassMeetingId(e.target.value)} placeholder="Meeting ID" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
+                            <input value={editClassMeetingPwd} onChange={(e) => setEditClassMeetingPwd(e.target.value)} placeholder="Password" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
+                            <select value={editClassStatus} onChange={(e) => setEditClassStatus(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
                               <option value="scheduled">Scheduled</option>
                               <option value="ongoing">Ongoing</option>
                               <option value="completed">Completed</option>
                               <option value="cancelled">Cancelled</option>
                             </select>
                             <div className="flex gap-2">
-                              <button onClick={() => saveClassEdit(c.id)} disabled={saving} className="rounded bg-white px-2 py-1 text-xs text-black">{saving ? "Saving..." : "Save"}</button>
-                              <button onClick={cancelClassEdit} className="rounded border border-white/20 px-2 py-1 text-xs">Cancel</button>
+                              <button onClick={() => saveClassEdit(c.id)} disabled={saving} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+                              <button onClick={cancelClassEdit} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs">Cancel</button>
                             </div>
                           </div>
                         </div>
                       ) : (
                         <div key={c.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="text-sm font-medium">{c.title}</p>
-                              <p className="text-xs text-white/60">{new Date(c.starts_at).toLocaleString()}</p>
-                              <span className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium leading-snug">{c.title}</p>
+                              <p className="mt-0.5 text-xs text-white/50">{new Date(c.starts_at).toLocaleString()}</p>
+                              <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
                                 c.status === "scheduled" ? "bg-blue-500/20 text-blue-200" :
                                 c.status === "ongoing" ? "bg-emerald-500/20 text-emerald-200" :
                                 c.status === "completed" ? "bg-white/10 text-white/50" :
-                                "bg-emerald-500/20 text-emerald-200"
+                                "bg-red-500/20 text-red-200"
                               }`}>{c.status}</span>
                             </div>
-                            <div className="flex shrink-0 items-center gap-1 ml-2">
+                            <div className="flex shrink-0 items-center gap-2">
                               <button onClick={() => startClassEdit(c)} className="text-xs text-blue-400 underline hover:text-blue-300">Edit</button>
                               <button onClick={() => setConfirmClassDelete(c.id)} className="text-xs text-red-400 underline hover:text-red-300">Cancel</button>
                             </div>
@@ -613,8 +632,8 @@ export default function StaffModulesPage() {
               </div>
             </>
           ) : (
-            <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-              <p className="text-sm text-white/60">Select a module to manage content and scheduling.</p>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-sm text-white/50">Select a module from the list to manage its content and scheduled classes.</p>
             </div>
           )}
         </div>

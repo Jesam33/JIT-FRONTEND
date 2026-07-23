@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function BecomeAnAgentPage() {
   return (
-    <div className="min-h-screen bg-site-bg text-site-text">
+    <div className="min-h-screen site-shell">
       <div className="mx-auto max-w-4xl px-4 py-20 text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Become a <span className="text-site-text">Jorsas Agent</span>

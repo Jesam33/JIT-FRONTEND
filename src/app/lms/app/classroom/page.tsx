@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AttendanceItem, SdkSignaturePayload } from "../../../../lib/lms-types";
 import { formatLocalDateTime, canJoinClassroom, isClassEnded, isClassActiveWindow, getToken } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
@@ -33,7 +33,17 @@ export default function StudentClassroomPage() {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Close pseudo-fullscreen with Escape key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && isFullscreen) setIsFullscreen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
 
   const token = useMemo(() => getToken(), []);
 
@@ -146,7 +156,8 @@ export default function StudentClassroomPage() {
     try {
       const response = await fetch(STUDENT_API.classroomSdkSignature(classroomId), {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ class_type: activeClass?.class_type ?? "classroom" }),
       });
       const payload = (await response.json()) as Partial<SdkSignaturePayload> & { message?: string };
 
@@ -159,7 +170,7 @@ export default function StudentClassroomPage() {
       url.searchParams.set("signature", payload.signature);
       url.searchParams.set("sdkKey", payload.sdk_key);
       url.searchParams.set("meetingNumber", payload.meeting_number);
-      url.searchParams.set("passcode", "");
+      url.searchParams.set("passcode", payload.passcode ?? "");
       url.searchParams.set("userName", payload.user_name ?? studentName);
       url.searchParams.set("userEmail", payload.user_email ?? profile.email ?? "");
 
@@ -216,6 +227,11 @@ export default function StudentClassroomPage() {
 
             {isScheduledClass && !activeClass.meeting_id ? (
               <p className="mt-3 text-sm text-white/60">No meeting set for this class.</p>
+            ) : isScheduledClass && !canJoinClassroom(activeClass.starts_at, currentTime) ? (
+              <>
+                <p className="mt-3 text-sm text-white/75">Join opens 5 minutes before class starts.</p>
+                <button type="button" disabled className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black opacity-40">Join Class</button>
+              </>
             ) : isScheduledClass && !isClassLive ? (
               <>
                 <p className="mt-3 text-sm text-white/75">Class is ready. Join directly inside your portal.</p>
@@ -271,16 +287,48 @@ export default function StudentClassroomPage() {
             )}
 
             {iframeUrl ? (
-              <div className="mt-4 rounded-lg overflow-hidden border border-white/15">
-                <iframe
-                  src={iframeUrl}
-                  className="w-full"
-                  style={{ height: "85vh", minHeight: "600px" }}
-                  allow="camera; microphone; display-capture; autoplay; fullscreen"
-                  allowFullScreen
-                  title="Live Session"
-                />
-              </div>
+              <>
+                {/* CSS pseudo-fullscreen overlay — keeps iframe in DOM so Zoom re-layouts on resize */}
+                <div
+                  className={isFullscreen
+                    ? "fixed inset-0 z-[9999] bg-black w-screen h-screen"
+                    : "relative mt-4 rounded-lg border border-white/15 w-full overflow-hidden"
+                  }
+                  style={!isFullscreen ? { height: "78vh", minHeight: "650px" } : undefined}
+                >
+                  {/* Fullscreen toggle button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsFullscreen((f) => !f)}
+                    title={isFullscreen ? "Exit fullscreen (Esc)" : "Enter fullscreen"}
+                    className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80 transition-colors"
+                  >
+                    {isFullscreen ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0h4m-4 0v4m11-4l5-5m0 0h-4m4 0v4M9 15l-5 5m0 0h4m-4 0v-4m11 4l5-5m0 0v4m0-4h-4" />
+                        </svg>
+                        Exit Fullscreen
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        Fullscreen
+                      </>
+                    )}
+                  </button>
+                  <iframe
+                    ref={iframeRef}
+                    src={iframeUrl}
+                    className="w-full h-full border-none"
+                    allow="camera; microphone; display-capture; autoplay; fullscreen"
+                    allowFullScreen
+                    title="Live Session"
+                  />
+                </div>
+              </>
             ) : !isClassLive && !isScheduledClass ? (
               <div className="mt-4 flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-white/20 bg-black/20 p-4 text-sm text-white/55">
                 Embedded classroom will load here when you join.

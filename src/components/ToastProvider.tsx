@@ -33,9 +33,9 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
             key={t.id}
             className={`animate-slide-up rounded-xl border px-4 py-3 text-sm shadow-lg ${
               t.type === "success"
-                ? "border-red-500/30 bg-red-500/15 text-red-200"
-                : t.type === "error"
                 ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-200"
+                : t.type === "error"
+                ? "border-red-500/30 bg-red-500/15 text-red-200"
                   : "border-white/15 bg-white/10 text-white"
             }`}
           >

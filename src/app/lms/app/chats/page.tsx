@@ -19,6 +19,9 @@ export default function StudentChatsPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [mentionableUsers, setMentionableUsers] = useState<{ id: number; name: string; username: string; role: string }[]>([]);
+  const [unreadGroup, setUnreadGroup] = useState(0);
+  const [unreadDm, setUnreadDm] = useState(0);
+  const chatTabRef = useRef<"track" | "dm">("track");
 
   const token = useMemo(() => getToken(), []);
 
@@ -31,7 +34,10 @@ export default function StudentChatsPage() {
       fetch(STUDENT_API.chatDmMessages, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setDmMessages(Array.isArray(p) ? p : [])),
       fetch(STUDENT_API.profile, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setProfile(p)),
       fetch(STUDENT_API.chatGroupMentionable, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setMentionableUsers(Array.isArray(p) ? p : [])),
-    ]).then(() => setLoading(false));
+    ]).then(() => {
+      setLoading(false);
+      markReadOnBackend("track");
+    });
   }, [token]);
 
   const subscribedGroupChats = useRef<Set<number>>(new Set());
@@ -60,8 +66,18 @@ export default function StudentChatsPage() {
         if (!data.id) return;
         setGroupMessages((prev) => {
           if (prev.some((m) => m.id === data.id)) return prev;
+          const tempIdx = prev.findIndex((m) => typeof m.id === "string" && (m.id as string).startsWith("temp-") && m.content === data.content);
+          if (tempIdx !== -1) {
+            const clone = [...prev];
+            clone[tempIdx] = data;
+            return clone;
+          }
           return [...prev, data];
         });
+        // Only count as unread if student is NOT on the track tab
+        if (chatTabRef.current !== "track") {
+          setUnreadGroup((n) => n + 1);
+        }
       });
     }
 
@@ -73,17 +89,69 @@ export default function StudentChatsPage() {
         if (!data.id) return;
         setDmMessages((prev) => {
           if (prev.some((m) => m.id === data.id)) return prev;
+          const tempIdx = prev.findIndex((m) => typeof m.id === "string" && (m.id as string).startsWith("temp-") && m.content === data.content);
+          if (tempIdx !== -1) {
+            const clone = [...prev];
+            clone[tempIdx] = data;
+            return clone;
+          }
           return [...prev, data];
         });
+        // Only count as unread if student is NOT on the dm tab AND the message is from the teacher
+        if (chatTabRef.current !== "dm" && (data.sender_role === "teacher" || data.from_role === "teacher")) {
+          setUnreadDm((n) => n + 1);
+        }
       });
     }
   }, [token, chatBootstrap]);
 
+  // Keep chatTabRef in sync so WebSocket callbacks can read the latest tab
+  useEffect(() => {
+    chatTabRef.current = chatTab;
+  }, [chatTab]);
+
+  function markReadOnBackend(tab: "track" | "dm") {
+    if (!token) return;
+    const api = tab === "track" ? STUDENT_API.chatGroupMarkRead : STUDENT_API.chatDmMarkRead;
+    fetch(api, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+      .then(() => window.dispatchEvent(new CustomEvent("opencode:chat-read")))
+      .catch(() => {});
+  }
+
+  function switchTab(tab: "track" | "dm") {
+    setChatTab(tab);
+    if (tab === "track") setUnreadGroup(0);
+    if (tab === "dm") setUnreadDm(0);
+    markReadOnBackend(tab);
+  }
+
   async function sendMessage() {
-    if (!chatBody.trim()) return;
-    setSending(true);
+    if (!chatBody.trim() && !chatAttachmentUrl.trim()) return;
+    const contentToSend = chatBody;
+    const attachmentToSend = chatAttachmentUrl;
+    setChatBody("");
+    setChatAttachmentUrl("");
+
+    const tempId = `temp-${Date.now()}`;
+    const tempMsg: ChatMessage = {
+      id: tempId as any,
+      content: contentToSend,
+      attachment_url: attachmentToSend || null,
+      sender_role: "student",
+      sender_id: profile?.id ?? 0,
+      sender_name: profile?.name ?? "You",
+      created_at: new Date().toISOString(),
+    };
+
+    const isGroup = chatTab === "track";
+    if (isGroup) {
+      setGroupMessages((prev) => [...prev, tempMsg]);
+    } else {
+      setDmMessages((prev) => [...prev, tempMsg]);
+    }
+
     try {
-      const endpoint = chatTab === "track" ? STUDENT_API.chatGroupMessages : STUDENT_API.chatDmMessages;
+      const endpoint = isGroup ? STUDENT_API.chatGroupMessages : STUDENT_API.chatDmMessages;
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -91,25 +159,21 @@ export default function StudentChatsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          content: chatBody,
-          attachment_url: chatAttachmentUrl || null,
+          content: contentToSend,
+          attachment_url: attachmentToSend || null,
         }),
       });
 
       const payload = await response.json();
 
-      if (response.ok) {
-        if (chatTab === "track") {
-          setGroupMessages((prev) => [...prev, payload]);
+      if (response.ok && payload.id) {
+        if (isGroup) {
+          setGroupMessages((prev) => prev.map((m) => m.id === tempId ? payload : m));
         } else {
-          setDmMessages((prev) => [...prev, payload]);
+          setDmMessages((prev) => prev.map((m) => m.id === tempId ? payload : m));
         }
-        setChatBody("");
-        setChatAttachmentUrl("");
       }
-    } finally {
-      setSending(false);
-    }
+    } catch {}
   }
 
   async function refreshChats() {
@@ -128,7 +192,7 @@ export default function StudentChatsPage() {
     <ChatLayout
       mode="student"
       chatTab={chatTab}
-      setChatTab={setChatTab}
+      setChatTab={switchTab}
       chatBootstrap={chatBootstrap}
       groupMessages={groupMessages}
       dmMessages={dmMessages}
@@ -141,6 +205,8 @@ export default function StudentChatsPage() {
       sending={sending}
       mentionableUsers={mentionableUsers}
       onRefresh={refreshChats}
+      unreadGroup={unreadGroup}
+      unreadDm={unreadDm}
       onEditMessage={(msg: any) => {
         const newContent = prompt("Edit message:", msg.content ?? msg.body ?? "");
         if (newContent === null) return;
