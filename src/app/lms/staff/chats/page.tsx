@@ -44,6 +44,8 @@ type DmMessage = {
   body?: string | null;
   from_role?: "student" | "teacher";
   sender_role?: "student" | "teacher";
+  sender_id?: number | null;
+  sender_name?: string;
   attachment_url?: string | null;
   created_at?: string;
   edited_at?: string | null;
@@ -331,7 +333,7 @@ export default function StaffChatsPage() {
       });
       if (res.ok) {
         const msg = await res.json();
-        setGroupMessages((prev) => prev.map((m) => m.id === tempId ? msg : m));
+        setGroupMessages((prev) => prev.map((m) => (m.id as any) === tempId ? msg : m));
       }
     } catch {}
   }
@@ -364,7 +366,7 @@ export default function StaffChatsPage() {
       });
       const data = await res.json();
       if (!res.ok) { setFeedback(data?.message ?? "Could not send."); return; }
-      setThreads((prev) => prev.map((t) => t.thread_id === activeThreadId ? { ...t, messages: t.messages.map((m) => m.id === tempId ? data : m) } : t));
+      setThreads((prev) => prev.map((t) => t.thread_id === activeThreadId ? { ...t, messages: t.messages.map((m) => (m.id as any) === tempId ? data : m) } : t));
     } catch {}
   }
 

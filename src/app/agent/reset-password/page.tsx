@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { AGENT_API } from "../../../../lib/api";
+import { AGENT_API } from "../../../lib/api";
 
 export default function AgentResetPasswordPage() {
   return (

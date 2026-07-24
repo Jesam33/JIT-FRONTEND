@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AGENT_API } from "../../../../lib/api";
+import { AGENT_API } from "../../../lib/api";
 
 export default function AgentForgotPasswordPage() {
   const [email, setEmail] = useState("");

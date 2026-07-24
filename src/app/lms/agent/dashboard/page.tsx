@@ -16,6 +16,7 @@ type DashboardData = {
   paid_commission: number;
   balance: number;
   referral_code: string;
+  has_bank_details: boolean;
   recent_referrals: { id: number; name: string; email: string; course: string; enrolled_at: string }[];
   recent_transactions: { id: number; amount: number; type: string; status: string; notes: string; created_at: string }[];
 };

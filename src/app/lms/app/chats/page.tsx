@@ -139,7 +139,7 @@ export default function StudentChatsPage() {
       attachment_url: attachmentToSend || null,
       sender_role: "student",
       sender_id: profile?.id ?? 0,
-      sender_name: profile?.name ?? "You",
+      sender_name: profile ? `${profile.first_name} ${profile.last_name}` : "You",
       created_at: new Date().toISOString(),
     };
 
@@ -168,9 +168,9 @@ export default function StudentChatsPage() {
 
       if (response.ok && payload.id) {
         if (isGroup) {
-          setGroupMessages((prev) => prev.map((m) => m.id === tempId ? payload : m));
+          setGroupMessages((prev) => prev.map((m) => (m.id as any) === tempId ? payload : m));
         } else {
-          setDmMessages((prev) => prev.map((m) => m.id === tempId ? payload : m));
+          setDmMessages((prev) => prev.map((m) => (m.id as any) === tempId ? payload : m));
         }
       }
     } catch {}
