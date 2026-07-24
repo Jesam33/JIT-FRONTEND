@@ -1,0 +1,35 @@
+name: Deploy Next.js Frontend to Namecheap
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          script: |
+            cd ${{ secrets.CPANEL_FRONTEND_PATH }}
+
+            git pull origin main
+
+            npm ci
+
+            NEXT_PUBLIC_PUSHER_KEY=${{ secrets.NEXT_PUBLIC_PUSHER_KEY }} \
+            NEXT_PUBLIC_PUSHER_CLUSTER=${{ secrets.NEXT_PUBLIC_PUSHER_CLUSTER }} \
+            npm run build
+
+            # Restart the Node.js app via cPanel's UAPI
+            # Replace APP_ID with your Node.js app ID from cPanel
+            /usr/sbin/whmapi1 passwd_pop host="${{ secrets.CPANEL_HOST }}" password="${{ secrets.CPANEL_TOKEN }}" 2>/dev/null || true
+            uapi --user=${{ secrets.CPANEL_USER }} NodeApps restart_app app_id=APP_ID 2>/dev/null || \
+              /scripts/restartsrv_apache 2>/dev/null || true
