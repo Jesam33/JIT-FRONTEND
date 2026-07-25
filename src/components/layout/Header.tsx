@@ -153,7 +153,8 @@ export default function Header({ onNavigate }: { onNavigate?: () => void }) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onMouseDown={() => { onNavigate?.(); setMobileNavOpen(false); }}
+onMouseDown={onNavigate}
+                    onClick={() => setMobileNavOpen(false)}
                     className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
                       active
                         ? "bg-white/10 text-white [html.light_&]:bg-site-text/10 [html.light_&]:text-site-text"
@@ -168,7 +169,8 @@ export default function Header({ onNavigate }: { onNavigate?: () => void }) {
             <div className="mt-auto pt-6">
               <Link
                 href="/qoute"
-                onMouseDown={() => { onNavigate?.(); setMobileNavOpen(false); }}
+                onMouseDown={onNavigate}
+                onClick={() => setMobileNavOpen(false)}
                 className="flex w-full items-center justify-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 Request a Qoute
