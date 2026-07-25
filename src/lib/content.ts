@@ -83,7 +83,7 @@ export const heroContent = {
   kicker: "Jorsas",
   title: "Mobile Apps & Website Development",
   subtitle:
-    "We have a team of experts across different strata of Software Development and would provide you with the clear insight your business needs to create an amazing future. From concept to deployment, we partner with you every step of the way — delivering modern, scalable digital products that drive real business outcomes. Whether you are a startup looking for your first MVP or an enterprise seeking digital transformation, our team brings decades of combined experience to your project.",
+    "We have a team of experts across different strata of Software Development and would provide you with the clear insight your business needs to create an amazing future. ",
   ctaPrimary: "Learn More",
   ctaSecondary: "Our Services",
 };
