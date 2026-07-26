@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
 
 export default function LmsLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const expired = searchParams.get("expired") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(expired ? "Session expired. Please log in again." : "");
   const [submitting, setSubmitting] = useState(false);
 
   async function login(event: React.FormEvent<HTMLFormElement>) {
@@ -67,7 +69,7 @@ export default function LmsLoginPage() {
             {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Logging in...</span> : "Login"}
           </button>
         </form>
-        {message ? <p className="mt-4 text-sm text-red-300">{message}</p> : null}
+        {message ? <p className="mt-4 text-sm" style={{ color: expired ? '#d97706' : '#dc2626' }}>{message}</p> : null}
       </div>
     </section>
   );

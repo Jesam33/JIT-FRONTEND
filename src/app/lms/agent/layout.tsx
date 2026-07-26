@@ -32,7 +32,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         <div className="section-divider overflow-x-clip pt-6">
           <div className="container-wide grid items-start gap-4 md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
             <AgentSidebar />
-            <main className="relative min-w-0">
+            <main className="relative min-w-0 pb-8">
               <LmsNavbar
                 portalName="Agent Portal"
                 bellHref="/lms/agent/notifications"

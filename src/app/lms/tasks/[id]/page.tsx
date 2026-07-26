@@ -95,8 +95,8 @@ export default function LmsTaskDetailPage() {
   return (
     <section className="section-pad section-divider">
       <div className="container-wide max-w-3xl rounded-2xl border border-white/20 bg-white/[0.03] p-6">
-        <button type="button" onClick={() => router.push("/lms/app")} className="text-xs uppercase tracking-[0.14em] text-white/65">
-          Back to Dashboard
+        <button type="button" onClick={() => router.push("/lms/app/tasks")} className="text-xs uppercase tracking-[0.14em] text-white/65">
+          ← Back to Tasks
         </button>
 
         {task ? (
@@ -123,7 +123,7 @@ export default function LmsTaskDetailPage() {
               </div>
             ) : (
               <div className="space-y-3 rounded-xl border border-emerald-300/20 bg-emerald-400/5 p-4 text-sm">
-                <p className="text-emerald-200">Submitted on {new Date(task.submission.submitted_at).toLocaleString()}</p>
+                <p style={{ color: '#059669' }}>Submitted on {new Date(task.submission.submitted_at).toLocaleString()}</p>
                 {task.submission.submitted_link ? <p>Link: <a href={task.submission.submitted_link} target="_blank" rel="noreferrer" className="underline text-blue-400">{task.submission.submitted_link}</a></p> : null}
                 {task.submission.submitted_file_url ? <p>File: <a href={task.submission.submitted_file_url} target="_blank" rel="noreferrer" download className="inline-block rounded-lg bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20">Download submitted file</a></p> : null}
                 {task.submission.score !== null ? <p>Score: <span className="font-semibold">{task.submission.score}/100</span></p> : <p>Status: Awaiting grading</p>}

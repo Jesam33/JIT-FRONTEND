@@ -47,7 +47,7 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
       <div className="section-divider overflow-x-clip pt-6">
         <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
           {!hideSidebar && <StaffSidebar onNavigate={handleNavigate} />}
-          <main className="relative min-w-0">
+          <main className={`relative min-w-0 ${hideSidebar ? "" : "pb-8"}`}>
             {!hideSidebar && (
               <LmsNavbar
                 portalName="Staff Portal"

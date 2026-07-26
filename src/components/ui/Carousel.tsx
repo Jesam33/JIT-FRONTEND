@@ -74,7 +74,7 @@ export default function Carousel({
     >
       <div className="overflow-hidden rounded-2xl">
         <div
-          className="flex transition-transform duration-700 ease-out will-change-transform"
+          className="flex transition-transform duration-500 ease-in-out will-change-transform transform-gpu"
           style={{ transform: `translateX(-${current * (100 / count)}%)` }}
         >
           {children.map((child, i) => (

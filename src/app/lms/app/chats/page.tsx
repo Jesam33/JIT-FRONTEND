@@ -28,16 +28,28 @@ export default function StudentChatsPage() {
   useEffect(() => {
     if (!token) return;
 
-    Promise.all([
-      fetch(STUDENT_API.chatBootstrap, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setChatBootstrap(p)),
-      fetch(STUDENT_API.chatGroupMessages, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setGroupMessages(Array.isArray(p) ? p : [])),
-      fetch(STUDENT_API.chatDmMessages, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setDmMessages(Array.isArray(p) ? p : [])),
-      fetch(STUDENT_API.profile, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setProfile(p)),
-      fetch(STUDENT_API.chatGroupMentionable, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setMentionableUsers(Array.isArray(p) ? p : [])),
-    ]).then(() => {
+    // Show chat UI immediately (empty state), populate as data arrives
+    const bootstrapPromise = fetch(STUDENT_API.chatBootstrap, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json()).then((p) => setChatBootstrap(p));
+
+    fetch(STUDENT_API.profile, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json()).then((p) => setProfile(p));
+
+    fetch(STUDENT_API.chatGroupMentionable, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json()).then((p) => setMentionableUsers(Array.isArray(p) ? p : []));
+
+    // Unblock UI as soon as bootstrap arrives
+    bootstrapPromise.then(() => {
       setLoading(false);
       markReadOnBackend("track");
     });
+
+    // Load messages in the background
+    fetch(STUDENT_API.chatGroupMessages, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json()).then((p) => setGroupMessages(Array.isArray(p) ? p : []));
+
+    fetch(STUDENT_API.chatDmMessages, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json()).then((p) => setDmMessages(Array.isArray(p) ? p : []));
   }, [token]);
 
   const subscribedGroupChats = useRef<Set<number>>(new Set());

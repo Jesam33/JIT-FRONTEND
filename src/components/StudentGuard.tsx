@@ -33,16 +33,31 @@ export default function StudentGuard({ children }: { children: React.ReactNode }
       return;
     }
 
+    const controller = new AbortController();
     fetch(STUDENT_API.me, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
+      signal: controller.signal,
     })
       .then((res) => {
         if (res.status === 200) return res.json();
+        if (res.status === 401) {
+          localStorage.removeItem("lms_student_token");
+          router.replace("/lms/login?expired=1");
+          return;
+        }
         throw new Error("unauth");
       })
       .then(() => setLoading(false))
-      .catch(() => router.replace("/lms/login"));
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        if (err.message !== "Unauthorized") {
+          // Network error or similar — still show the UI, try again later
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
   }, [isPublicPath, router]);
 
   if (loading) return <LoadingSpinner />;

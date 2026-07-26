@@ -66,10 +66,14 @@ export default function StudentTasksPage() {
                         </p>
                       </div>
                       <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${
-                        t.status === "graded" ? (t.score !== null && t.score >= 70 ? "bg-emerald-500/20 text-emerald-200" : "bg-emerald-500/20 text-emerald-200") :
-                        t.status === "submitted" ? "bg-amber-500/20 text-amber-200" :
-                        "bg-blue-500/20 text-blue-200"
-                      }`}>
+                        t.status === "graded" ? "bg-emerald-500/20" :
+                        t.status === "submitted" ? "bg-amber-500/20" :
+                        "bg-blue-500/20"
+                      }`} style={{
+                        color: t.status === "graded" ? '#059669' :
+                               t.status === "submitted" ? '#d97706' :
+                               '#2563eb'
+                      }}>
                         {t.status === "graded" && t.score !== null ? `${t.score}%` : t.status}
                       </span>
                     </div>

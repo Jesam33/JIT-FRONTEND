@@ -82,9 +82,14 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
         </div>
       </div>
 
+      <div className="mb-3 rounded-lg border border-site-secondary/20 bg-site-secondary/10 px-3 py-2 text-center text-xs text-site-secondary md:hidden">
+        ← Swipe to see full calendar →
+      </div>
+
       {/* Calendar Grid */}
-      <div className="rounded-2xl border border-white/15 bg-black/30 overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-white/10">
+      <div className="overflow-x-auto rounded-2xl border border-site-border/20 bg-black/30">
+        <div className="min-w-[1000px] md:min-w-0">
+          <div className="grid grid-cols-7 border-b border-white/20">
           {DAYS.map((d) => (
             <div key={d} className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-white/40">{d}</div>
           ))}
@@ -101,22 +106,35 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
                 key={i}
                 disabled={!day}
                 onClick={() => day && setSelectedDay(day)}
-                className={`relative min-h-[72px] border-b border-r border-white/5 p-1.5 text-left transition outline-none
+                className={`relative min-h-[72px] border-b border-r border-white/20 p-1.5 text-left transition outline-none
                   ${!day ? "bg-transparent cursor-default" : "hover:bg-white/[0.03] cursor-pointer"}
-                  ${isSelected ? "bg-white/[0.06]" : ""}`}
+                  ${isSelected ? "bg-white/[0.06]" : ""}
+                  ${isToday ? "bg-red-500/15" : ""}`}
               >
                 {day && (
                   <>
-                    <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium
+                    {isToday && (
+                      <span className="absolute -top-0 left-1/2 -translate-x-1/2 rounded-b bg-red-500 px-1.5 py-[1px] text-[8px] font-bold uppercase tracking-wider" style={{ color: '#fff' }}>
+                        Today
+                      </span>
+                    )}
+                    <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium mt-1.5
                       ${isToday ? "bg-red-500 text-white" : isSelected ? "bg-white/15 text-white" : "text-white/70"}`}>
                       {day}
                     </span>
                     {cls && cls.length > 0 && (
                       <div className="mt-1 space-y-0.5">
-                        {cls.slice(0, 2).map((c) => (
-                          <div key={c.id} className={`h-1.5 w-full rounded-full ${hasLive ? "bg-emerald-500" : c.status === "completed" ? "bg-white/20" : "bg-blue-500/60"}`} />
-                        ))}
-                        {cls.length > 2 && <span className="text-[10px] text-white/40">+{cls.length - 2}</span>}
+                        {cls.slice(0, 2).map((c) => {
+                          const start = new Date(c.starts_at);
+                          const timeStr = start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
+                          const isLive = hasLive && new Date(c.starts_at).getTime() <= now && (c.ends_at ? new Date(c.ends_at).getTime() > now : start.getTime() + 7200000 > now);
+                          return (
+                            <div key={c.id} className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${isLive ? "bg-emerald-500/20" : c.status === "completed" ? "bg-gray-500/20" : "bg-blue-500/20"}`} style={{ color: isLive ? '#059669' : c.status === "completed" ? '#64748b' : '#2563eb' }}>
+                              {timeStr} {c.title}
+                            </div>
+                          );
+                        })}
+                        {cls.length > 2 && <span className="text-[10px] text-white/40 ml-1">+{cls.length - 2} more</span>}
                       </div>
                     )}
                   </>
@@ -126,10 +144,27 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
           })}
         </div>
       </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4 text-xs text-white/60">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          Live
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-500/60" />
+          Scheduled
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+          Completed
+        </span>
+      </div>
 
       {/* Selected Day Details */}
       {selectedDay && (
-        <div className="rounded-2xl border border-white/15 bg-black/30 p-5">
+        <div className="rounded-2xl border border-site-border/20 bg-black/30 p-5">
           <h3 className="text-sm font-semibold text-white">{selectedTitle}</h3>
           {selectedClasses.length === 0 ? (
             <p className="mt-3 text-sm text-white/40">No classes on this day.</p>
@@ -144,7 +179,7 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
                   const isPast = end ? end.getTime() < now : start.getTime() < now;
 
                   return (
-                    <div key={c.id} className="rounded-lg border border-white/10 bg-black/40 p-3">
+                    <div key={c.id} className="rounded-lg border border-site-border/15 bg-black/40 p-3">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-white truncate">{c.title}</p>
@@ -160,18 +195,18 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {c.meeting_url && !isPast ? (
-                            <a href={c.meeting_url} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 transition">
+                            <a href={c.meeting_url} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium hover:bg-emerald-500 transition" style={{ color: '#fff' }}>
                               {isLive ? "Join Now" : "Join"}
                             </a>
                           ) : null}
                           {renderActions?.(c)}
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                            c.status === "ongoing" || isLive ? "bg-emerald-500/15 text-emerald-300" :
-                            c.status === "completed" ? "bg-white/10 text-white/40" :
-                            c.status === "cancelled" ? "bg-red-500/15 text-red-300" :
-                            "bg-blue-500/15 text-blue-300"
-                          }`}>
-                            {isLive && c.status !== "ongoing" ? "live" : c.status}
+                          <span className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${
+                            c.status === "ongoing" || isLive ? "bg-emerald-500/20" :
+                            c.status === "completed" ? "bg-gray-500/20" :
+                            c.status === "cancelled" ? "bg-red-500/20" :
+                            "bg-blue-500/20"
+                          }`} style={{ color: c.status === "ongoing" || isLive ? '#059669' : c.status === "completed" ? '#64748b' : c.status === "cancelled" ? '#dc2626' : '#2563eb' }}>
+                            {isLive && c.status !== "ongoing" ? "live" : c.status || "class"}
                           </span>
                         </div>
                       </div>

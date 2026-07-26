@@ -167,7 +167,7 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
 
   return (
     <div className={`group relative flex items-end gap-2 ${isMe ? "flex-row-reverse" : ""}`}>
-      {showAvatar && !isMe ? (
+      {showAvatar ? (
         avatarUrl ? (
           <img src={avatarUrl} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
         ) : (
@@ -175,11 +175,11 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
             {initialsFromName(senderName)}
           </div>
         )
-      ) : (
+      ) : isMe && (onEdit || onDelete) ? (
         <div className="w-7 shrink-0" />
-      )}
+      ) : null}
       <div
-        className={`w-full break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed border ${
+        className={`max-w-[85%] sm:max-w-[70%] break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed border ${
           isMe
             ? "rounded-br-md border-site-primary bg-site-primary text-white"
             : "rounded-bl-md border-site-border bg-site-surface-soft text-site-text"
@@ -505,6 +505,7 @@ export default function ChatLayout(props: AnyObj) {
       onRefresh,
       unreadGroup = 0,
       unreadDm = 0,
+      profile,
     } = props;
 
     const messages = chatTab === "track" ? groupMessages : dmMessages;
@@ -513,19 +514,18 @@ export default function ChatLayout(props: AnyObj) {
       : `@${chatBootstrap?.dm_thread?.instructor_name ?? "Instructor"}`;
 
     function showAvatar(item: AnyObj, idx: number, arr: AnyObj[]) {
-      const role = roleLabel(item.sender_role ?? item.from_role ?? "student");
-      if (role === "teacher") return false;
       if (idx === 0) return true;
-      const prevRole = roleLabel(arr[idx - 1].sender_role ?? arr[idx - 1].from_role ?? "student");
-      return prevRole !== role;
+      const prev = arr[idx - 1];
+      return prev.sender_id !== item.sender_id || (prev.sender_role ?? prev.from_role) !== (item.sender_role ?? item.from_role);
     }
 
     function getAvatarUrl(item: AnyObj) {
+      if (profile && item.sender_id === profile.id) return profile.profile_photo_url ?? null;
       return null;
     }
 
     function getSenderNameFn(item: AnyObj) {
-      return getSenderName(item);
+      return item.sender_name ?? item.student_name ?? item.name ?? (item.sender_role === "teacher" ? "Instructor" : "Student");
     }
 
     return (
@@ -639,11 +639,9 @@ export default function ChatLayout(props: AnyObj) {
   } = props;
 
   function showAvatar(item: AnyObj, idx: number, arr: AnyObj[]) {
-    const role = roleLabel(item.sender_role ?? item.from_role ?? "student");
-    if (role === "teacher") return false;
     if (idx === 0) return true;
-    const prevRole = roleLabel(arr[idx - 1].sender_role ?? arr[idx - 1].from_role ?? "student");
-    return prevRole !== role;
+    const prev = arr[idx - 1];
+    return prev.sender_id !== item.sender_id || (prev.sender_role ?? prev.from_role) !== (item.sender_role ?? item.from_role);
   }
 
   function getAvatarUrl(item: AnyObj) {

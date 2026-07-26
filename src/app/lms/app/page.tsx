@@ -110,7 +110,7 @@ export default function StudentDashboardPage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8 ">
       <div className="rounded-2xl border border-white/15 bg-black/30 p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-white/60">My Progress</p>
         <div className="mt-5 flex flex-wrap items-center gap-6">

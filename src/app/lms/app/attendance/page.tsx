@@ -26,7 +26,7 @@ export default function StudentAttendancePage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div>
+    <div className="pb-8">
       <h2 className="text-xl font-semibold">Attendance</h2>
       <p className="mt-2 text-sm text-white/75">Past class attendance is computed after class end and shown here.</p>
       <div className="mt-4 space-y-3">
@@ -38,7 +38,7 @@ export default function StudentAttendancePage() {
                   <h3 className="font-semibold">{item.class_title ?? "Class Session"}</h3>
                   <p className="mt-1 text-xs text-white/60">{item.starts_at ? formatLocalDateTime(item.starts_at) : "Date unavailable"}</p>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${item.status === "present" ? "bg-emerald-500/20 text-emerald-200" : item.status === "late" ? "bg-amber-500/20 text-amber-200" : item.status === "partial" ? "bg-orange-500/20 text-orange-200" : "bg-rose-500/20 text-rose-200"}`}>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${item.status === "present" ? "bg-emerald-500/20 text-emerald-600" : item.status === "late" ? "bg-amber-500/20 text-amber-600" : item.status === "partial" ? "bg-orange-500/20 text-orange-600" : "bg-rose-500/20 text-rose-600"}`}>
                   {item.status.replace("_", " ")}
                 </span>
               </div>
