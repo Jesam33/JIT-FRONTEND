@@ -1,11 +1,10 @@
 "use client";
-
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
 
-export default function LmsLoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired") === "1";
@@ -18,21 +17,17 @@ export default function LmsLoginPage() {
   async function login(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
-
     const response = await fetch(AUTH_API.login, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-
     const data = await response.json();
-
     if (!response.ok) {
       setMessage(data?.message ?? "Login failed");
       setSubmitting(false);
       return;
     }
-
     localStorage.setItem("lms_student_token", data.token);
     router.push("/lms/app");
   }
@@ -43,7 +38,6 @@ export default function LmsLoginPage() {
         <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Student Portal Login</h1>
         <form className="mt-6 space-y-4" onSubmit={login}>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white" required />
-
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -60,11 +54,9 @@ export default function LmsLoginPage() {
               </svg>
             </button>
           </div>
-
           <div className="flex justify-end">
             <Link href="/lms/forgot-password" className="text-xs text-white/75 underline">Forgot password?</Link>
           </div>
-
           <button type="submit" disabled={submitting} className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">
             {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Logging in...</span> : "Login"}
           </button>
@@ -72,5 +64,13 @@ export default function LmsLoginPage() {
         {message ? <p className="mt-4 text-sm" style={{ color: expired ? '#d97706' : '#dc2626' }}>{message}</p> : null}
       </div>
     </section>
+  );
+}
+
+export default function LmsLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
