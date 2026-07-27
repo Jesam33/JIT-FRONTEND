@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type AttendanceRecord = {
   id: number;
@@ -23,7 +24,7 @@ export default function StaffAttendancePage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.attendance, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.attendance)
       .then((r) => r.json())
       .then((data) => { setRecords(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));

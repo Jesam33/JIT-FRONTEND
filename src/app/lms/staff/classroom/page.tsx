@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { STAFF_API, STUDENT_API } from "../../../../lib/api";
-import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 import { isClassEnded } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 
@@ -68,9 +68,9 @@ export default function StaffClassroomPage() {
     if (!token) return;
     try {
       const [cls, crs, sched] = await Promise.all([
-        fetch(STAFF_API.classrooms, { headers: { Authorization: `Bearer ${token}` } }).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
+        apiFetchStaff(STAFF_API.classrooms).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
         fetch(STUDENT_API.courses).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
-        fetchWithTimeout(STAFF_API.scheduledClasses, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
+        apiFetchStaff(STAFF_API.scheduledClasses).then((r) => r.json()),
       ]);
       setClassrooms(Array.isArray(cls) ? cls : []);
       setCourses(Array.isArray(crs) ? crs : []);
@@ -108,9 +108,8 @@ export default function StaffClassroomPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this classroom?')) return;
     setDeletingId(id);
-    const res = await fetch(STAFF_API.classroom(id), {
+    const res = await apiFetchStaff(STAFF_API.classroom(id), {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       setClassrooms(classrooms.filter((c) => c.id !== id));
@@ -122,9 +121,9 @@ export default function StaffClassroomPage() {
     setMarkingEndedId(id);
     setMessage("");
     const now = new Date().toISOString();
-    const res = await fetch(STAFF_API.classroom(id), {
+    const res = await apiFetchStaff(STAFF_API.classroom(id), {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ends_at: now }),
     });
     setMarkingEndedId(null);
@@ -159,9 +158,9 @@ export default function StaffClassroomPage() {
     const url = editingId ? STAFF_API.classroom(editingId) : STAFF_API.classrooms;
     const method = editingId ? "PUT" : "POST";
 
-    const res = await fetch(url, {
+    const res = await apiFetchStaff(url, {
       method,
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
@@ -176,7 +175,7 @@ export default function StaffClassroomPage() {
     setMessage(editingId ? "Classroom updated." : "Classroom created.");
     resetForm();
 
-    const refreshed = await fetch(STAFF_API.classrooms, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json());
+    const refreshed = await apiFetchStaff(STAFF_API.classrooms).then((r) => r.json());
     setClassrooms(Array.isArray(refreshed) ? refreshed : []);
   };
 

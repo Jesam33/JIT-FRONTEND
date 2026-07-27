@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../../lib/api";
 import { getToken } from "../../../../lib/lms-utils";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 import type { NotificationItem } from "../../../../lib/lms-types";
 
 function notificationHref(n: NotificationItem): string | null {
@@ -22,13 +23,14 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STUDENT_API.notifications, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(STUDENT_API.notifications)
       .then((r) => r.json())
-      .then((p) => { setNotifications(Array.isArray(p) ? p : []); setLoading(false); });
+      .then((p) => { setNotifications(Array.isArray(p) ? p : []); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [token]);
 
   async function markRead(id: number) {
-    await fetch(STUDENT_API.markNotificationRead(id), { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    await apiFetch(STUDENT_API.markNotificationRead(id), { method: "POST" });
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
   }
 

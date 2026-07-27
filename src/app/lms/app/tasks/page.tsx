@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { STUDENT_API } from "../../../../lib/api";
 import { getToken } from "../../../../lib/lms-utils";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 
 type TaskItem = {
   id: number;
@@ -27,7 +28,7 @@ export default function StudentTasksPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STUDENT_API.tasks, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(STUDENT_API.tasks)
       .then((r) => r.json())
       .then((d) => { setTasks(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));

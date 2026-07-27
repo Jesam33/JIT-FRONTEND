@@ -5,6 +5,7 @@ import type { MaterialItem } from "../../../../lib/lms-types";
 import { getToken } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../../lib/api";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 
 function isVideoUrl(url: string): boolean {
   const u = url.toLowerCase();
@@ -71,9 +72,7 @@ export default function StudentMaterialsPage() {
   useEffect(() => {
     if (!token) return;
 
-    fetch(STUDENT_API.materials, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch(STUDENT_API.materials)
       .then((res) => res.json())
       .then((payload) => { setMaterials(Array.isArray(payload) ? payload : []); setLoading(false); })
       .catch(() => setLoading(false));

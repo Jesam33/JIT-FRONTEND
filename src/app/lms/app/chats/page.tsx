@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ChatLayout from "../../../../components/chat/ChatLayout";
 import type { ChatMessage, ChatBootstrap, StudentProfile } from "../../../../lib/lms-types";
 import { getToken } from "../../../../lib/lms-utils";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
@@ -29,27 +30,27 @@ export default function StudentChatsPage() {
     if (!token) return;
 
     // Show chat UI immediately (empty state), populate as data arrives
-    const bootstrapPromise = fetch(STUDENT_API.chatBootstrap, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json()).then((p) => setChatBootstrap(p));
+    const bootstrapPromise = apiFetch(STUDENT_API.chatBootstrap)
+      .then((r) => r.json()).then((p) => setChatBootstrap(p)).catch(() => {});
 
-    fetch(STUDENT_API.profile, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json()).then((p) => setProfile(p));
+    apiFetch(STUDENT_API.profile)
+      .then((r) => r.json()).then((p) => setProfile(p)).catch(() => {});
 
-    fetch(STUDENT_API.chatGroupMentionable, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json()).then((p) => setMentionableUsers(Array.isArray(p) ? p : []));
+    apiFetch(STUDENT_API.chatGroupMentionable)
+      .then((r) => r.json()).then((p) => setMentionableUsers(Array.isArray(p) ? p : [])).catch(() => {});
 
     // Unblock UI as soon as bootstrap arrives
     bootstrapPromise.then(() => {
       setLoading(false);
       markReadOnBackend("track");
-    });
+    }).catch(() => setLoading(false));
 
     // Load messages in the background
-    fetch(STUDENT_API.chatGroupMessages, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json()).then((p) => setGroupMessages(Array.isArray(p) ? p : []));
+    apiFetch(STUDENT_API.chatGroupMessages)
+      .then((r) => r.json()).then((p) => setGroupMessages(Array.isArray(p) ? p : [])).catch(() => {});
 
-    fetch(STUDENT_API.chatDmMessages, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json()).then((p) => setDmMessages(Array.isArray(p) ? p : []));
+    apiFetch(STUDENT_API.chatDmMessages)
+      .then((r) => r.json()).then((p) => setDmMessages(Array.isArray(p) ? p : [])).catch(() => {});
   }, [token]);
 
   const subscribedGroupChats = useRef<Set<number>>(new Set());
@@ -125,7 +126,7 @@ export default function StudentChatsPage() {
   function markReadOnBackend(tab: "track" | "dm") {
     if (!token) return;
     const api = tab === "track" ? STUDENT_API.chatGroupMarkRead : STUDENT_API.chatDmMarkRead;
-    fetch(api, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(api, { method: "POST" })
       .then(() => window.dispatchEvent(new CustomEvent("opencode:chat-read")))
       .catch(() => {});
   }
@@ -164,12 +165,9 @@ export default function StudentChatsPage() {
 
     try {
       const endpoint = isGroup ? STUDENT_API.chatGroupMessages : STUDENT_API.chatDmMessages;
-      const response = await fetch(endpoint, {
+      const response = await apiFetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: contentToSend,
           attachment_url: attachmentToSend || null,
@@ -192,8 +190,8 @@ export default function StudentChatsPage() {
     if (!token) return;
     try {
       await Promise.all([
-        fetch(STUDENT_API.chatGroupMessages, { headers: { Authorization: `Bearer ${token}` } }).then(async (r) => { if (r.ok) { const p = await r.json(); setGroupMessages(Array.isArray(p) ? p : []); } }),
-        fetch(STUDENT_API.chatDmMessages, { headers: { Authorization: `Bearer ${token}` } }).then(async (r) => { if (r.ok) { const p = await r.json(); setDmMessages(Array.isArray(p) ? p : []); } }),
+        apiFetch(STUDENT_API.chatGroupMessages).then(async (r) => { if (r.ok) { const p = await r.json(); setGroupMessages(Array.isArray(p) ? p : []); } }),
+        apiFetch(STUDENT_API.chatDmMessages).then(async (r) => { if (r.ok) { const p = await r.json(); setDmMessages(Array.isArray(p) ? p : []); } }),
       ]);
     } catch {}
   }
@@ -224,9 +222,9 @@ export default function StudentChatsPage() {
         if (newContent === null) return;
         const isGroup = chatTab === "track";
         const api = isGroup ? STUDENT_API.editGroupMessage(msg.id) : STUDENT_API.editDmMessage(msg.id);
-        fetch(api, {
+        apiFetch(api, {
           method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: newContent, attachment_url: msg.attachment_url || null }),
         }).then((r) => r.ok ? r.json() : null).then((data) => {
           if (!data) return;
@@ -241,7 +239,7 @@ export default function StudentChatsPage() {
         if (!confirm("Delete this message?")) return;
         const isGroup = chatTab === "track";
         const api = isGroup ? STUDENT_API.deleteGroupMessage(id) : STUDENT_API.deleteDmMessage(id);
-        fetch(api, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(api, { method: "POST" })
           .then((r) => r.ok ? (isGroup ? setGroupMessages((prev) => prev.filter((m) => m.id !== id)) : setDmMessages((prev) => prev.filter((m) => m.id !== id))) : null)
           .catch(() => {});
       }}

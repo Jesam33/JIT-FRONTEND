@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Course = { id: number; title: string; description?: string };
 
@@ -13,7 +14,7 @@ export default function StaffCoursesPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.assignedCourses, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.assignedCourses)
       .then((r) => r.json())
       .then((data) => { setCourses(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));

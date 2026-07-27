@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Announcement = {
   id: number;
@@ -27,8 +28,8 @@ export default function StaffAnnouncementsPage() {
 
   const load = useCallback(async () => {
     const [annRes, trackRes] = await Promise.all([
-      fetch(STAFF_API.announcements, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch(STAFF_API.assignedTracks, { headers: { Authorization: `Bearer ${token}` } }),
+      apiFetchStaff(STAFF_API.announcements),
+      apiFetchStaff(STAFF_API.assignedTracks),
     ]);
     const annData = await annRes.json();
     setAnnouncements(Array.isArray(annData) ? annData : []);
@@ -53,9 +54,9 @@ export default function StaffAnnouncementsPage() {
 
   async function createAnnouncement() {
     setCreating(true);
-    await fetch(STAFF_API.announcements, {
+    await apiFetchStaff(STAFF_API.announcements, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ batch_id: Number(batchId), title, body: body || undefined }),
     });
     setCreating(false);
@@ -67,7 +68,7 @@ export default function StaffAnnouncementsPage() {
   async function remove(id: number) {
     if (!confirm("Delete this announcement?")) return;
     setDeleting(id);
-    await fetch(STAFF_API.announcement(id), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    await apiFetchStaff(STAFF_API.announcement(id), { method: "DELETE" });
     setDeleting(null);
     await load();
   }

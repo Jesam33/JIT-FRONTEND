@@ -6,6 +6,7 @@ import type { AttendanceItem, SdkSignaturePayload } from "../../../../lib/lms-ty
 import { formatLocalDateTime, canJoinClassroom, isClassEnded, isClassActiveWindow, getToken } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_MODULE_API, STUDENT_API } from "../../../../lib/api";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 
 type TimetableItem = {
   id: number;
@@ -55,9 +56,9 @@ export default function StudentClassroomPage() {
     if (!token) return;
 
     Promise.allSettled([
-      fetch(STUDENT_MODULE_API.timetable, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setTimetable(Array.isArray(p) ? p : [])),
-      fetch(STUDENT_API.attendance, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setAttendanceItems(Array.isArray(p) ? p : [])),
-      fetch(STUDENT_API.profile, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()).then((p) => setProfile(p)),
+      apiFetch(STUDENT_MODULE_API.timetable).then((r) => r.json()).then((p) => setTimetable(Array.isArray(p) ? p : [])),
+      apiFetch(STUDENT_API.attendance).then((r) => r.json()).then((p) => setAttendanceItems(Array.isArray(p) ? p : [])),
+      apiFetch(STUDENT_API.profile).then((r) => r.json()).then((p) => setProfile(p)),
     ]).then(() => setLoading(false));
   }, [token]);
 
@@ -133,9 +134,8 @@ export default function StudentClassroomPage() {
   async function joinClassroom(id: number) {
     setJoinMessage("");
     setIsJoiningAttendance(true);
-    const response = await fetch(STUDENT_API.classroomJoin(id), {
+    const response = await apiFetch(STUDENT_API.classroomJoin(id), {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     });
     const payload = await response.json();
     setIsJoiningAttendance(false);
@@ -154,9 +154,9 @@ export default function StudentClassroomPage() {
     setIsJoiningEmbeddedClass(true);
 
     try {
-      const response = await fetch(STUDENT_API.classroomSdkSignature(classroomId), {
+      const response = await apiFetch(STUDENT_API.classroomSdkSignature(classroomId), {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ class_type: activeClass?.class_type ?? "classroom" }),
       });
       const payload = (await response.json()) as Partial<SdkSignaturePayload> & { message?: string };

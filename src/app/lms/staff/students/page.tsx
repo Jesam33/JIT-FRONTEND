@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Student = {
   id: number;
@@ -18,7 +19,7 @@ export default function StaffStudentsPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.students, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.students)
       .then((r) => r.json())
       .then((data) => { setStudents(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));

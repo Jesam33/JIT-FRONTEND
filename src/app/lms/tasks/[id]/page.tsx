@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { STUDENT_API } from "../../../../lib/api";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 
 type TaskDetail = {
   id: number;
@@ -45,11 +46,10 @@ export default function LmsTaskDetailPage() {
       return;
     }
 
-    fetch(STUDENT_API.taskDetail(taskId), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch(STUDENT_API.taskDetail(taskId))
       .then((res) => res.json())
-      .then((payload) => setTask(payload));
+      .then((payload) => setTask(payload))
+      .catch(() => {});
   }, [taskId, token]);
 
   async function submitTask() {
@@ -65,18 +65,14 @@ export default function LmsTaskDetailPage() {
     if (task.submission_type === "file_upload" && selectedFile) {
       const formData = new FormData();
       formData.append("submitted_file", selectedFile);
-      response = await fetch(STUDENT_API.submitTask(task.id), {
+      response = await apiFetch(STUDENT_API.submitTask(task.id), {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
     } else {
-      response = await fetch(STUDENT_API.submitTask(task.id), {
+      response = await apiFetch(STUDENT_API.submitTask(task.id), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ submitted_link: linkInput.trim() }),
       });
     }

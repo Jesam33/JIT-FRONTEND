@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type ModuleItem = {
   id: number;
@@ -19,7 +20,7 @@ export default function StaffDashboardPage() {
     const token = localStorage.getItem("lms_staff_token") ?? "";
     if (!token) return;
 
-    fetch(STAFF_API.dashboard, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.dashboard)
       .then((r) => r.json())
       .then((p) => { setDash(p); setLoading(false); })
       .catch(() => setLoading(false));

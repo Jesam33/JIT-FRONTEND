@@ -6,6 +6,7 @@ import type { DashboardPayload } from "../../../lib/lms-types";
 import { formatLocalDateTime, formatRelativeCountdown, canJoinClassroom, getToken } from "../../../lib/lms-utils";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../lib/api";
+import { apiFetch } from "../../../lib/fetch-with-timeout";
 
 export default function StudentDashboardPage() {
   const router = useRouter();
@@ -54,9 +55,10 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (!token) return;
 
-    fetch(STUDENT_API.dashboard, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(STUDENT_API.dashboard)
       .then((r) => r.json())
-      .then((p) => { setData(p); setLoading(false); });
+      .then((p) => { setData(p); setLoading(false); })
+      .catch(() => setLoading(false));
   }, [token]);
 
   useEffect(() => {
@@ -73,9 +75,8 @@ export default function StudentDashboardPage() {
   async function joinClassroom(id: number) {
     setJoinMessage("");
     setJoining(id);
-    const response = await fetch(STUDENT_API.classroomJoin(id), {
+    const response = await apiFetch(STUDENT_API.classroomJoin(id), {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     });
     const payload = await response.json();
     setJoining(null);

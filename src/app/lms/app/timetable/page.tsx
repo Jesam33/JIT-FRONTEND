@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STUDENT_MODULE_API } from "../../../../lib/api";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 import CalendarTimetable from "../../../../components/CalendarTimetable";
 
 type ScheduledClass = {
@@ -31,9 +32,7 @@ export default function StudentTimetablePage() {
 
   useEffect(() => {
     if (!token) return;
-      fetch(STUDENT_MODULE_API.timetable, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+      apiFetch(STUDENT_MODULE_API.timetable)
       .then((r) => r.json())
       .then((d) => { setClasses(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));

@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { STUDENT_MODULE_API } from "../../../../../lib/api";
-import { fetchWithTimeout } from "../../../../../lib/fetch-with-timeout";
+import { apiFetch } from "../../../../../lib/fetch-with-timeout";
 
 type ModuleContent = {
   id: number;
@@ -80,9 +80,7 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
 
   useEffect(() => {
     if (!token || !id) return;
-    fetchWithTimeout(STUDENT_MODULE_API.module(id), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch(STUDENT_MODULE_API.module(id))
       .then((r) => { if (!r.ok) throw new Error("Not OK"); return r.json(); })
       .then((d) => { setModule(Array.isArray(d) ? null : d); setLoading(false); })
       .catch(() => setLoading(false));

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { STAFF_API } from "@/lib/api";
+import { apiFetchStaff } from "@/lib/fetch-with-timeout";
 
 type SidebarGroup = {
   label: string;
@@ -178,14 +179,14 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
   useEffect(() => {
     const token = localStorage.getItem("lms_staff_token") ?? "";
     if (!token) return;
-    fetch(STAFF_API.me, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.me)
       .then((r) => r.json())
       .then((p) => { if (p?.name) setTeacher(p); })
       .catch(() => {});
 
     const fetchUnread = () => {
       if (document.hidden) return;
-      fetch(STAFF_API.chatUnread, { headers: { Authorization: `Bearer ${token}` } })
+      apiFetchStaff(STAFF_API.chatUnread)
         .then((r) => r.json())
         .then((p) => {
           setBadge((prev) => ({
@@ -194,7 +195,7 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
           }));
         })
         .catch(() => {});
-      fetch(STAFF_API.notificationUnread, { headers: { Authorization: `Bearer ${token}` } })
+      apiFetchStaff(STAFF_API.notificationUnread)
         .then((r) => r.json())
         .then((p) => {
           setBadge((prev) => ({

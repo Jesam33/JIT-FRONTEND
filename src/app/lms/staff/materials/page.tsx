@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Material = {
   id: number;
@@ -26,7 +27,7 @@ export default function StaffMaterialsPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
 
   async function load() {
-    const res = await fetch(STAFF_API.materials, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await apiFetchStaff(STAFF_API.materials);
     const data = await res.json();
     setMaterials(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -36,9 +37,9 @@ export default function StaffMaterialsPage() {
 
   async function createMaterial() {
     setCreating(true);
-    await fetch(STAFF_API.materials, {
+    await apiFetchStaff(STAFF_API.materials, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ course_id: Number(courseId), title, type, file_url: fileUrl }),
     });
     setCreating(false);
@@ -49,7 +50,7 @@ export default function StaffMaterialsPage() {
   async function remove(id: number) {
     if (!confirm("Delete this material?")) return;
     setDeleting(id);
-    await fetch(STAFF_API.material(id), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    await apiFetchStaff(STAFF_API.material(id), { method: "DELETE" });
     setDeleting(null);
     await load();
   }

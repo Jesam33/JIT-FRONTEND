@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Profile = {
   id: number;
@@ -41,7 +42,7 @@ export default function StaffProfilePage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.profile, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.profile)
       .then((r) => r.json())
       .then((data) => {
         setProfile(data);
@@ -56,9 +57,9 @@ export default function StaffProfilePage() {
 
   async function saveProfile() {
     setSaving(true); setMessage("");
-    const res = await fetch(STAFF_API.profile, {
+    const res = await apiFetchStaff(STAFF_API.profile, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, phone: phone || null, profile_photo_url: photoUrl || null }),
     });
     const data = await res.json();
@@ -69,9 +70,9 @@ export default function StaffProfilePage() {
 
   async function changePassword() {
     setPasswordMessage("");
-    const res = await fetch(STAFF_API.changePassword, {
+    const res = await apiFetchStaff(STAFF_API.changePassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
     });
     const data = await res.json();
@@ -84,7 +85,7 @@ export default function StaffProfilePage() {
     if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(STAFF_API.profilePhoto, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+    const res = await apiFetchStaff(STAFF_API.profilePhoto, { method: "POST", body: formData });
     const data = await res.json();
     if (res.ok && data.url) { setPhotoUrl(data.url); setProfile((prev) => prev ? { ...prev, profile_photo_url: data.url } : prev); }
   }

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import InnerPageHero from "@/components/layout/InnerPageHero";
@@ -38,12 +39,17 @@ export default async function ProjectDetailPage({ params }: Props) {
       <div className="container-wide py-12">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <article className="rounded-xl border border-white/20 bg-white/5 p-6 md:p-8">
-            <div
-              className="mb-7 h-64 rounded-xl border border-white/10 bg-cover bg-center md:h-80"
-              style={{ backgroundImage: `url(${item.image})` }}
-              role="img"
-              aria-label={item.title}
-            />
+            <div className="relative mb-7 h-64 overflow-hidden rounded-xl border border-white/10 md:h-80">
+              <Image
+                src={item.image}
+                alt={item.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                priority
+                unoptimized
+              />
+            </div>
             <h2 className="text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
               {item.title}
             </h2>

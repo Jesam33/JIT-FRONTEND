@@ -2,9 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { STAFF_API, api } from "../../../../lib/api";
-import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
 import { useToast } from "../../../../components/ToastProvider";
+
+const jsonHeaders = { "Content-Type": "application/json" };
 
 type ModuleContent = {
   id: number;
@@ -46,11 +48,6 @@ type Course = {
   id: number;
   title: string;
 };
-
-const headers = (token: string) => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${token}`,
-});
 
 const uploadableTypes = ["slides", "pdf", "file"];
 const typeLabels: Record<string, string> = {
@@ -122,9 +119,9 @@ export default function StaffModulesPage() {
       if (searchTerm) params.set("search", searchTerm);
       const qs = params.toString();
 
-      const modRes = await fetchWithTimeout(STAFF_API.modules + (qs ? `?${qs}` : ""), { headers: headers(token), timeout: 120000 }).catch((e) => { console.error("Modules fetch failed:", e); return null; });
-      const courseRes = await fetchWithTimeout(STAFF_API.assignedCourses, { headers: headers(token), timeout: 120000 }).catch((e) => { console.error("Courses fetch failed:", e); return null; });
-      const classRes = await fetchWithTimeout(STAFF_API.scheduledClasses, { headers: headers(token), timeout: 120000 }).catch((e) => { console.error("Classes fetch failed:", e); return null; });
+      const modRes = await apiFetchStaff(STAFF_API.modules + (qs ? `?${qs}` : ""), { timeout: 120000 }).catch((e) => { console.error("Modules fetch failed:", e); return null; });
+      const courseRes = await apiFetchStaff(STAFF_API.assignedCourses, { timeout: 120000 }).catch((e) => { console.error("Courses fetch failed:", e); return null; });
+      const classRes = await apiFetchStaff(STAFF_API.scheduledClasses, { timeout: 120000 }).catch((e) => { console.error("Classes fetch failed:", e); return null; });
 
       if (modRes && modRes.ok) {
         const mods = await modRes.json();
@@ -156,11 +153,11 @@ export default function StaffModulesPage() {
     if (!formTitle.trim() || !formCourseId) return;
     setSaving(true);
     try {
-      const res = await fetchWithTimeout(
+      const res = await apiFetchStaff(
         editing ? STAFF_API.module(selectedId!) : STAFF_API.modules,
         {
           method: editing ? "PUT" : "POST",
-          headers: headers(token),
+          headers: jsonHeaders,
           body: JSON.stringify({
             course_id: Number(formCourseId),
             title: formTitle.trim(),
@@ -193,9 +190,9 @@ export default function StaffModulesPage() {
     if (!newContentTitle.trim()) return;
     setSaving(true);
     try {
-      const res = await fetchWithTimeout(STAFF_API.moduleContents(moduleId), {
+      const res = await apiFetchStaff(STAFF_API.moduleContents(moduleId), {
         method: "POST",
-        headers: headers(token),
+        headers: jsonHeaders,
         body: JSON.stringify({
           title: newContentTitle.trim(),
           type: newContentType,
@@ -216,9 +213,8 @@ export default function StaffModulesPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(api(`/api/frontend/lms/staff/modules/${moduleId}/contents/upload`), {
+      const res = await apiFetchStaff(api(`/api/frontend/lms/staff/modules/${moduleId}/contents/upload`), {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       if (!res.ok) { showToast("Upload failed", "error"); return; }
@@ -239,9 +235,9 @@ export default function StaffModulesPage() {
     [items[idx], items[swapIdx]] = [items[swapIdx], items[idx]];
     const payload = items.map((c, i) => ({ id: c.id, sort_order: i }));
     try {
-      await fetchWithTimeout(api(`/api/frontend/lms/staff/modules/${selectedModule.id}/contents/reorder`), {
+      await apiFetchStaff(api(`/api/frontend/lms/staff/modules/${selectedModule.id}/contents/reorder`), {
         method: "PUT",
-        headers: headers(token),
+        headers: jsonHeaders,
         body: JSON.stringify({ items: payload }),
       });
       await load();
@@ -252,9 +248,8 @@ export default function StaffModulesPage() {
     if (!selectedId) return;
     setSaving(true);
     try {
-      await fetchWithTimeout(STAFF_API.moduleContent(selectedId, contentId), {
+      await apiFetchStaff(STAFF_API.moduleContent(selectedId, contentId), {
         method: "DELETE",
-        headers: headers(token),
       });
       showToast("Content removed", "success");
       setConfirmContentDelete(null);
@@ -266,9 +261,8 @@ export default function StaffModulesPage() {
   async function deleteModule(id: number) {
     setSaving(true);
     try {
-      await fetchWithTimeout(STAFF_API.module(id), {
+      await apiFetchStaff(STAFF_API.module(id), {
         method: "DELETE",
-        headers: headers(token),
       });
       showToast("Module deleted", "success");
       setConfirmDelete(null);
@@ -290,9 +284,9 @@ export default function StaffModulesPage() {
     if (!selectedId || !editFormTitle.trim()) return;
     setSaving(true);
     try {
-      const res = await fetchWithTimeout(STAFF_API.moduleContent(selectedId, contentId), {
+      const res = await apiFetchStaff(STAFF_API.moduleContent(selectedId, contentId), {
         method: "PUT",
-        headers: headers(token),
+        headers: jsonHeaders,
         body: JSON.stringify({
           title: editFormTitle.trim(),
           type: editFormType,
@@ -333,9 +327,9 @@ export default function StaffModulesPage() {
     if (!editClassTitle.trim() || !editClassStarts) return;
     setSaving(true);
     try {
-      const res = await fetchWithTimeout(STAFF_API.scheduledClass(classId), {
+      const res = await apiFetchStaff(STAFF_API.scheduledClass(classId), {
         method: "PUT",
-        headers: headers(token),
+        headers: jsonHeaders,
         body: JSON.stringify({
           title: editClassTitle.trim(),
           description: editClassDesc || null,
@@ -358,9 +352,9 @@ export default function StaffModulesPage() {
     if (!schedTitle.trim() || !schedStarts || !schedEnds) return;
     setSaving(true);
     try {
-      const res = await fetchWithTimeout(STAFF_API.scheduleClass(moduleId), {
+      const res = await apiFetchStaff(STAFF_API.scheduleClass(moduleId), {
         method: "POST",
-        headers: headers(token),
+        headers: jsonHeaders,
         body: JSON.stringify({
           title: schedTitle.trim(),
           description: schedDesc || null,
@@ -382,9 +376,8 @@ export default function StaffModulesPage() {
   async function deleteClass(classId: number) {
     setSaving(true);
     try {
-      await fetchWithTimeout(STAFF_API.scheduledClass(classId), {
+      await apiFetchStaff(STAFF_API.scheduledClass(classId), {
         method: "DELETE",
-        headers: headers(token),
       });
       showToast("Class cancelled", "success");
       setConfirmClassDelete(null);

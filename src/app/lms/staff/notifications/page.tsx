@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type TeacherNotification = {
   id: number;
@@ -33,19 +34,19 @@ export default function StaffNotificationsPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.notifications, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.notifications)
       .then((r) => r.json())
       .then((p) => { setNotifications(Array.isArray(p) ? p : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, [token]);
 
   async function markRead(id: number) {
-    await fetch(STAFF_API.markNotificationRead(id), { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    await apiFetchStaff(STAFF_API.markNotificationRead(id), { method: "POST" });
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
   }
 
   async function markAllRead() {
-    await fetch(STAFF_API.markAllNotificationsRead, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    await apiFetchStaff(STAFF_API.markAllNotificationsRead, { method: "POST" });
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   }
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import ChatLayout from "../../../../components/chat/ChatLayout";
 import { STAFF_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 function renderMentions(text: string, mentionClass = "font-bold text-site-primary") {
   const parts = text.split(/@(\w+)/);
@@ -143,13 +144,13 @@ export default function StaffChatsPage() {
   const loadGroupMessages = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(STAFF_API.chatGroupMessages, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+      const res = await apiFetchStaff(STAFF_API.chatGroupMessages, { cache: "no-store" });
       const data = await res.json();
       if (Array.isArray(data)) setGroupMessages(data);
       // Mark both group and DM as read when entering the chats page
       Promise.all([
-        fetch(STAFF_API.chatGroupMarkRead, { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
-        fetch(STAFF_API.chatDmMarkRead, { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+        apiFetchStaff(STAFF_API.chatGroupMarkRead, { method: "POST" }),
+        apiFetchStaff(STAFF_API.chatDmMarkRead, { method: "POST" }),
       ]).then(() => window.dispatchEvent(new CustomEvent("opencode:chat-read"))).catch(() => {});
     } catch {}
   }, [token]);
@@ -157,7 +158,7 @@ export default function StaffChatsPage() {
   const loadThreads = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(STAFF_API.chatDmMessages, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+      const res = await apiFetchStaff(STAFF_API.chatDmMessages, { cache: "no-store" });
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       setThreads(list);
@@ -170,11 +171,11 @@ export default function StaffChatsPage() {
     if (!token) return;
     loadGroupMessages();
     loadThreads();
-    fetch(STAFF_API.profile, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.profile)
       .then((r) => r.json())
       .then((d) => { if (d) setStaffProfile(d); })
       .catch(() => {});
-    fetch(STAFF_API.chatGroupMentionable, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.chatGroupMentionable)
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setMentionableUsers(d); })
       .catch(() => {});
@@ -269,9 +270,9 @@ export default function StaffChatsPage() {
   const saveEdit = async () => {
     if (!editingMsgId) return;
     try {
-      const res = await fetch(STAFF_API.editGroupMessage(editingMsgId), {
+      const res = await apiFetchStaff(STAFF_API.editGroupMessage(editingMsgId), {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: editingContent, attachment_url: editingAttachment || null }),
       });
       if (res.ok) {
@@ -285,9 +286,8 @@ export default function StaffChatsPage() {
   const confirmDelete = async (id: number) => {
     setMenuMsgId(null);
     try {
-      const res = await fetch(STAFF_API.deleteGroupMessage(id), {
+      const res = await apiFetchStaff(STAFF_API.deleteGroupMessage(id), {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         setGroupMessages((prev) => prev.filter((m) => m.id !== id));
@@ -300,7 +300,7 @@ export default function StaffChatsPage() {
   // Mark DM as read when switching threads
   useEffect(() => {
     if (!token || !activeThreadId) return;
-    fetch(STAFF_API.chatDmMarkRead, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.chatDmMarkRead, { method: "POST" })
       .then(() => window.dispatchEvent(new CustomEvent("opencode:chat-read")))
       .catch(() => {});
   }, [token, activeThreadId]);
@@ -326,9 +326,9 @@ export default function StaffChatsPage() {
     setTimeout(scrollToBottom, 50);
 
     try {
-      const res = await fetch(STAFF_API.chatGroupMessages, {
+      const res = await apiFetchStaff(STAFF_API.chatGroupMessages, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: bodyToSend, attachment_url: attachmentToSend || null }),
       });
       if (res.ok) {
@@ -359,9 +359,9 @@ export default function StaffChatsPage() {
     setTimeout(scrollToBottom, 50);
 
     try {
-      const res = await fetch(STAFF_API.chatDmMessages, {
+      const res = await apiFetchStaff(STAFF_API.chatDmMessages, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dm_thread_id: activeThreadId, content: bodyToSend, attachment_url: attachmentToSend || null }),
       });
       const data = await res.json();
@@ -538,9 +538,9 @@ export default function StaffChatsPage() {
               if (!tid) return;
               const newContent = prompt("Edit message:", msg.content ?? msg.body ?? "");
               if (newContent === null) return;
-              fetch(STAFF_API.editDmMessage(msg.id), {
+              apiFetchStaff(STAFF_API.editDmMessage(msg.id), {
                 method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ content: newContent, attachment_url: msg.attachment_url || null }),
               }).then((r) => r.ok ? r.json() : null).then((data) => {
                 if (!data) return;
@@ -551,9 +551,8 @@ export default function StaffChatsPage() {
               const tid = activeThreadId;
               if (!tid) return;
               if (!confirm("Delete this message?")) return;
-              fetch(STAFF_API.deleteDmMessage(id), {
+              apiFetchStaff(STAFF_API.deleteDmMessage(id), {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
               }).then((r) => r.ok ? setThreads((prev) => prev.map((t) => t.thread_id === tid ? { ...t, messages: t.messages.filter((m) => m.id !== id) } : t)) : null).catch(() => {});
             }}
           />

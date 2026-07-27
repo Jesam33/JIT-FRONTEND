@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Certificate = {
   id: number;
@@ -25,7 +26,7 @@ export default function StaffCertificatesPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
 
   async function load() {
-    const res = await fetch(STAFF_API.certificates, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await apiFetchStaff(STAFF_API.certificates);
     const data = await res.json();
     setCertificates(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -35,9 +36,9 @@ export default function StaffCertificatesPage() {
 
   async function issueCertificate() {
     setIssuing(true);
-    await fetch(STAFF_API.certificates, {
+    await apiFetchStaff(STAFF_API.certificates, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ student_id: Number(studentId), course_id: Number(courseId), title, file_url: fileUrl || undefined }),
     });
     setIssuing(false);

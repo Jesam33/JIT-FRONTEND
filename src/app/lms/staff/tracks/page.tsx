@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Track = { id: number; name: string; instructor_id?: number | null };
 
@@ -13,7 +14,7 @@ export default function StaffTracksPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.assignedTracks, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.assignedTracks)
       .then((r) => r.json())
       .then((data) => { setTracks(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));

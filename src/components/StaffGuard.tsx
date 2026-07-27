@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../lib/api";
+import { apiFetchStaff } from "../lib/fetch-with-timeout";
 
 const PUBLIC_PATHS = [
   "/lms/staff/login",
@@ -28,14 +29,8 @@ export default function StaffGuard({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    fetch(STAFF_API.me, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    })
-      .then((res) => {
-        if (res.status === 200) return res.json();
-        throw new Error("unauth");
-      })
+    apiFetchStaff(STAFF_API.me, { cache: "no-store" })
+      .then((res) => res.json())
       .then(() => setLoading(false))
       .catch(() => router.replace("/lms/staff/login"));
   }, [isPublicPath, router]);

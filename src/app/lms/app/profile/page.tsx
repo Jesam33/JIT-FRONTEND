@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { STUDENT_API } from "../../../../lib/api";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 import type { StudentProfile } from "../../../../lib/lms-types";
 
 type Tab = "basic-info" | "professional-details" | "change-password";
@@ -41,7 +42,7 @@ export default function ProfilePage() {
 
   const fetchProfile = useCallback(async () => {
     if (!token) return;
-    const res = await fetch(STUDENT_API.profile, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await apiFetch(STUDENT_API.profile);
     const data: StudentProfile = await res.json();
     setProfile(data);
     setFirstName(data.first_name ?? "");
@@ -61,9 +62,9 @@ export default function ProfilePage() {
 
   async function saveProfile() {
     setSaving(true); setMessage("");
-    const res = await fetch(STUDENT_API.profile, {
+    const res = await apiFetch(STUDENT_API.profile, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ first_name: firstName, last_name: lastName, date_of_birth: dob || null, phone: phone || null, gender: gender || null, profile_photo_url: photoUrl || null, notify_class_reminders: notifyClass, notify_chat: notifyChat, notify_announcements: notifyAnnounce }),
     });
     const data = await res.json();
@@ -74,9 +75,9 @@ export default function ProfilePage() {
 
   async function changePassword() {
     setPasswordMessage("");
-    const res = await fetch(STUDENT_API.changePassword, {
+    const res = await apiFetch(STUDENT_API.changePassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ current_password: currentPassword, new_password: newPassword, new_password_confirmation: confirmNewPassword }),
     });
     const data = await res.json();
@@ -89,7 +90,7 @@ export default function ProfilePage() {
     if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(STUDENT_API.profilePhoto, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+    const res = await apiFetch(STUDENT_API.profilePhoto, { method: "POST", body: formData });
     const data = await res.json();
     if (res.ok && data.url) { setPhotoUrl(data.url); setProfile((prev) => prev ? { ...prev, profile_photo_url: data.url } : prev); }
   }

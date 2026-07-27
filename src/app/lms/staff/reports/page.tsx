@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type ReportsData = {
   stats: {
@@ -22,7 +23,7 @@ export default function StaffReportsPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch(STAFF_API.reports, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(STAFF_API.reports)
       .then((r) => r.json())
       .then((d) => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));

@@ -5,6 +5,7 @@ import type { AttendanceItem } from "../../../../lib/lms-types";
 import { formatLocalDateTime, getToken } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../../lib/api";
+import { apiFetch } from "../../../../lib/fetch-with-timeout";
 
 export default function StudentAttendancePage() {
   const [attendanceItems, setAttendanceItems] = useState<AttendanceItem[]>([]);
@@ -15,12 +16,11 @@ export default function StudentAttendancePage() {
   useEffect(() => {
     if (!token) return;
 
-    fetch(STUDENT_API.attendance, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    apiFetch(STUDENT_API.attendance)
       .then((res) => res.json())
       .then((payload) => setAttendanceItems(Array.isArray(payload) ? payload : []))
-      .then(() => setLoading(false));
+      .then(() => setLoading(false))
+      .catch(() => setLoading(false));
   }, [token]);
 
   if (loading) return <LoadingSpinner />;

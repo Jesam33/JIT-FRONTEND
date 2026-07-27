@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 
 type Course = { id: number; title: string };
 type Module = { id: number; title: string; course_id: number };
@@ -57,8 +58,8 @@ export default function StaffTasksPage() {
     if (!t) return;
 
     Promise.all([
-      fetch(STAFF_API.assignedCourses, { headers: { Authorization: `Bearer ${t}` } }).then((r) => r.json()),
-      fetch(STAFF_API.tasks, { headers: { Authorization: `Bearer ${t}` } }).then((r) => r.json()),
+      apiFetchStaff(STAFF_API.assignedCourses).then((r) => r.json()),
+      apiFetchStaff(STAFF_API.tasks).then((r) => r.json()),
     ]).then(([coursesData, tasksData]) => {
       setCourses(Array.isArray(coursesData) ? coursesData : []);
       setTasks(Array.isArray(tasksData) ? tasksData : []);
@@ -68,14 +69,14 @@ export default function StaffTasksPage() {
 
   useEffect(() => {
     if (!courseId || !token) { setModules([]); return; }
-    fetch(`${STAFF_API.modules}?course_id=${courseId}`, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetchStaff(`${STAFF_API.modules}?course_id=${courseId}`)
       .then((r) => r.json())
       .then((data) => setModules(Array.isArray(data) ? data : []));
   }, [courseId, token]);
 
   async function viewTask(task: Task) {
     setSelectedTask(task);
-    const res = await fetch(STAFF_API.task(task.id), { headers: { Authorization: `Bearer ${token}` } });
+    const res = await apiFetchStaff(STAFF_API.task(task.id));
     const data = await res.json();
     setSubmissions(Array.isArray(data?.submissions) ? data.submissions : []);
   }
@@ -88,14 +89,14 @@ export default function StaffTasksPage() {
     if (instructions) body.instructions = instructions;
     if (dueAt) body.due_at = dueAt;
 
-    await fetch(STAFF_API.tasks, {
+    await apiFetchStaff(STAFF_API.tasks, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     setCreating(false);
     setTitle(""); setDescription(""); setInstructions(""); setDueAt(""); setModuleId("");
-    const res = await fetch(STAFF_API.tasks, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await apiFetchStaff(STAFF_API.tasks);
     const data = await res.json();
     setTasks(Array.isArray(data) ? data : []);
   }
@@ -103,9 +104,9 @@ export default function StaffTasksPage() {
   async function grade(submissionId: number) {
     if (!selectedTask) return;
     setGradingId(submissionId);
-    await fetch(STAFF_API.task(selectedTask.id) + `/submissions/${submissionId}/grade`, {
+    await apiFetchStaff(STAFF_API.task(selectedTask.id) + `/submissions/${submissionId}/grade`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ score: Number(gradeScore), feedback: gradeFeedback || null }),
     });
     setGradingId(null);

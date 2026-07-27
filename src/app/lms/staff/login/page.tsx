@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AUTH_API } from "@/lib/api";
 
 export default function StaffLoginPage() {
   const router = useRouter();
@@ -16,9 +17,7 @@ export default function StaffLoginPage() {
     event.preventDefault();
     setSubmitting(true);
 
-    const backend = (process.env.NEXT_PUBLIC_LARAVEL_BACKEND_URL ?? process.env.LARAVEL_BACKEND_URL ?? "http://localhost:8000").replace(/\/$/, "");
-
-    const response = await fetch(`${backend}/api/frontend/lms/staff/login`, {
+    const response = await fetch(AUTH_API.staffLogin, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),

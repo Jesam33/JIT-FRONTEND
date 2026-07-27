@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
 import CalendarTimetable from "../../../../components/CalendarTimetable";
-import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
 
 type ScheduledClass = {
@@ -34,9 +34,7 @@ export default function StaffTimetablePage() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetchWithTimeout(STAFF_API.scheduledClasses, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetchStaff(STAFF_API.scheduledClasses);
       const d = await res.json();
       setClasses(Array.isArray(d) ? d : []);
     } catch { /* ignore */ }
@@ -47,9 +45,8 @@ export default function StaffTimetablePage() {
 
   const cancelClass = async (id: number) => {
     try {
-      await fetchWithTimeout(STAFF_API.scheduledClass(id), {
+      await apiFetchStaff(STAFF_API.scheduledClass(id), {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       setConfirmCancel(null);
       await load();

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { STUDENT_API } from "@/lib/api";
+import { apiFetch } from "@/lib/fetch-with-timeout";
 
 type SidebarItem = {
   href: string;
@@ -191,7 +192,7 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
     if (!token) return;
 
     // Fetch student profile
-    fetch(STUDENT_API.me, { headers: { Authorization: `Bearer ${token}` } })
+    apiFetch(STUDENT_API.me)
       .then((r) => r.json())
       .then((p) => {
         if (p?.first_name || p?.name) {
@@ -203,7 +204,7 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
 
     const fetchUnread = () => {
       if (document.hidden) return;
-      fetch(STUDENT_API.chatUnread, { headers: { Authorization: `Bearer ${token}` } })
+      apiFetch(STUDENT_API.chatUnread)
         .then((r) => r.json())
         .then((p) => {
           setBadge({
