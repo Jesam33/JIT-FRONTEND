@@ -120,7 +120,7 @@ export default async function CourseDetailPage({ params }: Props) {
             </div>
 
             {course.is_full ? (
-              <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+              <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: '#d97706' }}>
                 This course is currently full. Check back later for available slots.
               </div>
             ) : (

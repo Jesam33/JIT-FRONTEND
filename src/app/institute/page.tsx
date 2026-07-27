@@ -62,11 +62,11 @@ export default async function InstitutePage() {
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                   <span className="text-2xl font-bold text-site-text">{formatPrice(course.price)}</span>
                   {course.is_full ? (
-                    <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-200">
+                    <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold" style={{ color: '#e11d48' }}>
                       Full
                     </span>
                   ) : (
-                    <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">
+                    <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold" style={{ color: '#059669' }}>
                       {course.slots_remaining} slot{course.slots_remaining !== 1 ? "s" : ""} left
                     </span>
                   )}
