@@ -73,7 +73,6 @@ export type FaqGroup = {
 export const navLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/institute", label: "Institute" },
-  { href: "/projects", label: "Portfolio" },
   { href: "/real-estate", label: "Real Estate" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact" },
