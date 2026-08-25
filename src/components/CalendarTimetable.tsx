@@ -4,11 +4,15 @@ import { useMemo, useState } from "react";
 
 type CalendarClass = {
   id: number;
+  // 'classroom' (legacy lms_classrooms) or 'scheduled' (LmsScheduledClass). The
+  // timetable endpoint merges both tables, so id alone isn't unique across them —
+  // React keys must be namespaced by class_type. Optional: the staff timetable
+  // sends a single table (no class_type), where id is already unique on its own.
+  class_type?: string;
   title: string;
   starts_at: string;
   ends_at: string | null;
   status: string;
-  meeting_url: string | null;
   module?: { id: number; title: string; course?: { id: number; title: string } } | null;
   meta?: React.ReactNode;
 };
@@ -27,7 +31,7 @@ function useCalendarNav() {
   };
 }
 
-export default function CalendarTimetable({ classes, renderActions }: { classes: CalendarClass[]; renderActions?: (c: CalendarClass) => React.ReactNode }) {
+export default function CalendarTimetable({ classes, renderActions, studentJoinPath }: { classes: CalendarClass[]; renderActions?: (c: CalendarClass) => React.ReactNode; studentJoinPath?: string }) {
   const { year, month, prev, next, today } = useCalendarNav();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
@@ -129,7 +133,7 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
                           const timeStr = start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
                           const isLive = hasLive && new Date(c.starts_at).getTime() <= now && (c.ends_at ? new Date(c.ends_at).getTime() > now : start.getTime() + 7200000 > now);
                           return (
-                            <div key={c.id} className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${isLive ? "bg-emerald-500/20" : c.status === "completed" ? "bg-gray-500/20" : "bg-blue-500/20"}`} style={{ color: isLive ? '#059669' : c.status === "completed" ? '#64748b' : '#2563eb' }}>
+                            <div key={`${c.class_type ?? "c"}-${c.id}`} className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${isLive ? "bg-emerald-500/20" : c.status === "completed" ? "bg-gray-500/20" : "bg-blue-500/20"}`} style={{ color: isLive ? '#059669' : c.status === "completed" ? '#64748b' : '#2563eb' }}>
                               {timeStr} {c.title}
                             </div>
                           );
@@ -176,10 +180,9 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
                   const start = new Date(c.starts_at);
                   const end = c.ends_at ? new Date(c.ends_at) : null;
                   const isLive = start.getTime() <= now && (end ? end.getTime() > now : start.getTime() + 7200000 > now);
-                  const isPast = end ? end.getTime() < now : start.getTime() < now;
 
                   return (
-                    <div key={c.id} className="rounded-lg border border-site-border/15 bg-black/40 p-3">
+                    <div key={`${c.class_type ?? "c"}-${c.id}`} className="rounded-lg border border-site-border/15 bg-black/40 p-3">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-white truncate">{c.title}</p>
@@ -194,9 +197,9 @@ export default function CalendarTimetable({ classes, renderActions }: { classes:
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {c.meeting_url && !isPast ? (
-                            <a href={c.meeting_url} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium hover:bg-emerald-500 transition" style={{ color: '#fff' }}>
-                              {isLive ? "Join Now" : "Join"}
+                          {studentJoinPath && isLive ? (
+                            <a href={studentJoinPath} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium hover:bg-emerald-500 transition" style={{ color: '#fff' }}>
+                              Join Now
                             </a>
                           ) : null}
                           {renderActions?.(c)}

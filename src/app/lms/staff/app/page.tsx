@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, okJson } from "../../../../lib/fetch-with-timeout";
 
 type ModuleItem = {
   id: number;
@@ -15,21 +15,44 @@ type ModuleItem = {
 export default function StaffDashboardPage() {
   const [dash, setDash] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem("lms_staff_token") ?? "";
     if (!token) return;
 
+    // Never render an error body as if it were dashboard data: a non-OK
+    // response (e.g. a tenant/auth hiccup) must surface as error+retry, not a
+    // misleading all-zero "Teaching overview". 401s redirect upstream.
+    setLoadError(false);
+    setLoading(true);
     apiFetchStaff(STAFF_API.dashboard)
-      .then((r) => r.json())
+      .then(okJson)
       .then((p) => { setDash(p); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+      .catch(() => { setLoadError(true); setLoading(false); });
+  }, [reloadKey]);
 
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="rounded-2xl border border-white/15 bg-black/30 p-8 text-center">
+        <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Couldn&apos;t load your dashboard</h1>
+        <p className="mt-2 text-sm text-white/70">We hit a snag reaching your teaching workspace. This is usually temporary.</p>
+        <button
+          type="button"
+          onClick={() => setReloadKey((k) => k + 1)}
+          className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+        >
+          Try again
+        </button>
       </div>
     );
   }

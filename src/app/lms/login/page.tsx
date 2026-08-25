@@ -3,6 +3,9 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
+import { tenantHeaders, setTenantCookie } from "@/lib/tenant-client";
+import InactivityNotice from "@/components/InactivityNotice";
+import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 function LoginForm() {
   const router = useRouter();
@@ -19,7 +22,7 @@ function LoginForm() {
     setSubmitting(true);
     const response = await fetch(AUTH_API.login, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...tenantHeaders() },
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();
@@ -29,12 +32,17 @@ function LoginForm() {
       return;
     }
     localStorage.setItem("lms_student_token", data.token);
+    // Pin the institute the backend authenticated us into, so the whole session
+    // (branding fetch, portal API calls, and any inactivity → login redirect)
+    // stays on this institute instead of falling back to the primary slug.
+    setTenantCookie(data?.tenant?.slug);
     router.push("/lms/app");
   }
 
   return (
     <section className="section-pad section-divider">
       <div className="container-wide max-w-xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+        <InactivityNotice />
         <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Student Portal Login</h1>
         <form className="mt-6 space-y-4" onSubmit={login}>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white" required />
@@ -69,8 +77,10 @@ function LoginForm() {
 
 export default function LmsLoginPage() {
   return (
-    <Suspense fallback={null}>
-      <LoginForm />
-    </Suspense>
+    <InstitutePublicShell>
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
+    </InstitutePublicShell>
   );
 }

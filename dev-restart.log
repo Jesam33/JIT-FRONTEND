@@ -1,0 +1,40 @@
+
+> jorsas-tech-v2@0.1.0 dev
+> next dev --webpack
+
+▲ Next.js 16.2.10 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.103:3000
+- Environments: .env.local
+✓ Ready in 10.1s
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\USER\Downloads\Compressed\jorsastech.com\jorsastech.com\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\USER\Downloads\Compressed\jorsastech.com\jorsastech.com\jorsas-tech-v2\package-lock.json
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+- Experiments (use with caution):
+  · cpus: 1
+
+○ Compiling middleware ...
+○ Compiling /institute ...
+Request timed out after 3000ms
+
+Retrying 1/3...
+Request timed out after 3000ms
+
+Retrying 1/3...
+Request timed out after 3000ms
+
+Retrying 1/3...
+Request timed out after 3000ms
+
+Retrying 1/3...
+ GET /institute 200 in 70s (next.js: 58s, proxy.ts: 875ms, application-code: 11.0s)
+ GET /institute 200 in 7.6s (next.js: 120ms, proxy.ts: 271ms, application-code: 7.3s)
+○ Compiling /lms/admin/profile ...
+ GET /lms/admin/profile 200 in 18.7s (next.js: 16.9s, proxy.ts: 379ms, application-code: 1420ms)
+ GET /institute 200 in 466ms (next.js: 79ms, proxy.ts: 44ms, application-code: 343ms)
+[?25h

@@ -3,12 +3,16 @@
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AGENT_API } from "../../../../lib/api";
+import { tenantHeaders } from "../../../../lib/tenant-client";
+import InstitutePublicShell from "../../../../components/institute/InstitutePublicShell";
 
 export default function AgentResetPasswordPage() {
   return (
+    <InstitutePublicShell>
     <Suspense fallback={<div className="site-shell min-h-screen flex items-center justify-center px-4"><p className="text-white/70">Loading...</p></div>}>
       <PageContent />
     </Suspense>
+    </InstitutePublicShell>
   );
 }
 
@@ -32,7 +36,7 @@ function PageContent() {
 
     const response = await fetch(AGENT_API.resetPassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...tenantHeaders() },
       body: JSON.stringify({
         email,
         token,
@@ -81,14 +85,14 @@ function PageContent() {
             </button>
           </div>
 
-          <button type="submit" disabled={submitting} className="w-full rounded-full bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
+          <button type="submit" disabled={submitting} className="w-full rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
             {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Resetting...</span> : "Reset Password"}
           </button>
         </form>
 
         {message ? <p className="mt-4 text-sm text-white/80 text-center">{message}</p> : null}
         <p className="mt-4 text-center text-sm text-white/50">
-          <a href="/lms/agent/login" className="text-red-400 hover:text-red-300 underline">Back to login</a>
+          <a href="/lms/agent/login" className="text-site-primary underline transition hover:brightness-110">Back to login</a>
         </p>
       </div>
     </div>

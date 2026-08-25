@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { STUDENT_API } from "../../../../lib/api";
-import { apiFetch } from "../../../../lib/fetch-with-timeout";
+import { apiFetch, okJson } from "../../../../lib/fetch-with-timeout";
 
 type TaskDetail = {
   id: number;
@@ -32,6 +32,8 @@ export default function LmsTaskDetailPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const token = useMemo(() => {
     if (typeof window === "undefined") {
@@ -46,11 +48,12 @@ export default function LmsTaskDetailPage() {
       return;
     }
 
+    setLoadError(false);
     apiFetch(STUDENT_API.taskDetail(taskId))
-      .then((res) => res.json())
+      .then((res) => okJson<TaskDetail>(res))
       .then((payload) => setTask(payload))
-      .catch(() => {});
-  }, [taskId, token]);
+      .catch(() => setLoadError(true));
+  }, [taskId, token, reloadKey]);
 
   async function submitTask() {
     if (!task || !token || isSubmitting || task.submission) {
@@ -89,8 +92,8 @@ export default function LmsTaskDetailPage() {
   }
 
   return (
-    <section className="section-pad section-divider">
-      <div className="container-wide max-w-3xl rounded-2xl border border-white/20 bg-white/[0.03] p-6">
+    <div className="max-w-3xl">
+      <div className="rounded-2xl border border-white/20 bg-white/[0.03] p-6">
         <button type="button" onClick={() => router.push("/lms/app/tasks")} className="text-xs uppercase tracking-[0.14em] text-white/65">
           ← Back to Tasks
         </button>
@@ -129,10 +132,15 @@ export default function LmsTaskDetailPage() {
 
             {message ? <p className="text-sm text-white/80">{message}</p> : null}
           </div>
+        ) : loadError ? (
+          <p className="mt-4 text-sm text-white/70">
+            Couldn&apos;t load this task.{" "}
+            <button type="button" onClick={() => setReloadKey((k) => k + 1)} className="underline underline-offset-2">Retry</button>
+          </p>
         ) : (
           <p className="mt-4 text-sm text-white/70">Loading task...</p>
         )}
       </div>
-    </section>
+    </div>
   );
 }

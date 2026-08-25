@@ -49,7 +49,6 @@ type Course = {
   title: string;
 };
 
-const uploadableTypes = ["slides", "pdf", "file"];
 const typeLabels: Record<string, string> = {
   slides: "Slides", pdf: "PDF", video: "Video", link: "Link",
   text: "Text", code: "Code", file: "File", doc: "Doc",
@@ -78,7 +77,6 @@ export default function StaffModulesPage() {
   const [newContentType, setNewContentType] = useState("text");
   const [newContentUrl, setNewContentUrl] = useState("");
   const [newContentBody, setNewContentBody] = useState("");
-  const [uploadingFile, setUploadingFile] = useState(false);
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedDesc, setSchedDesc] = useState("");
@@ -119,9 +117,14 @@ export default function StaffModulesPage() {
       if (searchTerm) params.set("search", searchTerm);
       const qs = params.toString();
 
-      const modRes = await apiFetchStaff(STAFF_API.modules + (qs ? `?${qs}` : ""), { timeout: 120000 }).catch((e) => { console.error("Modules fetch failed:", e); return null; });
-      const courseRes = await apiFetchStaff(STAFF_API.assignedCourses, { timeout: 120000 }).catch((e) => { console.error("Courses fetch failed:", e); return null; });
-      const classRes = await apiFetchStaff(STAFF_API.scheduledClasses, { timeout: 120000 }).catch((e) => { console.error("Classes fetch failed:", e); return null; });
+      // These three reads are independent — run them in parallel instead of a
+      // three-step waterfall. Each keeps its own catch so one failure doesn't
+      // reject the batch.
+      const [modRes, courseRes, classRes] = await Promise.all([
+        apiFetchStaff(STAFF_API.modules + (qs ? `?${qs}` : ""), { timeout: 30000 }).catch((e) => { console.error("Modules fetch failed:", e); return null; }),
+        apiFetchStaff(STAFF_API.assignedCourses, { timeout: 30000 }).catch((e) => { console.error("Courses fetch failed:", e); return null; }),
+        apiFetchStaff(STAFF_API.scheduledClasses, { timeout: 30000 }).catch((e) => { console.error("Classes fetch failed:", e); return null; }),
+      ]);
 
       if (modRes && modRes.ok) {
         const mods = await modRes.json();
@@ -206,24 +209,6 @@ export default function StaffModulesPage() {
       await load();
     } catch { showToast("Failed to add content", "error"); }
     setSaving(false);
-  }
-
-  async function handleFileUpload(moduleId: number, file: File) {
-    setUploadingFile(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiFetchStaff(api(`/api/frontend/lms/staff/modules/${moduleId}/contents/upload`), {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) { showToast("Upload failed", "error"); return; }
-      const data = await res.json();
-      setNewContentUrl(data.url);
-      setNewContentType("file");
-      showToast("File uploaded", "success");
-    } catch { showToast("Upload failed", "error"); }
-    setUploadingFile(false);
   }
 
   async function reorderContent(contentId: number, direction: "up" | "down") {
@@ -491,7 +476,7 @@ export default function StaffModulesPage() {
                             <select value={editFormType} onChange={(e) => setEditFormType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
                               {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
-                            <input type="file" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; setUploadingFile(true); try { const fd = new FormData(); fd.append("file", f); const r = await fetch(api(`/api/frontend/lms/staff/modules/${selectedModule.id}/contents/upload`), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd }); if (!r.ok) return; const d = await r.json(); setEditFormUrl(d.url); showToast("File uploaded", "success"); } catch {} finally { setUploadingFile(false); } }} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs file:mr-2 file:rounded file:border-0 file:bg-white/10 file:px-2 file:py-0.5 file:text-xs file:text-white focus:outline-none" />
+                            <input value={editFormUrl} onChange={(e) => setEditFormUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs placeholder:text-white/30 focus:outline-none" />
                             <textarea value={editFormBody} onChange={(e) => setEditFormBody(e.target.value)} placeholder="Body" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs resize-none focus:outline-none" rows={3} />
                             <div className="flex gap-2">
                               <button onClick={() => saveContentEdit(c.id)} disabled={saving} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
@@ -532,8 +517,8 @@ export default function StaffModulesPage() {
                       {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                     <div>
-                      <input type="file" onChange={(e) => e.target.files?.[0] && handleFileUpload(selectedModule.id, e.target.files[0])} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm file:mr-2 file:rounded file:border-0 file:bg-white/10 file:px-2 file:py-1 file:text-xs file:text-white focus:outline-none" />
-                      {uploadingFile ? <p className="mt-1 text-xs text-white/50">Uploading…</p> : null}
+                      <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                      <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link — no file uploads. Leave blank for text/code content.</p>
                     </div>
                     <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={4} />
                     <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim()} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
@@ -560,8 +545,6 @@ export default function StaffModulesPage() {
                     <input value={schedEnds} onChange={(e) => setSchedEnds(e.target.value)} type="datetime-local" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30" />
                     {schedEnds ? <p className="mt-1 text-[11px] text-white/40">{new Date(schedEnds).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
                   </div>
-                  <input value={schedMeetingId} onChange={(e) => setSchedMeetingId(e.target.value)} placeholder="Meeting ID (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
-                  <input value={schedMeetingPwd} onChange={(e) => setSchedMeetingPwd(e.target.value)} placeholder="Meeting password (optional)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
                   <button onClick={() => scheduleClass(selectedModule.id)} disabled={saving || !schedTitle.trim() || !schedStarts || !schedEnds} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
                     {saving ? "Scheduling…" : "Schedule Class"}
                   </button>
@@ -586,8 +569,6 @@ export default function StaffModulesPage() {
                             {editClassStarts ? <p className="text-[10px] text-white/40">{new Date(editClassStarts).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
                             <input value={editClassEnds} onChange={(e) => setEditClassEnds(e.target.value)} type="datetime-local" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
                             {editClassEnds ? <p className="text-[10px] text-white/40">{new Date(editClassEnds).toLocaleString([], { hour: "2-digit", minute: "2-digit", hour12: true })}</p> : null}
-                            <input value={editClassMeetingId} onChange={(e) => setEditClassMeetingId(e.target.value)} placeholder="Meeting ID" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
-                            <input value={editClassMeetingPwd} onChange={(e) => setEditClassMeetingPwd(e.target.value)} placeholder="Password" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
                             <select value={editClassStatus} onChange={(e) => setEditClassStatus(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
                               <option value="scheduled">Scheduled</option>
                               <option value="ongoing">Ongoing</option>

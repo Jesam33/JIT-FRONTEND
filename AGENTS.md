@@ -29,7 +29,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - One module = one task (the end-of-module assessment)
 
 ### Scheduled Classes (delivery events)
-- `LmsScheduledClass`: belongsTo Module + Teacher. Has date/time/Zoom link.
+- `LmsScheduledClass`: belongsTo Module + Teacher. Has date/time + an auto-generated Jitsi (8x8 JaaS) room.
 - Multiple classes can point to the same module (e.g. Module 1 gets 3 sessions)
 - Timetable merges old `lms_classrooms` + new `LmsScheduledClass` with `class_type` field
 
@@ -50,10 +50,29 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Polling: Student chat polls every 5s with `document.hidden` check; staff dashboard polls every 15s
 - **@ mentions**: Type `@` to see a dropdown of all track members. Arrow keys + Enter to select. Tagged students get a notification.
 
+### Live Classes (Jitsi / 8x8 JaaS)
+- Live classes run on **8x8 JaaS** (managed Jitsi), not Zoom. There is no external meeting to
+  create: the room name is auto-generated and stored in the reused `meeting_id` column as
+  `jit-{tenantId}-{s|c}{id}-{sha1 substr}` (via `BaseLmsController::ensureRoom`).
+- Join tokens are **RS256** JWTs, hand-signed with `openssl_sign(..., OPENSSL_ALGO_SHA256)` in
+  `BaseLmsController::jwtEncodeRs256` (no JWT library). Students get a participant token
+  (`moderator:false`); staff get a moderator token (`moderator:true`) via
+  `StaffClassroomController::meetingToken`.
+- Students join **in-portal** via an iframe (`public/jitsi-meeting.html`) that loads
+  `external_api.js` from `https://8x8.vc/{appId}/external_api.js` and talks to the parent through a
+  one-way `postMessage` contract (`jitsi-joined` / `jitsi-left` / `jitsi-error`). Staff "Host" opens
+  the room in a new tab (`https://8x8.vc/{appId}/{room}?jwt=…`).
+- If JaaS env vars are missing, `jitsiConfig()` returns null and the token endpoints return a clean
+  **503** ("Live classes are not configured yet.") — no crash, buttons degrade gracefully.
+
 ### Attendance
 - `LmsAttendance`: Tracks student joins/leaves per classroom. Fields: student_id, classroom_id, joined_at, first_joined_at, last_left_at, total_seconds, status, calculated_at
-- `LmsAttendanceRecord`: Detailed computed records (created when meeting ends via Zoom webhook)
-- Zoom webhook (`/api/frontend/lms/webhooks/zoom`) handles participant_joined, participant_left, meeting.ended events
+- `LmsAttendanceRecord`: Detailed computed records
+- Attendance is **client-side**: only classroom-type classes track it. On join, `sdkSignature()`
+  first-creates the attendance row; when the embedded room tears down, the frontend POSTs
+  `/api/frontend/lms/classrooms/{id}/attendance-leave`, which computes `total_seconds`/`status`
+  (present/partial/absent from the 75%-of-duration threshold). `LmsScheduledClass` never tracked
+  attendance and still does not. (This replaces the old Zoom `meeting.ended` webhook.)
 
 ### Notifications
 - `LmsNotification`: student_id, type, title, body, reference_type, reference_id
@@ -66,7 +85,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Staff sees only their assigned courses/tracks (via `instructor_id` on `LmsTrack`)
 - Staff CAN create/edit/delete classrooms (own), modules, materials, tasks, announcements
 - Staff CANNOT create/edit courses or tracks — admin-only
-- `fetchWithTimeout` (15s AbortController) used on every API call
+- `fetchWithTimeout` (30s AbortController + fast-transient retry) used on every API call
 - `ConfirmDialog` for destructive actions
 - `ErrorBoundary` + `ToastProvider` wrapping every page
 
@@ -174,13 +193,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - `APP_ENV=production`
 - `APP_DEBUG=false`
 - `NEXT_PUBLIC_API_BASE=http://localhost:8000` (change to production URL)
-- `ZOOM_SDK_KEY=zSxWBv7RfCsY1h2xBhkoA`
-- `ZOOM_SDK_SECRET=hkZXETxyQzIx2N5EVmnWju66D1Vt3dWa`
+- `JITSI_APP_ID=` — 8x8 JaaS App ID (magic cookie)
+- `JITSI_API_KEY_ID=` — the JaaS API key id (becomes the JWT `kid`)
+- `JITSI_PRIVATE_KEY=` — the RS256 private key, base64-encoded on one line (dotenv-safe); read as-is if it already contains `BEGIN`
+- `JITSI_DOMAIN=8x8.vc`
 - CORS in `config/cors.php`: change `'allowed_origins' => ['*']` to specific domain before deploying
 
 ## Key Technical Decisions
-- **Zoom SDK isolation**: `public/zoom-meeting.html` loads React 18 UMDs from unpkg CDN + Zoom UMD bundle in an iframe, communicates with parent via `postMessage`. This avoids React 19/Zoom SDK v6.2.0 incompatibility.
-- **Meeting number sanitization**: `(int) preg_replace('/\s+/', '', $meeting_id)` on backend, `parseInt` on frontend — avoids Zoom error 3707
+- **Live-class isolation**: `public/jitsi-meeting.html` loads 8x8 JaaS `external_api.js` in an iframe and communicates with the parent via `postMessage` (`jitsi-joined`/`jitsi-left`/`jitsi-error`). Served same-origin so the parent's `event.origin === window.location.origin` check holds.
+- **RS256 JWT, no library**: JaaS tokens are hand-signed via `openssl_sign(..., OPENSSL_ALGO_SHA256)` in `BaseLmsController`. Header `{alg:RS256, kid, typ}`; payload carries `context.user.moderator` + `features` as **strings**. `room:"*"` so one token works for the resolved room.
+- **Room reuse**: the old nullable `meeting_id` column now stores the Jitsi room name; `ensureRoom()` is idempotent (returns the existing value if it already starts with `jit-`, else generates + persists one).
 - **Polling intervals**: Student chat 5s, staff dashboard 15s (both with visibility checks)
 - **Module progress**: Derived from task grades (>= 70%), not stored as a separate counter
 - **Sequential unlock**: Module N is accessible only when module N-1's scheduled class has started
@@ -194,7 +216,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - `app/Http/Controllers/Lms/StudentModuleController.php` — Module listing (sequential unlock), timetable (merged)
 - `app/Http/Controllers/Lms/StudentMaterialController.php` — Lightweight materials endpoint
 - `app/Http/Controllers/Lms/StudentDashboardController.php` — Dashboard, tasks, attendance, notifications
-- `app/Http/Controllers/Lms/StudentClassroomController.php` — Join classroom, Zoom webhook
+- `app/Http/Controllers/Lms/StudentClassroomController.php` — Join classroom, live-class token (Jitsi), client-side attendance close-out
 - `app/Http/Controllers/Lms/StaffTaskController.php` — Task creation, grading
 - `app/Http/Controllers/Lms/StaffAuthController.php` — Login, dashboard stats
 - `app/Http/Controllers/Lms/StaffPortalController.php` — Materials CRUD, students, courses
@@ -223,5 +245,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - `src/components/StaffSidebar.tsx` — Staff navigation (with Modules link)
 - `src/lib/api.ts` — All API endpoint constants
 - `src/lib/lms-types.ts` — TypeScript type definitions
-- `src/lib/fetch-with-timeout.ts` — 15s AbortController wrapper
+- `src/lib/fetch-with-timeout.ts` — 30s AbortController wrapper; auto-retries idempotent GET/HEAD on a fast transient failure (network reset / 5xx), never POST/timeout/401
 <!-- END:project-context -->

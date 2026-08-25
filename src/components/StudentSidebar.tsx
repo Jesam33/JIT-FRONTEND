@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { STUDENT_API } from "@/lib/api";
 import { apiFetch } from "@/lib/fetch-with-timeout";
+import { tenantLoginPath } from "@/lib/tenant-client";
 
 type SidebarItem = {
   href: string;
@@ -16,13 +17,11 @@ function StudentSidebarNav({
   pathname,
   badge,
   onItemClick,
-  onNavigate,
 }: {
   items: SidebarItem[];
   pathname: string;
   badge?: Record<string, number>;
   onItemClick?: () => void;
-  onNavigate?: () => void;
 }) {
   return (
     <nav className="space-y-2.5">
@@ -30,7 +29,9 @@ function StudentSidebarNav({
         const active =
           item.href === "/lms/app"
             ? pathname === "/lms/app" || pathname === "/lms"
-            : pathname.startsWith(item.href);
+            : item.href === "/lms/app/tasks"
+              ? pathname.startsWith("/lms/app/tasks") || pathname.startsWith("/lms/tasks")
+              : pathname.startsWith(item.href);
 
         const count = badge?.[item.href] ?? 0;
 
@@ -38,7 +39,6 @@ function StudentSidebarNav({
           <Link
             key={item.href}
             href={item.href}
-            onMouseDown={() => onNavigate?.()}
             onClick={() => onItemClick?.()}
             className={`flex min-h-[52px] items-center rounded-xl border px-4 py-3 text-sm transition ${
               active
@@ -179,11 +179,12 @@ function AccountDropdown({
   );
 }
 
-export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void }) {
+export default function StudentSidebar() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState<{ name: string; role?: string; profile_photo_url?: string | null } | null>(null);
+  const [chatEnabled, setChatEnabled] = useState(true);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -198,6 +199,10 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
         if (p?.first_name || p?.name) {
           const fullName = p.name ?? [p.first_name, p.last_name].filter(Boolean).join(" ");
           setStudent({ ...p, name: fullName, role: p.role ?? "Student" });
+        }
+        // Chat is a paid-plan feature; gate the Chats link on the tenant plan.
+        if (p && typeof p === "object") {
+          setChatEnabled((p.plan ?? "free") !== "free");
         }
       })
       .catch(() => {});
@@ -236,8 +241,7 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
 
   const handleLogout = () => {
     localStorage.removeItem("lms_student_token");
-    onNavigate?.();
-    router.push("/lms/login");
+    router.push(tenantLoginPath("student"));
   };
 
   const items: SidebarItem[] = [
@@ -248,7 +252,7 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
     { href: "/lms/app/modules", label: "Modules" },
     { href: "/lms/app/tasks", label: "Tasks" },
     { href: "/lms/app/materials", label: "Materials" },
-    { href: "/lms/app/chats", label: "Chats" },
+    ...(chatEnabled ? [{ href: "/lms/app/chats", label: "Chats" }] : []),
     { href: "/lms/app/profile", label: "Profile" },
   ];
 
@@ -263,7 +267,7 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
             onLogout={handleLogout}
           />
         </div>
-        <StudentSidebarNav items={items} pathname={pathname} badge={badge} onNavigate={onNavigate} />
+        <StudentSidebarNav items={items} pathname={pathname} badge={badge} />
 
         <div className="mt-6 border-t border-white/10 pt-4">
           <button
@@ -333,7 +337,7 @@ export default function StudentSidebar({ onNavigate }: { onNavigate?: () => void
               </div>
 
               <div className="grow">
-                <StudentSidebarNav items={items} pathname={pathname} badge={badge} onItemClick={() => setOpen(false)} onNavigate={onNavigate} />
+                <StudentSidebarNav items={items} pathname={pathname} badge={badge} onItemClick={() => setOpen(false)} />
               </div>
 
               <div className="border-t border-white/10 pt-4">

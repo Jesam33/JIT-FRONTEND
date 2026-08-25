@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { STAFF_API, STUDENT_API } from "../../../../lib/api";
+import { STAFF_API } from "../../../../lib/api";
 import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 import { isClassEnded } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
@@ -69,7 +69,11 @@ export default function StaffClassroomPage() {
     try {
       const [cls, crs, sched] = await Promise.all([
         apiFetchStaff(STAFF_API.classrooms).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
-        fetch(STUDENT_API.courses).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
+        // Tenant + instructor scoped (the teacher's assigned courses), NOT the
+        // public /courses list — a bare fetch there carries no token/tenant, so
+        // the backend falls back to the primary institute and leaks its courses
+        // into another tenant's dropdown. Mirrors the Modules page.
+        apiFetchStaff(STAFF_API.assignedCourses).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
         apiFetchStaff(STAFF_API.scheduledClasses).then((r) => r.json()),
       ]);
       setClassrooms(Array.isArray(cls) ? cls : []);
@@ -137,6 +141,34 @@ export default function StaffClassroomPage() {
     await loadData();
   };
 
+  // Host the live class as moderator. The tab is opened synchronously (inside the
+  // click gesture) so popup blockers don't kill it, then redirected to the JaaS
+  // room once the moderator token is minted. Handles both class kinds: "scheduled"
+  // (per-module LmsScheduledClass) and "classroom" (per-course LmsClassroom).
+  const hostClass = async (id: number, classType: string) => {
+    setMessage("");
+    const win = window.open("about:blank", "_blank");
+    try {
+      const res = await apiFetchStaff(STAFF_API.classroomMeetingToken(id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ class_type: classType }),
+      });
+      const p = await res.json();
+      if (!res.ok || !p.jwt || !p.room || !p.domain || !p.app_id) {
+        if (win) win.close();
+        setMessage(p?.message ?? "Could not start the live class.");
+        return;
+      }
+      const url = `https://${p.domain}/${p.app_id}/${p.room}?jwt=${encodeURIComponent(p.jwt)}`;
+      if (win) win.location.href = url;
+      else window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      if (win) win.close();
+      setMessage("Could not start the live class.");
+    }
+  };
+
   const handleSave = async () => {
     if (!token) return;
     setSaving(true);
@@ -201,14 +233,9 @@ export default function StaffClassroomPage() {
                   <div>
                     <p className="text-sm font-medium">{c.title}</p>
                     <p className="text-xs text-white/60">{new Date(c.starts_at).toLocaleString()}{c.module ? ` - ${c.module.title}` : ""}</p>
-                    {c.meeting_password ? <p className="mt-0.5 text-[10px] text-white/40">Password: {c.meeting_password}</p> : null}
                   </div>
                   <div className="flex items-center gap-2">
-                    {c.meeting_id ? (
-                      <a href={`https://zoom.us/j/${c.meeting_id.replace(/\s+/g, "")}`} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Join</a>
-                    ) : c.meeting_url ? (
-                      <a href={c.meeting_url} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Join</a>
-                    ) : null}
+                    <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
                     <span className="rounded-full bg-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-200">Live</span>
                   </div>
                 </div>
@@ -230,13 +257,8 @@ export default function StaffClassroomPage() {
                   <div>
                     <p className="text-sm font-medium">{c.title}</p>
                     <p className="text-xs text-white/60">{new Date(c.starts_at).toLocaleString()}{c.module ? ` - ${c.module.title}` : ""}</p>
-                    {c.meeting_password ? <p className="mt-0.5 text-[10px] text-white/40">Password: {c.meeting_password}</p> : null}
                   </div>
-                  {c.meeting_id ? (
-                    <a href={`https://zoom.us/j/${c.meeting_id.replace(/\s+/g, "")}`} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Join</a>
-                  ) : c.meeting_url ? (
-                    <a href={c.meeting_url} target="_blank" rel="noreferrer" className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Join</a>
-                  ) : null}
+                  <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
                 </div>
               ))}
             </div>
@@ -290,30 +312,6 @@ export default function StaffClassroomPage() {
 
           <input
             type="url"
-            placeholder="Meeting URL (optional)"
-            value={form.meeting_url}
-            onChange={(e) => setForm({ ...form, meeting_url: e.target.value })}
-            className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none"
-          />
-
-          <input
-            type="text"
-            placeholder="Zoom Meeting ID"
-            value={form.meeting_id}
-            onChange={(e) => setForm({ ...form, meeting_id: e.target.value })}
-            className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none"
-          />
-
-          <input
-            type="password"
-            placeholder="Meeting Password (optional)"
-            value={form.meeting_password}
-            onChange={(e) => setForm({ ...form, meeting_password: e.target.value })}
-            className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none"
-          />
-
-          <input
-            type="url"
             placeholder="Thumbnail URL (optional)"
             value={form.session_thumbnail_url}
             onChange={(e) => setForm({ ...form, session_thumbnail_url: e.target.value })}
@@ -362,19 +360,13 @@ export default function StaffClassroomPage() {
                   <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">Ended</span>
                 ) : (
                   <>
-                    {c.meeting_id || c.meeting_url ? (
-                      <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200">Zoom Ready</span>
-                    ) : null}
-                    {c.meeting_url || c.meeting_id ? (
-                      <a
-                        href={c.meeting_url || `https://zoom.us/j/${c.meeting_id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/30"
-                      >
-                        Join
-                      </a>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => hostClass(c.id, "classroom")}
+                      className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/30"
+                    >
+                      Host
+                    </button>
                     <button type="button" onClick={() => handleMarkEnded(c.id)} disabled={markingEndedId === c.id} className="rounded-full border border-amber-400/30 px-3 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 disabled:opacity-40">
                       {markingEndedId === c.id ? "Marking..." : "Mark Ended"}
                     </button>

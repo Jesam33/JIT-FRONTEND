@@ -41,7 +41,7 @@ export default function StaffAnnouncementsPage() {
       for (const t of tracks) {
         if (t.batch_id && !seen.has(t.batch_id)) {
           seen.add(t.batch_id);
-          batchList.push({ id: t.batch_id, name: t.batch?.name ?? `Batch #${t.batch_id}` });
+          batchList.push({ id: t.batch_id, name: t.batch?.name ?? `Cohort #${t.batch_id}` });
         }
       }
       setBatches(batchList);
@@ -76,16 +76,19 @@ export default function StaffAnnouncementsPage() {
   return (
     <section>
       <h1 className="text-2xl font-bold">Announcements</h1>
-      <p className="text-sm text-white/70">Post and manage announcements for your batches.</p>
+      <p className="text-sm text-white/70">Post and manage announcements for your cohorts.</p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.5fr]">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
           <h3 className="font-semibold">New Announcement</h3>
           <div className="mt-2 grid gap-2">
             <select value={batchId} onChange={(e) => setBatchId(e.target.value)} className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm">
-              <option value="">Select batch</option>
+              <option value="">Select cohort</option>
               {batches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
+            {!loading && batches.length === 0 ? (
+              <p className="text-xs text-white/50">You have no cohorts assigned yet. Ask your admin to assign you to a course cohort, then you can post announcements to it.</p>
+            ) : null}
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Announcement title" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" />
             <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Announcement body" className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm" rows={4} />
             <button onClick={createAnnouncement} disabled={creating || !batchId || !title.trim()} className="rounded bg-white px-3 py-2 text-sm text-black disabled:opacity-60">

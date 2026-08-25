@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { AUTH_API } from "../../../../lib/api";
+import { tenantHeaders } from "../../../../lib/tenant-client";
+import InstitutePublicShell from "../../../../components/institute/InstitutePublicShell";
 
 export default function StaffForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +17,7 @@ export default function StaffForgotPasswordPage() {
 
     const response = await fetch(AUTH_API.staffForgotPassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...tenantHeaders() },
       body: JSON.stringify({ email }),
     });
 
@@ -25,7 +27,8 @@ export default function StaffForgotPasswordPage() {
   }
 
   return (
-    <section className="section-pad section-divider">
+    <InstitutePublicShell>
+      <section className="section-pad section-divider">
       <div className="container-wide max-w-xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
         <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Staff Portal Forgot Password</h1>
         <p className="mt-2 text-sm text-white/70">Enter your staff email to receive a password reset link.</p>
@@ -37,6 +40,7 @@ export default function StaffForgotPasswordPage() {
         </form>
         {message ? <p className="mt-4 text-sm text-white/80">{message}</p> : null}
       </div>
-    </section>
+      </section>
+    </InstitutePublicShell>
   );
 }

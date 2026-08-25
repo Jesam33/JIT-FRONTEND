@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Button from "@/components/ui/Button";
-import Carousel from "@/components/ui/Carousel";
 import { heroContent } from "@/lib/content";
 
 type HeroContent = typeof heroContent;
@@ -16,39 +15,28 @@ type SlideData = {
 
 const slides: SlideData[] = [
   {
-    image: "/images/sections/showcase-business-experience.jpg",
+    image: "/images/sections/code-3.png",
     stat: "25+",
     statLabel: "Years Experience",
     description: "Trusted delivery with a practical build process for modern products.",
   },
+  
   {
-    image: "/images/sections/web-development.jpg",
-    label: "Web Development",
-  },
-  {
-    image: "/images/sections/showcase-client-base.jpg",
+    image: "/images/sections/code-2.png",
     stat: "100+",
     statLabel: "Projects Delivered",
   },
   {
-    image: "/images/sections/mobile-app.jpg",
-    label: "Mobile App Dev",
+    image: "/images/sections/code-4.png",
+    label: "Web Development",
   },
-  {
-    image: "/images/sections/ui-ux.jpg",
-    label: "UI / UX Design",
-  },
-  {
-    image: "/images/sections/work.png",
-    label: "At Work",
-    description: "From concept to deployment — we partner with you every step of the way.",
-  },
+  
 ];
 
 export default function Hero({ content = heroContent }: HeroProps) {
   return (
     <section className="section-pad section-divider hero-grid">
-      <div className="container-wide space-y-12">
+      <div className="container-wide space-y-6">
 
         {/* ── Heading ─────────────────────────────────────── */}
         <div className="reveal space-y-6 text-center">
@@ -62,14 +50,14 @@ export default function Hero({ content = heroContent }: HeroProps) {
             {content.title}
           </h1>
           <p className="mx-auto max-w-2xl text-sm leading-7 text-site-text/75 sm:text-base md:text-lg md:leading-8">{content.subtitle}</p>
-          {/* <div className="flex flex-wrap justify-center gap-4">
-            <Button href="/contact" variant="secondary">{content.ctaPrimary}</Button>
-            <Button href="https://www.youtube.com/watch?v=c8aOBRC3tvs" variant="outline">{content.ctaSecondary}</Button>
-          </div> */}
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button href="/qoute" variant="primary">{content.ctaPrimary}</Button>
+            <Button href="/institute" variant="light">{content.ctaSecondary}</Button>
+          </div>
         </div>
 
-        {/* ── Carousel ────────────────────────────────────── */}
-        <Carousel slidesToShow={1} responsive={[{ breakpoint: 768, slidesToShow: 4 }]}>
+        {/* ── Image grid ─────────────────────────────────── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {slides.map((slide, i) => (
             <div key={i} className="relative h-[240px] overflow-hidden rounded-2xl border border-site-border/20 group/card md:h-[260px]">
               <Image
@@ -107,7 +95,7 @@ export default function Hero({ content = heroContent }: HeroProps) {
               </div>
             </div>
           ))}
-        </Carousel>
+        </div>
       </div>
     </section>
   );

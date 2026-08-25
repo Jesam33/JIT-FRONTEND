@@ -185,6 +185,7 @@ export default function StaffChatsPage() {
   useEffect(() => {
     if (!token) return;
     const pusher = getPusher(token);
+    if (!pusher) return;
 
     for (const msg of groupMessages) {
       const cid = msg.chat_id;
@@ -217,6 +218,7 @@ export default function StaffChatsPage() {
   useEffect(() => {
     if (!token) return;
     const pusher = getPusher(token);
+    if (!pusher) return;
 
     for (const t of threads) {
       if (!subscribedDmThreads.current.has(t.thread_id)) {

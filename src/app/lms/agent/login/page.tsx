@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AGENT_API } from "../../../../lib/api";
+import { tenantHeaders } from "../../../../lib/tenant-client";
+import InactivityNotice from "../../../../components/InactivityNotice";
+import InstitutePublicShell from "../../../../components/institute/InstitutePublicShell";
 
 export default function AgentLoginPage() {
   const router = useRouter();
@@ -19,7 +22,7 @@ export default function AgentLoginPage() {
     try {
       const res = await fetch(AGENT_API.login, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...tenantHeaders() },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
@@ -31,8 +34,10 @@ export default function AgentLoginPage() {
   }
 
   return (
+    <InstitutePublicShell>
     <div className="site-shell min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
+        <InactivityNotice />
         <h1 className="text-2xl font-bold text-center">Agent Login</h1>
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required className="w-full rounded-xl border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text outline-none focus:border-site-text/30" />
@@ -53,13 +58,14 @@ export default function AgentLoginPage() {
           </div>
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
           <div className="flex items-center justify-between">
-            <button type="submit" disabled={loading} className="rounded-full bg-red-600 px-6 py-3 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50">
+            <button type="submit" disabled={loading} className="rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
               {loading ? "Logging in..." : "Login"}
             </button>
-            <a href="/lms/agent/forgot-password" className="text-sm text-red-400 hover:text-red-300 underline">Forgot Password?</a>
+            <a href="/lms/agent/forgot-password" className="text-sm text-site-primary underline transition hover:brightness-110">Forgot Password?</a>
           </div>
         </form>
       </div>
     </div>
+    </InstitutePublicShell>
   );
 }

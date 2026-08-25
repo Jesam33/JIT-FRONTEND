@@ -1,4 +1,5 @@
 import InnerPageHero from "@/components/layout/InnerPageHero";
+import ReadMoreText from "@/components/ui/ReadMoreText";
 import { aboutCoreFeatures, routeIntros } from "@/lib/content";
 
 export default function AboutPage() {
@@ -7,7 +8,7 @@ export default function AboutPage() {
   return (
     <section>
       <InnerPageHero title={content.title} subtitle={content.subtitle}>
-        <p>{content.body}</p>
+        <ReadMoreText text={content.body} />
       </InnerPageHero>
 
       <div className="container-wide py-14">

@@ -18,7 +18,7 @@ const links: NavItem[] = [
 
 function AccountDropdown({
   agent,
-  initials,
+  initials, 
   onLogout,
   onClose,
 }: {
@@ -112,7 +112,7 @@ function AccountDropdown({
   );
 }
 
-export default function AgentSidebar({ onNavigate }: { onNavigate?: () => void }) {
+export default function AgentSidebar() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -124,7 +124,6 @@ export default function AgentSidebar({ onNavigate }: { onNavigate?: () => void }
 
   const handleLogout = () => {
     localStorage.removeItem("lms_agent_token");
-    onNavigate?.();
     router.push("/lms/agent/login");
   };
 
@@ -152,7 +151,6 @@ export default function AgentSidebar({ onNavigate }: { onNavigate?: () => void }
             <Link
               key={item.href}
               href={item.href}
-              onMouseDown={() => onNavigate?.()}
               className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
                 isActive(item.href)
                   ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"
@@ -237,7 +235,6 @@ export default function AgentSidebar({ onNavigate }: { onNavigate?: () => void }
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    onMouseDown={() => onNavigate?.()}
                     className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
                       isActive(item.href)
                         ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"

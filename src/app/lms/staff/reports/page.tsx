@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, okJson } from "../../../../lib/fetch-with-timeout";
 
 type ReportsData = {
   stats: {
@@ -18,18 +18,42 @@ type ReportsData = {
 export default function StaffReportsPage() {
   const [data, setData] = useState<ReportsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
 
   useEffect(() => {
     if (!token) return;
+    // Gate on r.ok so a failed load surfaces as error+retry instead of an
+    // all-zero report that reads as "no activity" when the request really failed.
+    setLoadError(false);
+    setLoading(true);
     apiFetchStaff(STAFF_API.reports)
-      .then((r) => r.json())
+      .then(okJson)
       .then((d) => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [token]);
+      .catch(() => { setLoadError(true); setLoading(false); });
+  }, [token, reloadKey]);
 
   if (loading) return <section><h1 className="text-2xl font-bold">Reports</h1><p className="mt-2 text-sm text-white/60">Loading...</p></section>;
+
+  if (loadError) {
+    return (
+      <section>
+        <h1 className="text-2xl font-bold">Reports</h1>
+        <div className="mt-4 rounded-2xl border border-white/15 bg-black/30 p-8 text-center">
+          <p className="text-sm text-white/70">We couldn&apos;t load your reports. This is usually temporary.</p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+          >
+            Try again
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   const stats = data?.stats;
 

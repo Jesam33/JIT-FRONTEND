@@ -55,6 +55,19 @@ export type DashboardPayload = {
   notifications?: NotificationItem[];
 };
 
+export type ChatReaction = {
+  emoji: string;
+  count: number;
+  mine?: boolean;
+};
+
+export type ChatReplyPreview = {
+  id: number;
+  content?: string | null;
+  sender_role?: "student" | "teacher";
+  sender_name?: string | null;
+};
+
 export type ChatMessage = {
   id: number;
   chat_id?: number;
@@ -65,6 +78,9 @@ export type ChatMessage = {
   sender_id?: number | null;
   sender_name?: string;
   attachment_url?: string | null;
+  reply_to_id?: number | null;
+  reply_to?: ChatReplyPreview | null;
+  reactions?: ChatReaction[];
   created_at: string;
   edited_at?: string | null;
 };
@@ -85,13 +101,13 @@ export type AttendanceItem = {
   calculated_at: string | null;
 };
 
-export type SdkSignaturePayload = {
-  signature: string;
-  sdk_key: string;
-  meeting_number: string;
+export type MeetingTokenPayload = {
+  room: string;
+  jwt: string;
+  domain: string;
+  app_id: string;
   user_name: string;
-  user_email: string;
-  passcode: string;
+  moderator: boolean;
 };
 
 export type TaskItem = {

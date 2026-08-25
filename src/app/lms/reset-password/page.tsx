@@ -3,12 +3,16 @@
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
+import { tenantHeaders, tenantLoginPath } from "@/lib/tenant-client";
+import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 export default function StudentResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="section-pad section-divider"><div className="container-wide"><p className="text-white/70">Loading...</p></div></div>}>
-      <PageContent />
-    </Suspense>
+    <InstitutePublicShell>
+      <Suspense fallback={<div className="section-pad section-divider"><div className="container-wide"><p className="text-white/70">Loading...</p></div></div>}>
+        <PageContent />
+      </Suspense>
+    </InstitutePublicShell>
   );
 }
 
@@ -32,7 +36,7 @@ function PageContent() {
 
     const response = await fetch(AUTH_API.resetPassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...tenantHeaders() },
       body: JSON.stringify({
         email,
         token,
@@ -51,7 +55,7 @@ function PageContent() {
 
     setMessage(data?.message ?? "Password reset successful.");
     setSubmitting(false);
-    setTimeout(() => router.push("/lms/login"), 1200);
+    setTimeout(() => router.push(tenantLoginPath("student")), 1200);
   }
 
   return (

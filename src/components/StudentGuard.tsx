@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 import { STUDENT_API } from "../lib/api";
 import { apiFetch } from "../lib/fetch-with-timeout";
+import { tenantLoginPath, setTenantCookie } from "../lib/tenant-client";
 
 const PUBLIC_PATHS = [
   "/lms/login",
@@ -30,14 +31,21 @@ export default function StudentGuard({ children }: { children: React.ReactNode }
     const token = localStorage.getItem("lms_student_token") ?? "";
 
     if (!token) {
-      router.replace("/lms/login");
+      router.replace(tenantLoginPath("student"));
       return;
     }
 
     const controller = new AbortController();
     apiFetch(STUDENT_API.me, { signal: controller.signal })
       .then((res) => res.json())
-      .then(() => setLoading(false))
+      .then((data) => {
+        // Re-pin the tenant cookie from THIS authenticated session so the
+        // inactivity → login redirect keeps the student's institute instead of
+        // falling back to the primary slug (jorsas). The cookie is otherwise
+        // only set at fresh-login and goes stale (7-day TTL / incognito).
+        if (data?.tenant?.slug) setTenantCookie(data.tenant.slug);
+        setLoading(false);
+      })
       .catch((err) => {
         if (err.name === "AbortError") return;
         setLoading(false);

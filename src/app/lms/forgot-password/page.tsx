@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { AUTH_API } from "@/lib/api";
+import { tenantHeaders } from "@/lib/tenant-client";
+import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 export default function StudentForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +17,7 @@ export default function StudentForgotPasswordPage() {
 
     const response = await fetch(AUTH_API.forgotPassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...tenantHeaders() },
       body: JSON.stringify({ email }),
     });
 
@@ -25,18 +27,20 @@ export default function StudentForgotPasswordPage() {
   }
 
   return (
-    <section className="section-pad section-divider">
-      <div className="container-wide max-w-xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
-        <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Student Portal Forgot Password</h1>
-        <p className="mt-2 text-sm text-white/70">Enter your email to receive a password reset link.</p>
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white" required />
-          <button type="submit" disabled={submitting} className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">
-            {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Sending...</span> : "Send Reset Link"}
-          </button>
-        </form>
-        {message ? <p className="mt-4 text-sm text-white/80">{message}</p> : null}
-      </div>
-    </section>
+    <InstitutePublicShell>
+      <section className="section-pad section-divider">
+        <div className="container-wide max-w-xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Student Portal Forgot Password</h1>
+          <p className="mt-2 text-sm text-white/70">Enter your email to receive a password reset link.</p>
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white" required />
+            <button type="submit" disabled={submitting} className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">
+              {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Sending...</span> : "Send Reset Link"}
+            </button>
+          </form>
+          {message ? <p className="mt-4 text-sm text-white/80">{message}</p> : null}
+        </div>
+      </section>
+    </InstitutePublicShell>
   );
 }

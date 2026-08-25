@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 :root {
+  /* Dark UI by default. Without color-scheme the browser renders native
+     controls (the <select> options popup, date pickers, scrollbars) in the OS
+     light scheme, so the white option text inherited from a `text-white`
+     <select> becomes invisible on the light popup. html.light flips it back. */
+  color-scheme: dark;
   --color-bg: #000000;
   --color-surface: #111111;
   --color-surface-soft: #171717;
@@ -15,6 +20,7 @@
 }
 
 html.light {
+  color-scheme: light;
   --color-bg: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-soft: #f1f5f9;
@@ -45,7 +51,10 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: var(--font-body), sans-serif;
+  /* --brand-font is pre-painted by the branding-init script (app/layout.tsx)
+     from the per-institute cache, so a customised institute's font shows on the
+     first frame; falls back to the default body font when none is set. */
+  font-family: var(--brand-font, var(--font-body)), sans-serif;
 }
 
 a {
@@ -141,7 +150,7 @@ html.light .hero-grid::before {
 }
 
 .section-pad {
-  padding-block: clamp(4rem, 7vw, 8rem);
+  padding-block: clamp(4rem, 4vw, 8rem);
 }
 
 ::-webkit-scrollbar {
@@ -297,5 +306,29 @@ html.light {
   .ring-white\/20 {
     --tw-ring-color: rgba(15, 23, 42, 0.15) !important;
   }
+}
+
+/* ── White-label: brand color in dark mode ─────────────────────────────────
+   The student & staff portals use a monochrome (white-on-dark) accent in dark
+   mode by default. When an institute picks a custom brand color, its portal
+   shell gets [data-branded] (see use-portal-branding.ts), and these rules tint
+   the same key accents the light-mode block above already themes — the active
+   sidebar nav item and primary action buttons — with the institute's primary
+   color, so branding is visible in BOTH themes. Un-branded institutes (default
+   red) never get [data-branded], so their dark mode stays monochrome as before.
+   var(--color-primary) is supplied by the inline brandingStyle() on the shell. */
+[data-branded] .border-white\/18.bg-white\/12.text-white {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+[data-branded] .bg-white.text-black {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+}
+[data-branded] .bg-white.text-black:hover {
+  background-color: var(--color-primary) !important;
+  filter: brightness(0.92) !important;
 }
 

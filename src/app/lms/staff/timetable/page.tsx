@@ -29,6 +29,7 @@ export default function StaffTimetablePage() {
   const [classes, setClasses] = useState<ScheduledClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState<number | null>(null);
+  const [hostMessage, setHostMessage] = useState("");
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -53,6 +54,34 @@ export default function StaffTimetablePage() {
     } catch { /* ignore */ }
   };
 
+  // Host the live class as moderator. The tab is opened synchronously (inside the
+  // click gesture) so popup blockers don't kill it, then redirected to the JaaS
+  // room once the moderator token is minted. Scheduled classes are the only kind
+  // on the staff timetable, so class_type is always "scheduled" here.
+  const hostClass = async (id: number) => {
+    setHostMessage("");
+    const win = window.open("about:blank", "_blank");
+    try {
+      const res = await apiFetchStaff(STAFF_API.classroomMeetingToken(id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ class_type: "scheduled" }),
+      });
+      const p = await res.json();
+      if (!res.ok || !p.jwt || !p.room || !p.domain || !p.app_id) {
+        if (win) win.close();
+        setHostMessage(p?.message ?? "Could not start the live class.");
+        return;
+      }
+      const url = `https://${p.domain}/${p.app_id}/${p.room}?jwt=${encodeURIComponent(p.jwt)}`;
+      if (win) win.location.href = url;
+      else window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      if (win) win.close();
+      setHostMessage("Could not start the live class.");
+    }
+  };
+
   if (loading) return <p className="text-sm text-white/60 mt-8 text-center">Loading timetable...</p>;
 
   return (
@@ -62,6 +91,10 @@ export default function StaffTimetablePage() {
         <p className="mt-1 text-sm text-white/50">Scheduled classes across your modules.</p>
       </div>
 
+      {hostMessage ? (
+        <p className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">{hostMessage}</p>
+      ) : null}
+
       {classes.length === 0 ? (
         <div className="rounded-2xl border border-white/15 bg-black/30 p-8 text-center">
           <p className="text-sm text-white/50">No scheduled classes. Create one via a Module.</p>
@@ -69,13 +102,20 @@ export default function StaffTimetablePage() {
       ) : (
         <CalendarTimetable
           classes={classes}
-          renderActions={(c) =>
-            c.status === "scheduled" ? (
-              <button onClick={() => setConfirmCancel(c.id)} className="text-xs text-red-400 underline hover:text-red-300 transition">
-                Cancel
-              </button>
-            ) : undefined
-          }
+          renderActions={(c) => (
+            <>
+              {c.status !== "cancelled" && c.status !== "completed" ? (
+                <button onClick={() => hostClass(c.id)} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium hover:bg-emerald-500 transition" style={{ color: "#fff" }}>
+                  Host
+                </button>
+              ) : null}
+              {c.status === "scheduled" ? (
+                <button onClick={() => setConfirmCancel(c.id)} className="text-xs text-red-400 underline hover:text-red-300 transition">
+                  Cancel
+                </button>
+              ) : null}
+            </>
+          )}
         />
       )}
 

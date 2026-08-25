@@ -3,12 +3,15 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
+import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 export default function LmsSignupPage() {
   return (
-    <Suspense fallback={<div className="section-pad section-divider"><div className="container-wide"><p className="text-white/70">Loading...</p></div></div>}>
-      <PageContent />
-    </Suspense>
+    <InstitutePublicShell>
+      <Suspense fallback={<div className="section-pad section-divider"><div className="container-wide"><p className="text-white/70">Loading...</p></div></div>}>
+        <PageContent />
+      </Suspense>
+    </InstitutePublicShell>
   );
 }
 

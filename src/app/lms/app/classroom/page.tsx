@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { AttendanceItem, SdkSignaturePayload } from "../../../../lib/lms-types";
+import type { AttendanceItem, MeetingTokenPayload } from "../../../../lib/lms-types";
 import { formatLocalDateTime, canJoinClassroom, isClassEnded, isClassActiveWindow, getToken } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_MODULE_API, STUDENT_API } from "../../../../lib/api";
-import { apiFetch } from "../../../../lib/fetch-with-timeout";
+import { apiFetch, okJson } from "../../../../lib/fetch-with-timeout";
 
 type TimetableItem = {
   id: number;
@@ -36,6 +36,11 @@ export default function StudentClassroomPage() {
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  // Which class is currently live in the embed, so the leave / class-ended /
+  // hangup paths can post attendance for the right classroom. attendanceClosedRef
+  // dedupes the close-out when both the button and the iframe's own leave fire.
+  const liveClassRef = useRef<{ id: number; classType: string } | null>(null);
+  const attendanceClosedRef = useRef<number | null>(null);
 
   // Close pseudo-fullscreen with Escape key
   useEffect(() => {
@@ -58,7 +63,10 @@ export default function StudentClassroomPage() {
     Promise.allSettled([
       apiFetch(STUDENT_MODULE_API.timetable).then((r) => r.json()).then((p) => setTimetable(Array.isArray(p) ? p : [])),
       apiFetch(STUDENT_API.attendance).then((r) => r.json()).then((p) => setAttendanceItems(Array.isArray(p) ? p : [])),
-      apiFetch(STUDENT_API.profile).then((r) => r.json()).then((p) => setProfile(p)),
+      // Object-shape payload: gate on r.ok so a non-OK body is never spread into
+      // `profile` (it would poison the student's name/email). On failure the
+      // allSettled branch simply leaves `profile` at its safe {} default.
+      apiFetch(STUDENT_API.profile).then(okJson).then((p) => setProfile(p)),
     ]).then(() => setLoading(false));
   }, [token]);
 
@@ -97,30 +105,51 @@ export default function StudentClassroomPage() {
   const isScheduledClass = activeClass?.class_type === "scheduled";
   const isClassroomType = activeClass?.class_type === "classroom" || !activeClass?.class_type;
 
-  const handleZoomMessage = useCallback((event: MessageEvent) => {
-    if (event.origin !== window.location.origin) return;
-    const { type, detail } = event.data || {};
-    switch (type) {
-      case "zoom-joined":
-        setIsClassLive(true);
-        setJoinMessage("You are now in the live classroom.");
-        break;
-      case "zoom-error":
-        setIsClassLive(false);
-        setJoinMessage(detail || "Failed to join the meeting.");
-        break;
-      case "zoom-leave":
-        setIsClassLive(false);
-        setIframeUrl(null);
-        setJoinMessage("You left the classroom.");
-        break;
+  // Post the client-side attendance close-out for a classroom-type class (the
+  // replacement for the old Zoom meeting.ended webhook). Scheduled classes never
+  // tracked attendance, so they're skipped. Best-effort + deduped; on success we
+  // refresh the attendance list so the page reflects the computed status.
+  const closeOutAttendance = useCallback(async (classId: number, classType: string) => {
+    if (classType === "scheduled") return;
+    if (attendanceClosedRef.current === classId) return;
+    attendanceClosedRef.current = classId;
+    try {
+      await apiFetch(STUDENT_API.classroomAttendanceLeave(classId), { method: "POST" });
+      const items = await apiFetch(STUDENT_API.attendance).then((r) => r.json());
+      setAttendanceItems(Array.isArray(items) ? items : []);
+    } catch {
+      // Best-effort — the server recomputes from first_joined_at either way.
     }
   }, []);
 
+  const handleMeetingMessage = useCallback((event: MessageEvent) => {
+    if (event.origin !== window.location.origin) return;
+    const { type, detail } = event.data || {};
+    switch (type) {
+      case "jitsi-joined":
+        setIsClassLive(true);
+        setJoinMessage("You are now in the live classroom.");
+        break;
+      case "jitsi-error":
+        setIsClassLive(false);
+        setJoinMessage(detail || "Failed to join the class.");
+        break;
+      case "jitsi-left": {
+        setIsClassLive(false);
+        setIframeUrl(null);
+        setJoinMessage("You left the classroom.");
+        const live = liveClassRef.current;
+        if (live) closeOutAttendance(live.id, live.classType);
+        liveClassRef.current = null;
+        break;
+      }
+    }
+  }, [closeOutAttendance]);
+
   useEffect(() => {
-    window.addEventListener("message", handleZoomMessage);
-    return () => window.removeEventListener("message", handleZoomMessage);
-  }, [handleZoomMessage]);
+    window.addEventListener("message", handleMeetingMessage);
+    return () => window.removeEventListener("message", handleMeetingMessage);
+  }, [handleMeetingMessage]);
 
   useEffect(() => {
     if (!isClassLive || !activeClass || !iframeUrl) return;
@@ -128,8 +157,10 @@ export default function StudentClassroomPage() {
       setIsClassLive(false);
       setIframeUrl(null);
       setJoinMessage("Class time has ended.");
+      closeOutAttendance(activeClass.id, activeClass.class_type ?? "classroom");
+      liveClassRef.current = null;
     }
-  }, [currentTime, activeClass?.ends_at, isClassLive, iframeUrl]);
+  }, [currentTime, activeClass?.ends_at, isClassLive, iframeUrl, closeOutAttendance]);
 
   async function joinClassroom(id: number) {
     setJoinMessage("");
@@ -150,6 +181,7 @@ export default function StudentClassroomPage() {
 
   async function joinEmbeddedClassroom(classroomId: number) {
     if (!token) return;
+    const classType = activeClass?.class_type ?? "classroom";
     setJoinMessage("");
     setIsJoiningEmbeddedClass(true);
 
@@ -157,23 +189,26 @@ export default function StudentClassroomPage() {
       const response = await apiFetch(STUDENT_API.classroomSdkSignature(classroomId), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ class_type: activeClass?.class_type ?? "classroom" }),
+        body: JSON.stringify({ class_type: classType }),
       });
-      const payload = (await response.json()) as Partial<SdkSignaturePayload> & { message?: string };
+      const payload = (await response.json()) as Partial<MeetingTokenPayload> & { message?: string };
 
-      if (!response.ok || !payload.signature || !payload.sdk_key || !payload.meeting_number) {
-        setJoinMessage(payload.message ?? "Could not initialize embedded class session.");
+      if (!response.ok || !payload.jwt || !payload.room || !payload.domain || !payload.app_id) {
+        setJoinMessage(payload.message ?? "Could not initialize the live class session.");
         return;
       }
 
-      const url = new URL("/zoom-meeting.html", window.location.origin);
-      url.searchParams.set("signature", payload.signature);
-      url.searchParams.set("sdkKey", payload.sdk_key);
-      url.searchParams.set("meetingNumber", payload.meeting_number);
-      url.searchParams.set("passcode", payload.passcode ?? "");
+      const url = new URL("/jitsi-meeting.html", window.location.origin);
+      url.searchParams.set("domain", payload.domain);
+      url.searchParams.set("appId", payload.app_id);
+      url.searchParams.set("room", payload.room);
+      url.searchParams.set("jwt", payload.jwt);
       url.searchParams.set("userName", payload.user_name ?? studentName);
-      url.searchParams.set("userEmail", payload.user_email ?? profile.email ?? "");
 
+      // Track which class is live so the leave / class-ended / hangup paths can
+      // post attendance for it; reset the dedupe guard for this fresh session.
+      liveClassRef.current = { id: classroomId, classType };
+      attendanceClosedRef.current = null;
       setIframeUrl(url.toString());
     } catch {
       setJoinMessage("Failed to start live session. Please try again.");
@@ -186,6 +221,9 @@ export default function StudentClassroomPage() {
     setIsClassLive(false);
     setIframeUrl(null);
     setJoinMessage("You left the classroom.");
+    const live = liveClassRef.current;
+    if (live) closeOutAttendance(live.id, live.classType);
+    liveClassRef.current = null;
   }
 
   if (loading) return <LoadingSpinner />;
@@ -210,11 +248,6 @@ export default function StudentClassroomPage() {
               {formatLocalDateTime(activeClass.starts_at)}
               {isScheduledClass ? <span className="ml-2 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
             </p>
-            {!isScheduledClass && activeClass.meeting_url ? (
-              <a href={activeClass.meeting_url} target="_blank" rel="noreferrer" className="mt-3 inline-block rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
-                Join Meeting
-              </a>
-            ) : null}
 
             {isScheduledClass && activeClass.meeting_password ? (
               <div className="mt-3">
@@ -225,9 +258,7 @@ export default function StudentClassroomPage() {
               </div>
             ) : null}
 
-            {isScheduledClass && !activeClass.meeting_id ? (
-              <p className="mt-3 text-sm text-white/60">No meeting set for this class.</p>
-            ) : isScheduledClass && !canJoinClassroom(activeClass.starts_at, currentTime) ? (
+            {isScheduledClass && !canJoinClassroom(activeClass.starts_at, currentTime) ? (
               <>
                 <p className="mt-3 text-sm text-white/75">Join opens 5 minutes before class starts.</p>
                 <button type="button" disabled className="mt-3 rounded-full bg-white px-4 py-2 text-xs font-semibold text-black opacity-40">Join Class</button>
@@ -288,7 +319,7 @@ export default function StudentClassroomPage() {
 
             {iframeUrl ? (
               <>
-                {/* CSS pseudo-fullscreen overlay — keeps iframe in DOM so Zoom re-layouts on resize */}
+                {/* CSS pseudo-fullscreen overlay — keeps iframe in DOM so Jitsi re-layouts on resize */}
                 <div
                   className={isFullscreen
                     ? "fixed inset-0 z-[9999] bg-black w-screen h-screen"
@@ -346,18 +377,10 @@ export default function StudentClassroomPage() {
                     <h3 className="font-semibold">{c.title}</h3>
                     <p className="mt-1 text-sm text-white/70">{formatLocalDateTime(c.starts_at)}</p>
                     {c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
-                    {c.meeting_password ? <p className="mt-2 text-xs text-white/50">Password set</p> : null}
                   </div>
-                  {c.class_type === "scheduled" && c.meeting_url ? (
-                    <a
-                      href={c.meeting_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
-                    >
-                      Join
-                    </a>
-                  ) : null}
+                  {/* Upcoming classes are info-only — the live room opens (in-portal) once the
+                      class is active, so no external join link here. */}
+                  <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] text-white/50">Upcoming</span>
                 </div>
               </article>
             );

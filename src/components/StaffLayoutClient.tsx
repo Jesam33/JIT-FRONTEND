@@ -1,42 +1,34 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import StaffSidebar from "./StaffSidebar";
 import StaffGuard from "./StaffGuard";
 import ErrorBoundary from "./ErrorBoundary";
 import ToastProvider from "./ToastProvider";
-import LoadingSpinner from "./LoadingSpinner";
 import LmsNavbar from "./LmsNavbar";
+import DynamicFavicon from "./DynamicFavicon";
+import { STAFF_API, PUBLIC_API } from "@/lib/api";
+import { brandingStyle, storefrontBackgroundStyle } from "@/lib/owner-branding";
+import { usePortalBranding, isBranded } from "@/lib/use-portal-branding";
+import { tenantLoginPath, pinTenantFromLocation } from "@/lib/tenant-client";
+import IdleLogout from "./IdleLogout";
 
 export default function StaffLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
-  const [navigating, setNavigating] = useState(false);
-  const prevPathname = useRef(pathname);
-  const safetyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const branding = usePortalBranding(STAFF_API.branding, "lms_staff_token", PUBLIC_API.branding);
 
+  // Pin the institute from an emailed link's ?tenant= so invite/reset → login
+  // stays on the right portal instead of defaulting to the primary slug.
   useEffect(() => {
-    return () => clearTimeout(safetyTimer.current);
-  }, []);
-
-  useEffect(() => {
-    if (prevPathname.current !== pathname) {
-      prevPathname.current = pathname;
-      clearTimeout(safetyTimer.current);
-      setNavigating(false);
-    }
+    pinTenantFromLocation();
   }, [pathname]);
-
-  const handleNavigate = () => {
-    setNavigating(true);
-    clearTimeout(safetyTimer.current);
-    safetyTimer.current = setTimeout(() => setNavigating(false), 5000);
-  };
 
   const publicPaths = [
     "/lms/staff/login",
     "/lms/staff/forgot-password",
     "/lms/staff/reset-password",
+    "/lms/staff/setup-password",
   ];
 
   const hideSidebar = publicPaths.some((p) => pathname.startsWith(p));
@@ -44,9 +36,11 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
   return (
     <StaffGuard>
       <ToastProvider>
-      <div className="section-divider pt-6">
+      <DynamicFavicon href={branding?.logo_url ?? null} />
+      {!hideSidebar && <IdleLogout tokenKeys={["lms_staff_token"]} redirectTo={() => tenantLoginPath("staff")} />}
+      <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
         <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
-          {!hideSidebar && <StaffSidebar onNavigate={handleNavigate} />}
+          {!hideSidebar && <StaffSidebar />}
           <main className={`relative min-w-0 ${hideSidebar ? "" : "pb-8"}`}>
             {!hideSidebar && (
               <LmsNavbar
@@ -54,16 +48,10 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
                 bellHref="/lms/staff/notifications"
                 placeholder="Search students, courses, or resources..."
                 searchRedirectHref="/lms/staff/students"
+                logoUrl={branding?.logo_url ?? null}
               />
             )}
-            {navigating ? (
-              <div className="flex min-h-[300px] items-center justify-center">
-                <LoadingSpinner />
-                <span className="ml-3 text-sm text-white/60">Loading…</span>
-              </div>
-            ) : (
-              <ErrorBoundary>{children}</ErrorBoundary>
-            )}
+            <ErrorBoundary>{children}</ErrorBoundary>
           </main>
         </div>
       </div>

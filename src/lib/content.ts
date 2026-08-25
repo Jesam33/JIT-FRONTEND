@@ -40,6 +40,7 @@ export type ServiceCard = {
 };
 
 export type PricingPlan = {
+  slug: string;
   name: string;
   price: string;
   features: string[];
@@ -73,18 +74,19 @@ export type FaqGroup = {
 export const navLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/institute", label: "Institute" },
-  { href: "/real-estate", label: "Real Estate" },
+  // { href: "/real-estate", label: "Real Estate" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact" },
 ];
 
 export const heroContent = {
-  kicker: "Jorsas",
-  title: "Mobile Apps & Website Development",
+  kicker: "JORSAS TECH",
+  title: "Mobile Apps & Web Development",
   subtitle:
-    "We have a team of experts across different strata of Software Development and would provide you with the clear insight your business needs to create an amazing future. ",
-  ctaPrimary: "Learn More",
-  ctaSecondary: "Our Services",
+    "We design and develop powerful websites, mobile apps and digital solutions that help businesses grow, innovate and succeed. ",
+  ctaPrimary: "Start a Project",
+  ctaSecondary: "Train With Us",
 };
 
 export const capabilities: Capability[] = [
@@ -218,9 +220,9 @@ export const blogPreview: BlogItem[] = [
 
 export const routeIntros: Record<string, RouteIntro> = {
   about: {
-    title: "Pioneering Tech & Real Estate Solutions for the Future",
+    title: "Turning Bold Ideas Into Quality Technology",
     subtitle: "WHO WE ARE",
-    body: "At Jorsas Tech, we merge cutting-edge technology with dynamic real estate strategies to deliver solutions that drive growth, innovation, and long-term value. Our mission is to simplify complexity — empowering businesses and individuals with smart tools and tailored services that redefine possibilities in tech and property.",
+    body: "A Born in Africa. Built to global standards. Designed for the world.Jorsas Tech is a technology company founded in Nigeria with a global outlook. We build high-quality, human-centred technology designed to solve real-world problems and create opportunities at scale. We believe technology should do more than demonstrate what is possible. It should be useful, reliable, accessible and worth what people pay for it. That belief shapes everything we build. Our approach is simple: understand real human needs, challenge conventional thinking, and turn ambitious ideas into practical digital products that people and businesses can genuinely benefit from. We pursue innovation with purpose—not technology for technology’s sake. At Jorsas Tech, quality and value for money are non-negotiable. We believe exceptional technology does not need unnecessary complexity or excessive cost. Every product bearing the Jorsas Tech name should be thoughtfully designed, reliably delivered and built to create meaningful value.Our culture is driven by excellence, creativity, ownership, integrity and continuous improvement. We encourage our people to think boldly, collaborate openly and take responsibility for building products we are proud to put our name on.From Africa to the world, our ambition is to build a globally recognised technology company known not simply for creating products, but for creating technology that matters. Our Promise Quality you can trust. Technology that delivers. Value that makes sense. Our Philosophy Think boldly. Build properly. Deliver value.",
   },
   services: {
     title: "Spotlight some most important features We have",
@@ -303,40 +305,38 @@ export const faqGroups: FaqGroup[] = [
 
 export const pricingPlans: PricingPlan[] = [
   {
-    name: "Basic Plan",
-    price: "$19/month",
+    slug: "free",
+    name: "Free",
+    price: "₦0",
     features: [
-      "100 User Activities",
-      "Limit Access",
-      "No Hidden Charge",
-      "01 Time Updates",
-      "Figma Source File",
-      "Many More Facilities",
+      "Full LMS access",
+      "Unlimited courses & modules",
+      "Student & staff portals",
+      "Attendance & grading",
+      "Group & direct chat",
     ],
   },
   {
-    name: "Team Plan",
-    price: "$49/month",
+    slug: "basic",
+    name: "Basic",
+    price: "₦5,000/mo",
     popular: true,
     features: [
-      "1000 User Activities",
-      "Unlimited Access",
-      "No Hidden Charge",
-      "03 Time Updates",
-      "Figma Source File",
-      "Many More Facilities",
+      "Everything in Free",
+      "Priority email support",
+      "Custom branding",
+      "Certificates",
     ],
   },
   {
-    name: "Enterprise Plan",
-    price: "$99/month",
+    slug: "pro",
+    name: "Pro",
+    price: "₦15,000/mo",
     features: [
-      "5000 User Activities",
-      "Unlimited Access",
-      "No Hidden Charge",
-      "10 Time Updates",
-      "Figma Source File",
-      "Many More Facilities",
+      "Everything in Basic",
+      "Dedicated onboarding",
+      "Advanced reporting",
+      "Early access to new features",
     ],
   },
 ];

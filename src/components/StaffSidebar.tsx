@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { STAFF_API } from "@/lib/api";
 import { apiFetchStaff } from "@/lib/fetch-with-timeout";
+import { tenantLoginPath } from "@/lib/tenant-client";
 
 type SidebarGroup = {
   label: string;
@@ -30,7 +31,6 @@ const groups: SidebarGroup[] = [
       { href: "/lms/staff/modules", label: "Modules" },
       { href: "/lms/staff/materials", label: "Materials" },
       { href: "/lms/staff/tasks", label: "Tasks" },
-      { href: "/lms/staff/certificates", label: "Certificates" },
     ],
   },
   {
@@ -168,11 +168,13 @@ function AccountDropdown({
   );
 }
 
-export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }) {
+export default function StaffSidebar() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [teacher, setTeacher] = useState<{ name: string; role: string; profile_photo_url?: string | null } | null>(null);
+  const [chatEnabled, setChatEnabled] = useState(true);
+  const chatEnabledRef = useRef(true);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -181,20 +183,37 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
     if (!token) return;
     apiFetchStaff(STAFF_API.me)
       .then((r) => r.json())
-      .then((p) => { if (p?.name) setTeacher(p); })
+      .then((p) => {
+        // Accept the payload as long as it's a real profile object (not a
+        // {message:"Unauthorized"} error body). Derive a safe display name so
+        // the header never sticks on "Loading…" when `name` is absent.
+        if (p && typeof p === "object" && !p.message) {
+          setTeacher({
+            name: p.name || p.email || "Staff",
+            role: p.role || "Staff",
+            profile_photo_url: p.profile_photo_url ?? null,
+          });
+          const enabled = (p.plan ?? "free") !== "free";
+          chatEnabledRef.current = enabled;
+          setChatEnabled(enabled);
+        }
+      })
       .catch(() => {});
 
     const fetchUnread = () => {
       if (document.hidden) return;
-      apiFetchStaff(STAFF_API.chatUnread)
-        .then((r) => r.json())
-        .then((p) => {
-          setBadge((prev) => ({
-            ...prev,
-            "/lms/staff/chats": (p.unread_group ?? 0) + (p.unread_dm ?? 0),
-          }));
-        })
-        .catch(() => {});
+      // Chat is a paid-plan feature — only poll chat unread when enabled.
+      if (chatEnabledRef.current) {
+        apiFetchStaff(STAFF_API.chatUnread)
+          .then((r) => r.json())
+          .then((p) => {
+            setBadge((prev) => ({
+              ...prev,
+              "/lms/staff/chats": (p.unread_group ?? 0) + (p.unread_dm ?? 0),
+            }));
+          })
+          .catch(() => {});
+      }
       apiFetchStaff(STAFF_API.notificationUnread)
         .then((r) => r.json())
         .then((p) => {
@@ -227,8 +246,7 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
 
   const handleLogout = () => {
     localStorage.removeItem("lms_staff_token");
-    onNavigate?.();
-    router.push("/lms/staff/login");
+    router.push(tenantLoginPath("staff"));
   };
 
   function isActive(href: string) {
@@ -237,6 +255,14 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
     }
     return pathname.startsWith(href);
   }
+
+  // Chat is a paid-plan feature — drop the Chats link on the free plan.
+  const visibleGroups = chatEnabled
+    ? groups
+    : groups.map((g) => ({
+        ...g,
+        items: g.items.filter((i) => i.href !== "/lms/staff/chats"),
+      }));
 
   return (
     <>
@@ -251,7 +277,7 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
         </div>
 
         <nav className="flex-1 space-y-5 overflow-y-auto">
-          {groups.map((group) => (
+          {visibleGroups.map((group) => (
             <div key={group.label}>
               <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">{group.label}</p>
               <div className="space-y-2">
@@ -261,7 +287,6 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
                     <Link
                       key={item.href}
                       href={item.href}
-                      onMouseDown={() => onNavigate?.()}
                       className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
                         isActive(item.href)
                           ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"
@@ -350,7 +375,7 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
               </div>
 
               <nav className="flex-1 space-y-5 overflow-y-auto pr-0.5">
-                {groups.map((group) => (
+                {visibleGroups.map((group) => (
                   <div key={group.label}>
                     <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">{group.label}</p>
                     <div className="space-y-2">
@@ -361,7 +386,6 @@ export default function StaffSidebar({ onNavigate }: { onNavigate?: () => void }
                             key={item.href}
                             href={item.href}
                             onClick={() => setOpen(false)}
-                            onMouseDown={() => onNavigate?.()}
                             className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
                               isActive(item.href)
                                 ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"

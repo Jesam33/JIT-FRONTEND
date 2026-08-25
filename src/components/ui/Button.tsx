@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "outline";
+type ButtonVariant = "primary" | "secondary" | "outline" | "light";
 
 type ButtonProps = {
   href: string;
@@ -16,6 +16,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     "bg-site-surface-soft text-site-text hover:brightness-105 border-site-border/30",
   outline:
     "bg-transparent text-site-text border-site-border/60 hover:bg-site-text/10",
+  light: "bg-white text-black! hover:brightness-95 border-transparent",
 };
 
 export default function Button({ href, children, variant = "primary" }: ButtonProps) {

@@ -14,6 +14,8 @@ export default function StudentDashboardPage() {
   const [joinMessage, setJoinMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [joining, setJoining] = useState<number | null>(null);
 
   const token = useMemo(() => getToken(), []);
@@ -55,11 +57,20 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (!token) return;
 
+    // Never render an error body as if it were dashboard data: a non-OK
+    // response (e.g. a tenant/auth hiccup that 404s the student lookup) must
+    // surface as an error+retry, not a misleading empty "No course selected"
+    // shell. 401s are already handled upstream (fetchWithTimeout redirects).
+    setLoadError(false);
+    setLoading(true);
     apiFetch(STUDENT_API.dashboard)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Dashboard request failed (${r.status})`);
+        return r.json();
+      })
       .then((p) => { setData(p); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [token]);
+      .catch(() => { setLoadError(true); setLoading(false); });
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (!joinMessage) return;
@@ -109,6 +120,24 @@ export default function StudentDashboardPage() {
   const unreadNotifications = useMemo(() => (data.notifications ?? []).filter((item) => !item.is_read), [data.notifications]);
 
   if (loading) return <LoadingSpinner />;
+
+  if (loadError) {
+    return (
+      <div className="space-y-6 pb-8">
+        <div className="rounded-2xl border border-white/15 bg-black/30 p-8 text-center">
+          <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>Couldn&apos;t load your dashboard</h1>
+          <p className="mt-2 text-sm text-white/70">We hit a snag reaching your course workspace. This is usually temporary.</p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-8 ">

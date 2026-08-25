@@ -18,13 +18,22 @@ export default function TrainingInstituteBanner() {
                 classes, guided materials, and mentorship that helps you move from beginner to confident professional.
               </p>
               <div className="mt-8">
-                  <Link
-                    href="/institute"
-                    className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-red-500"
-                  >
-                    View Courses
-                    <span aria-hidden="true">↗</span>
-                  </Link>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href="/institute"
+                      className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-red-500"
+                    >
+                      View Courses
+                      <span aria-hidden="true">↗</span>
+                    </Link>
+
+                    <Link
+                      href="/signup"
+                      className="inline-flex  items-center gap-2 rounded-full border border-white/10 bg-transparent px-6 py-3 text-sm font-semibold text-site-text transition hover:bg-white/5"
+                    >
+                      Register Your Institute
+                    </Link>
+                  </div>
               </div>
             </div>
 

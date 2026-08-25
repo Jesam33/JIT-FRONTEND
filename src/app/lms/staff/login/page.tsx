@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
+import { tenantHeaders, setTenantCookie } from "@/lib/tenant-client";
+import InactivityNotice from "@/components/InactivityNotice";
+import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
-export default function StaffLoginPage() {
+function StaffLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +22,7 @@ export default function StaffLoginPage() {
 
     const response = await fetch(AUTH_API.staffLogin, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...tenantHeaders() },
       body: JSON.stringify({ email, password }),
     });
 
@@ -32,12 +35,15 @@ export default function StaffLoginPage() {
     }
 
     localStorage.setItem("lms_staff_token", data.token);
+    // Pin the institute the backend authenticated us into (see student login).
+    setTenantCookie(data?.tenant?.slug);
     router.push("/lms/staff/app");
   }
 
   return (
     <section className="section-pad section-divider">
       <div className="container-wide max-w-xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+        <InactivityNotice />
         <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Staff Portal Login</h1>
         <form className="mt-6 space-y-4" onSubmit={login}>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white" required />
@@ -70,5 +76,13 @@ export default function StaffLoginPage() {
         {message ? <p className="mt-4 text-sm text-red-300">{message}</p> : null}
       </div>
     </section>
+  );
+}
+
+export default function StaffLoginPage() {
+  return (
+    <InstitutePublicShell>
+      <StaffLoginForm />
+    </InstitutePublicShell>
   );
 }

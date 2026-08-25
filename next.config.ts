@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         source: "/storage/:path*",
         destination: `${process.env.LARAVEL_BACKEND_URL || "http://localhost:8000"}/storage/:path*`,
       },
+      {
+        source: "/contact/send",
+        destination: `${process.env.LARAVEL_BACKEND_URL || "http://localhost:8000"}/contact/send`,
+      },
     ];
   },
   images: {

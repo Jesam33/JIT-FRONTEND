@@ -1,0 +1,289 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { OWNER_API } from "@/lib/api";
+import { getOwnerToken, ownerAuthHeaders } from "@/lib/owner-client";
+import { tenantLoginPath } from "@/lib/tenant-client";
+
+type Bank = { name: string; code: string };
+
+type PaymentSettings = {
+  payment: {
+    configured: boolean;
+    subaccount_code: string | null;
+    business_name: string | null;
+    bank_code: string | null;
+    bank_name: string | null;
+    account_number_masked: string | null;
+    account_name: string | null;
+  };
+  platform_commission_percent: number;
+  gateway_ready: boolean;
+  banks: Bank[];
+};
+
+const inputClass =
+  "w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition focus:border-white/30 focus:bg-white/10";
+
+export default function PaymentsPage() {
+  const router = useRouter();
+
+  const [data, setData] = useState<PaymentSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  // Link-a-subaccount form (bank-details path).
+  const [businessName, setBusinessName] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(OWNER_API.paymentSettings, { headers: ownerAuthHeaders() });
+      if (res.status === 401 || res.status === 403) {
+        router.replace(tenantLoginPath("owner"));
+        return;
+      }
+      if (res.ok) {
+        const json: PaymentSettings = await res.json();
+        setData(json);
+        setBusinessName(json.payment.business_name ?? "");
+        setBankCode(json.payment.bank_code ?? "");
+      } else {
+        setMsg({ kind: "err", text: `Could not load payment settings (HTTP ${res.status}).` });
+      }
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!getOwnerToken()) {
+      router.replace(tenantLoginPath("owner"));
+      return;
+    }
+    load();
+  }, [load, router]);
+
+  const link = async () => {
+    setMsg(null);
+    if (!businessName.trim() || !bankCode || !accountNumber.trim()) {
+      setMsg({ kind: "err", text: "Enter your business name, bank, and account number." });
+      return;
+    }
+    setSaving(true);
+    try {
+      const bank = data?.banks.find((b) => b.code === bankCode);
+      const res = await fetch(OWNER_API.paymentSettingsUpdate, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
+        body: JSON.stringify({
+          business_name: businessName.trim(),
+          bank_code: bankCode,
+          bank_name: bank?.name ?? null,
+          account_number: accountNumber.trim(),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        router.replace(tenantLoginPath("owner"));
+        return;
+      }
+      if (!res.ok) {
+        setMsg({ kind: "err", text: json?.message || `Could not link payout account (HTTP ${res.status}).` });
+        return;
+      }
+      setMsg({ kind: "ok", text: json?.message || "Payout account linked." });
+      setAccountNumber("");
+      await load();
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const disconnect = async () => {
+    setMsg(null);
+    setSaving(true);
+    try {
+      const res = await fetch(OWNER_API.paymentSettingsUpdate, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
+        body: JSON.stringify({ disconnect: true }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        router.replace(tenantLoginPath("owner"));
+        return;
+      }
+      if (!res.ok) {
+        setMsg({ kind: "err", text: json?.message || `Could not disconnect (HTTP ${res.status}).` });
+        return;
+      }
+      setMsg({ kind: "ok", text: json?.message || "Payout account disconnected." });
+      await load();
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const configured = data?.payment.configured;
+  const commission = data?.platform_commission_percent ?? 0;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold display-gradient sm:text-3xl">Course payments</h1>
+        <Link href="/lms/admin" className="text-sm text-site-muted hover:text-white">
+          ← Dashboard
+        </Link>
+      </div>
+
+      <p className="max-w-2xl text-sm text-site-muted">
+        Link your institute&apos;s own bank so course fees paid by students settle to{" "}
+        <span className="text-white">your account</span> — not the platform. We keep a{" "}
+        <span className="text-white">{commission}%</span> commission on each payment; the rest is yours.
+      </p>
+
+      {msg && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            msg.kind === "ok"
+              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-100"
+              : "border-red-500/30 bg-red-500/10 text-red-200"
+          }`}
+        >
+          {msg.text}
+        </div>
+      )}
+
+      {loading && (
+        <div className="space-y-3">
+          <div className="h-8 w-56 animate-pulse rounded-lg bg-white/10" />
+          <div className="h-64 animate-pulse rounded-[20px] bg-white/[0.04]" />
+        </div>
+      )}
+
+      {!loading && data && !data.gateway_ready && (
+        <div className="rounded-[20px] border border-amber-400/30 bg-amber-400/10 p-6 text-sm text-amber-100">
+          The payment gateway isn&apos;t enabled on this environment yet. You&apos;ll be able to link a
+          payout bank once it&apos;s live.
+        </div>
+      )}
+
+      {/* CONNECTED STATE */}
+      {!loading && data && data.gateway_ready && configured && (
+        <div className="rounded-[20px] border border-emerald-400/25 bg-emerald-400/[0.06] p-6">
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/20">✓</span>
+            Payout account linked
+          </div>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+            {data.payment.business_name && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-site-muted">Business name</dt>
+                <dd className="mt-0.5 text-sm text-white">{data.payment.business_name}</dd>
+              </div>
+            )}
+            {data.payment.bank_name && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-site-muted">Bank</dt>
+                <dd className="mt-0.5 text-sm text-white">{data.payment.bank_name}</dd>
+              </div>
+            )}
+            {data.payment.account_number_masked && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-site-muted">Account number</dt>
+                <dd className="mt-0.5 font-mono text-sm text-white">{data.payment.account_number_masked}</dd>
+              </div>
+            )}
+            {data.payment.account_name && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-site-muted">Account name</dt>
+                <dd className="mt-0.5 text-sm text-white">{data.payment.account_name}</dd>
+              </div>
+            )}
+          </dl>
+          <button
+            onClick={disconnect}
+            disabled={saving}
+            className="mt-6 rounded-full border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:opacity-60"
+          >
+            {saving ? "Working…" : "Disconnect account"}
+          </button>
+          <p className="mt-3 text-xs text-site-muted">
+            After disconnecting, course fees settle to the platform account until you link a bank again.
+          </p>
+        </div>
+      )}
+
+      {/* NOT-CONNECTED STATE — link form */}
+      {!loading && data && data.gateway_ready && !configured && (
+        <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
+          <h2 className="text-lg font-semibold text-white">Link your payout bank</h2>
+          <p className="mt-1 text-sm text-site-muted">
+            We&apos;ll create a secure Paystack payout account for your institute. Fees settle to this
+            bank automatically.
+          </p>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm text-white/80">Business / institute name</label>
+              <input
+                className={inputClass}
+                value={businessName}
+                placeholder="e.g. Bright Future Academy"
+                onChange={(e) => setBusinessName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm text-white/80">Bank</label>
+              <select
+                className={inputClass}
+                value={bankCode}
+                onChange={(e) => setBankCode(e.target.value)}
+              >
+                <option value="">Select your bank…</option>
+                {data.banks.map((b, i) => (
+                  // Paystack's bank list repeats codes (a bank + its USSD/variant
+                  // entries share one code, e.g. 057), so key on code+index — the
+                  // value stays the code, which is what we submit and look up.
+                  <option key={`${b.code}-${i}`} value={b.code} className="bg-[#0b0b0b]">
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm text-white/80">Account number</label>
+              <input
+                className={inputClass}
+                value={accountNumber}
+                inputMode="numeric"
+                placeholder="0123456789"
+                onChange={(e) => setAccountNumber(e.target.value.replace(/[^\d]/g, ""))}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={link}
+            disabled={saving}
+            className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+          >
+            {saving ? "Linking…" : "Link payout account"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

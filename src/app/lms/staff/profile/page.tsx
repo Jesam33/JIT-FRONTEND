@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, okJson } from "../../../../lib/fetch-with-timeout";
 
 type Profile = {
   id: number;
@@ -26,6 +26,8 @@ export default function StaffProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("basic-info");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
@@ -42,8 +44,13 @@ export default function StaffProfilePage() {
 
   useEffect(() => {
     if (!token) return;
+    // Gate on r.ok so a failed load never leaves the form populated from an
+    // error body (blank name/email) — a Save from that state would overwrite
+    // the real profile with empty values. On failure we show error+retry.
+    setLoadError(false);
+    setLoading(true);
     apiFetchStaff(STAFF_API.profile)
-      .then((r) => r.json())
+      .then(okJson)
       .then((data) => {
         setProfile(data);
         setName(data.name ?? "");
@@ -52,8 +59,8 @@ export default function StaffProfilePage() {
         setPhotoUrl(data.profile_photo_url ?? "");
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, [token]);
+      .catch(() => { setLoadError(true); setLoading(false); });
+  }, [token, reloadKey]);
 
   async function saveProfile() {
     setSaving(true); setMessage("");
@@ -96,6 +103,27 @@ export default function StaffProfilePage() {
     return (
       <section className="flex items-center justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      </section>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <section>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold capitalize">Basic info</h1>
+          <p className="mt-1 text-sm text-white/60">Edit and update your profile</p>
+        </div>
+        <div className="rounded-2xl border border-white/15 bg-black/30 p-8 text-center">
+          <p className="text-sm text-white/70">We couldn&apos;t load your profile. This is usually temporary.</p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+          >
+            Try again
+          </button>
+        </div>
       </section>
     );
   }

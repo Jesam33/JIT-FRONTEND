@@ -1,0 +1,1255 @@
+JIT SaaS
+
+Full Product & Functional Specification for Development
+Product concept
+
+JIT SaaS is a multi-tenant platform that allows individuals and organisations to create, operate and
+grow their own branded training institute using JIT's infrastructure.
+The important distinction is:
+JIT is not a marketplace like Udemy where people simply upload courses.
+A customer using JIT SaaS gets the infrastructure to operate their own school.
+For example, someone could create:
+PrimeTech Academy
+Another customer could create:
+Lagos School of Data
+Another:
+NextGen Cyber Academy
+All three schools run on JIT SaaS, but their students experience them as separate institutes.
+Each institute can have its own:
+
+Identity                                          People
+
+    Name                                              Courses
+    Logo                                              Students
+    Colours                                           Lecturers
+    Public website                                    Admission Specialists
+
+Operations                                        Outcomes
+
+    Applications                                      Assignments
+    Payments                                          Attendance
+    Classes                                           Certificates
+    Learning materials                                Communication
+                                                      Reports
+                                                      Revenue
+
+JIT owns and operates the underlying technology.
+The customer operates their institute.
+A useful internal principle for development is:
+
+One platform. Many independent institutes.
+1. TERMINOLOGY -- THESE TERMS MUST REMAIN
+CONSISTENT
+
+Developers, designers and product staff should use the same terminology everywhere.
+Do not use different names for the same thing on different screens.
+
+Official term         Meaning
+Platform              The entire JIT SaaS product
+Organisation          A school/training business using JIT SaaS
+Platform Admin        JIT's internal administrator
+Organisation Owner    Person who owns the Organisation account
+Organisation Admin    Staff member authorised to administer an Organisation
+Lecturer              Person responsible for teaching Students
+Student               Person studying through an Organisation
+Admission Specialist  Person authorised to recruit/refer Students for an Organisation
+Course                Training programme offered by an Organisation
+Batch                 A specific intake of a Course
+Track                 A group of Students within a Batch assigned for teaching
+Module                Ordered section/chapter of a Course
+Lesson                Individual learning activity/content inside a Module
+Material              Video, PDF, document, slide, text or link used for learning
+Live Class            Scheduled real-time class
+Task                  Assignment given to Students
+Submission            Student's response to a Task
+Application           Registration submitted by someone wanting to join a Course
+Enrolment             Approved relationship giving a Student access to a Course
+Referral Code         Unique code belonging to an Admission Specialist
+Commission            Money earned by an Admission Specialist from an eligible admission
+Attendance Record     Record showing whether/how long a Student attended a Live Class
+Subscription          Amount an Organisation pays JIT to use the SaaS
+Course Payment        Amount a Student pays an Organisation for a Course
+
+Terminology specifically prohibited
+
+Do not use:                                 Use instead:
+
+Teacher                                     Lecturer
+Agent                                       Admission Specialist
+
+This applies to:
+
+    Frontend
+    Backend naming
+    Emails
+    Notifications
+    Reports
+    Documentation
+    Database/API concepts where practical.
+1. UNDERSTANDING THE THREE
+DIFFERENT BUSINESSES INSIDE JIT
+
+There are three financial/operational relationships that developers must not confuse.
+
+Relationship 1 -- JIT        Relationship 2 --             Relationship 3 --
+and the                      Student and                   Organisation and
+Organisation                 Organisation                  Admission Specialist
+
+The Organisation pays JIT    A Student pays the            The Admission Specialist
+for access to the software.  Organisation for training.    brings a Student to the
+                                                           Organisation and earns
+Example: PrimeTech            Example: Student pays        Commission.
+                              150,000 PrimeTech
+ Academy pays JIT SaaS                                     Example: PrimeTech
+                             Academy
+subscription                                                Academy owes
+                             This is Course revenue.
+This is SaaS revenue.                                      Admission Specialist
+                                                           15,000
+
+These must be separate accounting concepts in the system.
+1. MULTI-TENANT ARCHITECTURE
+
+This is the most important architectural requirement.
+Currently JIT may behave like one training institute.
+The SaaS must introduce an Organisation layer above the existing system.
+Conceptually:
+
+   JIT SAAS PLATFORM
+
+  Jorsas Institute of Technology
+   Students
+   Lecturers
+   Courses
+   Admission Specialists
+   Payments
+   Classes
+ 
+  PrimeTech Academy
+   Students
+   Lecturers
+   Courses
+   Admission Specialists
+   Payments
+   Classes
+ 
+  Lagos School of Data
+
+    Students
+    Lecturers
+    Courses
+    Admission Specialists
+    Payments
+    Classes
+
+Each Organisation is called a tenant technically.
+Almost every Organisation-owned database record should therefore contain:
+
+   organisation_id
+
+Example:
+
+   student_id: 567
+   organisation_id: 23
+
+The Organisation ID tells JIT: This Student belongs to Organisation 23.
+This principle applies to:
+
+    Students
+    Lecturers
+    Courses
+    Applications
+    Batches
+    Tracks
+    Classes
+    Tasks
+    Payments
+    Admission Specialists
+    Commissions
+    Chats
+    Announcements
+    Certificates etc.
+Critical security requirement
+
+An Organisation must NEVER be able to access another Organisation's private information.
+If:
+PrimeTech Academy = Organisation 23
+and:
+Lagos School of Data = Organisation 31
+Organisation 23 cannot request:
+
+   /api/organisation/31/students
+
+and receive those Students.
+The backend must reject it.
+
+         Hiding the button on the frontend is not sufficient security.
+1. JORSAS INSTITUTE OF
+TECHNOLOGY BECOMES THE FIRST
+CUSTOMER
+
+Do not build special code saying:
+
+   if organisation == JIT
+
+Jorsas Institute of Technology should simply exist as:
+
+   Organisation ID: 1
+   Name: Jorsas Institute of Technology
+
+This is important.
+If the architecture works properly for JIT, it should work exactly the same way when the 500th
+Organisation signs up.
+1. NEW ORGANISATION SIGN-UP
+
+The SaaS should eventually allow a training provider to visit the JIT SaaS website and select:
+START YOUR INSTITUTE
+They create an account.
+Information:
+
+    First Name
+    Last Name
+    Email
+    Phone
+    Password
+Then:
+Create Your Institute
+    Institute Name -- Example: PrimeTech Academy
+    Institute URL -- Example: primetech
+The system generates:
+platform.com/primetech
+Later, higher subscription plans could support:
+learn.primetech.com
+1. ORGANISATION SETUP WIZARD
+
+After creating the account, do not immediately throw the user into a complicated Admin Dashboard.
+
+Give them a guided setup.
+
+01                         02                                  03
+
+Name Your Institute        Brand Your Institute                Institute Information
+
+Institute name.            Upload: Logo. Choose: Primary       Description, Email, Phone,
+                           colour, Secondary colour.           WhatsApp, Address, Website,
+                                                               Social media.
+
+04                         05                                  06
+
+Create Your First Course Configure Payments                    Add Your First Lecturer
+
+Course name, Description, Price, Connect supported payment     Name, Email, Course/Track
+                                                               assignment.
+Learning mode, Capacity.   account.
+
+07
+
+Publish
+
+ Then show: YOUR INSTITUTE IS LIVE -- Provide its public URL.
+1. ORGANISATION PUBLIC WEBSITE
+
+Every Organisation gets its own public-facing website.
+This is effectively its digital school.
+It must NOT look like the customer is merely selling courses on JIT.
+It should primarily display the Organisation's identity.
+For example:
+PrimeTech Academy
+Learn practical technology skills from industry professionals.
+Then:
+Available Courses
+Course cards. Example:
+Data Analytics Professional Programme
+Learn practical data analytics using Excel, SQL, Power BI and Python.
+120,000 | LIVE | 12 seats remaining | VIEW COURSE
+1. COURSE AVAILABILITY & DELIVERY
+
+Course Status                                Course Delivery
+
+    DRAFT -- Not publicly visible.           Currently JIT has:
+    PUBLISHED -- Public and available.           Live
+    INACTIVE -- Temporarily unavailable.         Pre-recorded
+    ARCHIVED -- Historical Course no longer
+    being offered.                           Keep these.
+                                             But architect it so we can later support:
+
+                                                 Hybrid
+                                                 Self-paced
+                                             Do not design the database in a way that makes
+                                             adding another delivery mode difficult.
+1. COURSE INFORMATION & COURSE
+PAGE
+
+Course Information                             Course Page Example
+
+Organisation Admin creates a Course. Required  Data Protection Professional Programme
+information should include:                    LIVE | 150,000
+                                               About This Course -- Full description.
+    Course Name                                What You Will Learn -- Learning outcomes.
+    Course Image                               Requirements -- Prerequisites.
+    Short Description                          Course Information
+    Full Description
+    Requirements                                   Duration: 12 weeks
+    Price                                          Mode: Live
+    Delivery Mode                                  Next intake: September 2026
+    Pass Mark                                      Seats available: 12
+    Course Duration                            Then: REGISTER NOW
+    Maximum Students where appropriate
+    Certificate Available: Yes/No
+    Status
+1. COURSE, BATCH AND TRACK MUST
+NOT BE CONFUSED
+
+This distinction is very important.
+
+Course                               Batch                        Track
+
+The academic product.                A particular intake of that  A teaching group inside a
+                                     Course.                      Batch. Imagine 120
+Example: Data Protection                                          Students register. One
+Professional Programme               Example: September 2026      Lecturer should not
+                                     Batch                        necessarily teach all 120.
+The Course could exist for
+five years.                          Another could be: January    Track A -- 40 Students --
+                                     2027 Batch                   Lecturer: Sarah
+
+                                     Both belong to the same      Track B -- 40 Students --
+                                     Course.                      Lecturer: John
+
+                                                                  Track C -- 40 Students --
+                                                                  Lecturer: Michael
+
+                 Batch                                            Tracks & People
+
+September 2026 intake                                             Track A, B, C; lecturers and
+                                                                  students
+
+                                                                  Core Course
+
+                                                                  Data Protection Professional
+                                                                  Programme
+1. STUDENT REGISTRATION
+
+When someone chooses a Course, they complete an Application.
+
+Default fields:                 Qualification Level (Nigerian
+                                implementation):
+    First Name
+    Last Name                       SSCE/WAEC
+    Date of Birth                   GCE O-Level
+    Qualification Level             ND/OND
+    Phone                           NCE
+    Email                           HND
+    WhatsApp Number                 Bachelor's
+    Learning Mode                   PGD
+    Referral Code -- optional.      Master's
+                                    PhD
+                                    Professional Certification
+                                    Other
+
+However, because this is SaaS, these fields should eventually become configurable.
+A training provider in another country may not use WAEC or HND.
+1. FUTURE REGISTRATION FORM
+BUILDER
+
+Organisations should eventually be able to add custom questions.
+
+Examples:
+
+    Do you currently work in technology?
+    How many years of experience do you have?
+    Upload your CV.
+    Why do you want to join this programme?
+
+Field types:
+
+Text      Long Text                                                    Number
+
+Dropdown  Radio                                                        Checkbox
+
+Date      File Upload                                                  Yes/No
+
+This means JIT can serve many different types of training institutes.
+1. REGISTRATION VALIDATION
+
+Before creating a valid Application, the backend checks:
+
+       Is the Organisation active?
+       Is the Course published?
+       Is registration open?
+       Is the Batch accepting Students?
+       Are seats available?
+       Does the selected learning mode exist?
+       Is the email valid?
+       Is the Referral Code valid?
+
+If Course capacity is reached:
+THIS COURSE IS FULL
+Then: JOIN WAITLIST
+
+         Do not accept payment for a seat that does not exist.
+1. APPLICATION IS DIFFERENT FROM
+STUDENT
+
+Someone who fills the form is not automatically a Student.
+They become an: Applicant
+The Application exists first.
+Example:
+
+Application Name: John Doe
+Course: Data Analytics
+Status: PENDING_PAYMENT
+
+After payment/approval, the system creates or links the Student and creates an Enrolment.
+This distinction is essential for proper reporting.
+
+Application Statuses
+
+Use standard backend statuses:
+
+PENDING_PAYMENT             PAYMENT_FAILED                  PENDING_REVIEW
+
+APPROVED                    DECLINED                        WAITLISTED
+
+  CANCELLED
+
+Do not invent new variations such as: Waiting, Awaiting, Pending Approval, Waiting Approval
+throughout different parts of the backend.
+Frontend can translate technical statuses into friendly wording.
+1. PAYMENT
+
+For a paid Course, CTA:
+REGISTER & PAY 150,000
+Process:
+
+         Submit App
+         Process Payment
+         Confirm Enrollment
+         Onboard Student
+1. PAYMENT SECURITY & DUPLICATE
+PAYMENT PROTECTION
+
+Payment Security                               Duplicate Payment Protection
+
+The user's browser returning to: Payment       Payment processing must be idempotent.
+Successful is NOT sufficient evidence that
+payment happened.                              Meaning: If Paystack accidentally sends the
+                                               same webhook three times, JIT must not:
+Paystack's server-to-server
+verification/webhook must confirm it.              Create three Students
+                                                   Create three Enrolments
+The webhook signature must be validated.           Consume three seats
+                                                   Create three Commissions
+This prevents someone from manually visiting:      Send three setup emails.
+/payment/success and gaining Course access.
+                                               The transaction reference should only be
+                                               processed successfully once.
+1. FREE COURSES
+
+If:                                                                           Student Created
+
+   price = 0                                                                  Create or link student
+                                                                                        record
+Paystack should not be required.
+Flow:
+
+                        Application
+
+                            Submit free course
+                                    request
+
+                                                  Approved                                               Enrolment
+                                                                                                           Created
+                                                          Verify and approve
+                                                                application                           Register student for
+                                                                                                               course
+Still create an Application.
+
+Still create an Enrolment.
+
+This keeps reporting consistent.
+1. STUDENT ACCOUNTS & STUDENT
+DASHBOARD
+
+Student Accounts                                Student Dashboard
+
+The same person should not need five different  The Student should immediately understand:
+accounts for five Courses.
+                                                    What am I studying?
+Example: Benjamin Idris -- Account:                 What should I do next?
+benjamin@example.com                                How am I performing?
+
+Enrolments:                                     Example: Good afternoon, Benjamin
+
+    Data Protection                             Data Protection Professional Programme --
+    Cybersecurity                               Progress: 6 of 8 Modules completed
+    AI Governance
+    UI/UX                                       NEXT CLASS: UK GDPR Principles -- Today 7:00
+                                                PM -- JOIN CLASS
+The Student logs in once and sees: MY
+COURSES -- All active Enrolments.               TASKS: DPIA Assignment -- Due Friday --
+                                                SUBMIT
+
+                                                RECENT FEEDBACK: 82% PASS -- Lecturer: Good
+                                                analysis. Review the section on legitimate
+                                                interests.
+1. STUDENT NAVIGATION & MODULE
+STRUCTURE
+
+Student Navigation  Module Structure Example
+
+Keep it simple:     Data Protection Professional Programme
+
+    Dashboard           Module 1 -- Introduction to Data Protection
+    My Courses          Module 2 -- UK GDPR Principles
+    Modules             Module 3 -- Lawful Bases
+    Classes             Module 4 -- Data Subject Rights
+    Materials           Module 5 -- DPIAs
+    Tasks               Module 6 -- Data Breaches
+    Grades              Module 7 -- International Transfers
+    Attendance          Module 8 -- Final Assessment
+    Chat
+    Profile
+1. SEQUENTIAL LEARNING
+
+JIT currently requires Students to progress through Modules sequentially.
+Keep this.
+
+   Example: Module 1 | Module 2 | Module 3
+
+But developers should not simply unlock Module 2 because the Student clicked Module 1.
+Each Module should have configurable completion requirements.
+Possible requirements:
+
+WATCH_LESSON       ATTEND_CLASS                                 COMPLETE_TASK
+
+ACHIEVE_PASS_MARK  MANUAL_APPROVAL
+
+Example: Module 1 requires:
+
+    Watch three videos
+    Attend one Live Class
+    Submit assignment
+    Score at least 70%.
+
+Only after those requirements are satisfied: MODULE 2 UNLOCKED
+1. MATERIALS
+
+Lecturers should be able to add:
+
+Video   PDF                       Word document
+
+Slides  Text                      External Link
+
+Other permitted files
+
+  Materials belong to: Organisation Course Module/Lesson.
+
+Access must be checked server-side.
+
+         A Student from another Organisation must not be able to obtain the file simply by guessing
+         its URL.
+1. LIVE CLASSES
+
+Lecturer creates:
+Create Live Class
+
+Class Details      Scheduling
+
+    Course             Date
+    Batch              Start Time
+    Track              Duration
+    Class Title        Meeting Provider -- Example: Zoom
+    Description
+
+Students assigned to the Track automatically see the class.
+The Lecturer should not manually select 40 Students every time.
+1. ATTENDANCE
+
+Where Zoom provides participation information, JIT should retrieve:
+    Join Time
+    Leave Time
+    Minutes Attended
+    Class Duration
+
+Then calculate attendance.
+Example:
+Class duration: 120 minutes | Student attended: 108 minutes | Attendance: 90% | Status: PRESENT
+The Organisation should configure the minimum attendance threshold.
+Example: Minimum attendance = 70%
+1. TASKS & STUDENT SUBMISSION
+
+Lecturer creates a Task:                     Student Submission
+
+    Task Title                               Student opens Task. Uploads:
+    Instructions
+    Course                                       PDF
+    Module                                       Word document
+    Track                                        Text response
+    Due Date                                     or another allowed submission type.
+    Maximum Score
+    Pass Mark                                Then: SUBMIT TASK
+    Submission Type
+    Attachments                              Submission records:
+
+Example: DPIA Assessment -- Complete a DPIA      Student
+for the scenario provided. Maximum: 100 |        Task
+Pass Mark: 70 | Due: Friday 11:59 PM.            Submission Time
+                                                 File
+                                                 Status
+                                                 Grade
+                                                 Lecturer Feedback.
+1. GRADING
+
+Lecturer opens: SUBMISSIONS TO GRADE
+Example:
+Benjamin Idris -- DPIA Assessment -- Submitted: 18 August
+Then:
+Score: 82 / 100
+Feedback: Strong assessment. Review the section on residual risk.
+SAVE GRADE
+Student receives notification:
+Your DPIA Assessment has been graded.
+Result: 82% -- PASS
+1. LECTURER ROLE & LECTURER
+DASHBOARD
+
+Lecturer Role                                   Lecturer Dashboard
+
+Lecturer is academic staff.                     Instead of displaying meaningless numbers,
+                                                answer:
+Lecturer Dashboard should contain:              WHAT NEEDS YOUR ATTENTION?
+
+    Dashboard                                       Next Class -- Today 7 PM
+    My Courses                                      12 Submissions Awaiting Grading
+    My Tracks                                       3 Student Messages
+    Students                                        5 Students Falling Behind
+    Classes                                     Then: YOUR TRACKS
+    Modules
+    Materials                                   Data Protection -- Track A
+    Tasks                                       32 Students | Average Progress: 67% |
+    Submissions                                 Average Attendance: 81%
+    Attendance
+    Chat
+
+The Lecturer should NOT see every Student in
+the Organisation.
+
+If Lecturer Sarah teaches Track A: Sarah sees
+Track A Students. She should not automatically
+see Track B Students.
+1. CHAT & ANNOUNCEMENTS
+
+Chat                                             Announcements
+
+There are two communication levels.              Organisation Admin or authorised Lecturer can
+                                                 create:
+Track Group Chat
+                                                 Tomorrow's class has moved to 8 PM.
+Participants: Assigned Lecturer(s) and Students
+belonging to that Track.                         Audience:
+
+Support: Messages, @mentions, Files, Links.          Entire Organisation
+                                                     Course
+Private Lecturer Chat                                Batch
+                                                     Track
+ Student assigned Lecturer.                          Specific group where appropriate.
+
+A Student should not automatically be able to    Student receives it in: Dashboard,
+privately message every Lecturer in the          Notifications, and optionally email/push
+Organisation.                                    depending on configuration.
+1. ORGANISATION ADMIN
+
+This is the person operating the school.
+Recommended navigation:
+
+DASHBOARD              ADMISSIONS              ACADEMIC
+
+                       Applications, Waitlist  Courses, Batches, Tracks,
+                                               Classes, Modules
+
+PEOPLE                 LEARNING                FINANCE
+
+Students, Lecturers,   Tasks, Submissions,     Payments, Commissions,
+Admission Specialists  Attendance,             Withdrawals
+                       Announcements
+
+COMMUNICATION          REPORTS                 SETTINGS
+
+Messages,              Analytics, Exports      Institute Profile, Branding,
+Email/Notifications                            Payments, Users &
+                                               Permissions, Integrations,
+                                               Subscription
+1. ORGANISATION DASHBOARD
+
+Show business-critical information.
+
+STUDENTS                             ADMISSIONS                FINANCE
+
+    Active Students                      Applications              Revenue This Month
+    New Students                         Pending Applications      Revenue This Year
+    Completed Students                   Approval Rate             Outstanding/Failed
+    At-risk Students                     Enrollment Rate           Payments
+                                                                   Admission Specialist
+                                                                   Commissions
+
+ACADEMIC                             OPERATIONS
+
+    Average Attendance                   Upcoming Classes
+    Course Completion Rate               Courses Near Capacity
+    Average Grade                        Submissions Awaiting Grading
+    Popular Courses
+1. ADMISSION SPECIALIST NETWORK
+
+This should be treated as a major JIT differentiator, not a tiny referral feature.
+
+An Organisation can enable: Admission Specialist Network
+
+People can apply: BECOME AN ADMISSION SPECIALIST
+
+Application includes:
+
+    Name
+    Email
+    Phone
+    WhatsApp
+    Location
+    Experience
+    Reason for applying
+
+Organisation Admin reviews.
+
+Statuses:
+
+PENDING   APPROVED
+
+REJECTED  SUSPENDED
+1. APPROVED ADMISSION SPECIALIST
+& DASHBOARD
+
+After approval, generate:                      Admission Specialist Dashboard
+
+Referral Code                                  Welcome, Benjamin
+Example: BEN472                                YOUR REFERRAL CODE: BEN472 -- COPY
+Also generate a referral URL:
+platform.com/primetech/course/data-analytics?  PERFORMANCE
+ref=BEN472                                         Students Referred: 24
+They receive their own dashboard.                  Successful Admissions: 17
+                                                   Sales Generated: 2,430,000
+                                                   Commission Earned: 243,000
+                                                   Available: 160,000
+                                                   Pending: 83,000
+
+                                               Then: REQUEST WITHDRAWAL
+1. STUDENT DISCOUNT & ADMISSION
+SPECIALIST COMMISSION
+
+Student Discount                                Admission Specialist Commission
+
+Organisation controls the percentage.           Organisation controls Commission percentage.
+Example: Course: 100,000 | Student discount:
+5% | Valid Referral Code: Student pays: 95,000  Example: Student successfully pays: 95,000 |
+                                                Commission: 10% | Admission Specialist earns:
+Do not hard-code 5%.                            9,500
+One Organisation might use: 10%. Another: 0%.
+Another: 2.5%.                                  I recommend calculating Commission on the
+                                                actual amount successfully paid, not the
+                                                original list price.
+
+                                                However, the business can choose a different
+                                                rule later, so calculation policy should be
+                                                configurable/centralised rather than scattered
+                                                across code.
+1. HISTORICAL COMMISSION MUST
+NEVER CHANGE & COMMISSION
+STATUS
+
+Historical Commission Must Never            Commission Status
+Change
+                                            Use:
+Suppose today: Commission = 10%. Benjamin
+earns: 9,500.                                   PENDING
+                                                AVAILABLE
+Next month Organisation changes Commission      WITHDRAWAL_REQUESTED
+to: 15%.                                        PAID
+Benjamin's historical Commission remains:       CANCELLED
+9,500.
+Therefore every Commission should store:     Example: Payment received Commission:
+
+   commission_rate_at_transaction           PENDING. After Organisation's chosen
+   commission_amount                        clearance/refund period: AVAILABLE.
+                                            Admission Specialist requests withdrawal:
+Never calculate old Commissions from the    WITHDRAWAL_REQUESTED. Admin processes:
+Organisation's current settings.            PAID.
+1. PLATFORM ADMIN & PLATFORM
+ADMIN DASHBOARD
+
+Platform Admin                          Platform Admin Dashboard
+
+This is JIT's own control centre.       JIT SaaS
+
+The Platform Admin does NOT manage one      Active Organisations: 247
+school. It manages the entire SaaS.         Trial Organisations: 31
+                                            Suspended Organisations: 6
+Navigation:                                 Students Across Platform: 38,420
+                                            Lecturers: 2,310
+    OVERVIEW                                Admission Specialists: 5,902
+    ORGANISATIONS                           Monthly SaaS Revenue: XX,XXX,XXX
+    SUBSCRIPTIONS
+    PLANS                               Then: New Organisations, Subscription churn,
+    PLATFORM REVENUE                    Plan distribution, Platform usage, Storage,
+    USAGE                               Payment-processing statistics where
+    SUPPORT                             applicable.
+    SECURITY
+    AUDIT LOGS
+    FEATURE FLAGS
+    SYSTEM SETTINGS
+1. ORGANISATION MANAGEMENT
+
+Platform Admin opens: PrimeTech Academy
+See:
+
+Organisation Details                     Then actions:
+
+    Owner                                    View
+    Plan                                     Change Plan
+    Subscription status                      Extend Trial
+    Number of Students                       Suspend
+    Lecturers                                Reactivate
+    Courses                                  Support Access
+    Storage
+    Created Date
+    Last Activity
+
+Any support impersonation feature must be clearly logged.
+1. SAAS SUBSCRIPTION & PLAN
+ENTITLEMENTS
+
+SaaS Subscription                                 Plan Entitlements
+
+Organisation pays JIT to use the Platform.        Plans should control capabilities. Example:
+Do not mix this with Student Course payments.
+Plans could be:                                       max_active_students
+                                                      max_lecturers
+    STARTER -- Small training providers.              max_courses
+    GROWTH -- Growing institutes.                     max_storage
+    PRO -- Established academies.                     admission_specialist_network
+    ENTERPRISE -- Large organisations.                zoom_integration
+Exact pricing can be decided commercially later.      advanced_reports
+                                                      custom_domain
+                                                      white_label
+                                                      api_access
+                                                      priority_support
+
+                                                  Do NOT build: if subscription == "Pro" allow
+                                                  Zoom everywhere. Instead:
+                                                  organisation.features.zoom = true or an
+                                                  equivalent central entitlement service. This
+                                                  allows plans to change without rewriting the
+                                                  product.
+1. BRANDING & CUSTOM DOMAIN
+
+Branding                                      Custom Domain -- Later/Higher
+                                              Plan
+Organisation should control:
+                                              Standard:
+    Logo                                      jit-domain.com/primetech
+    Primary Colour                            Premium:
+    Secondary Colour                          learn.primetechacademy.com
+    Institute Name                            Enterprise may remove: Powered by JIT
+    Favicon eventually                        This becomes a valuable SaaS upsell.
+    Email sender branding where technically
+    available
+    Certificate branding
+    Public Website
+    Student Portal
+    Lecturer Portal
+
+The user should feel they are attending:
+PrimeTech Academy -- not: JIT University
+Marketplace
+
+JIT may display: Powered by JIT -- depending
+on subscription level.
+1. CERTIFICATES
+
+Add this as an important part of the SaaS roadmap.
+
+Organisation creates certificate template.
+
+Contains:
+
+    Organisation Logo
+    Student Name
+    Course Name
+    Completion Date
+    Certificate Number
+    Lecturer/Director Signature
+    QR Code
+    Verification URL.
+
+Example: Certificate ID: PTA-DATA-2026-00421
+
+Employer scans QR. JIT verifies:
+
+VALID CERTIFICATE
+
+    Student: Benjamin Idris
+    Course: Data Analytics Professional Programme
+    Organisation: PrimeTech Academy
+    Completed: 12 December 2026.
+1. ADMISSIONS CRM &
+COMMUNICATION AUTOMATION
+
+Admissions CRM -- Important Next                Communication Automation
+Evolution
+                                                Organisations should eventually create
+Current system begins mainly at Application.    automatic communications. Examples:
+
+Eventually add: Lead -- because someone may         Application Received -- Thank you for
+be interested before registering.                   applying to PrimeTech Academy.
+                                                    Payment Successful -- Your payment has
+Pipeline:                                           been confirmed.
+                                                    Admission Approved -- Congratulations.
+    LEAD                                            You have been admitted.
+    CONTACTED                                       Class Reminder -- Your class begins
+    APPLICATION STARTED                             tomorrow at 7 PM.
+    APPLICATION SUBMITTED                           Missed Class -- We noticed you missed
+    PAYMENT PENDING                                 today's class.
+    ADMITTED                                        Assignment Reminder -- Your assignment
+    ENROLLED                                        is due tomorrow.
+                                                    Course Completed -- Congratulations on
+This makes JIT useful for actually growing a        completing your programme.
+school, not merely teaching existing Students.
+                                                Channels can later include: Email, Push
+Admission Specialists should eventually         notification, SMS, WhatsApp integrations.
+contribute Leads into this pipeline.
+1. ANALYTICS
+
+JIT SaaS should not only answer: How many Students do I have?
+It should answer: How healthy is my training business?
+
+Revenue                        Admissions                      Academic
+
+    Revenue by Course              Applications                    Attendance Rate
+    Revenue by Batch               Conversion Rate                 Completion Rate
+    Revenue by month               Admission Specialist            Average Score
+    Average Student value          conversions                     Task Submission Rate
+                                   Registration
+                                   abandonment
+
+Course Performance             Admission Specialist
+                               Performance
+    Most Popular Course
+    Highest Revenue Course         Top Admission Specialist
+    Highest Completion Course      Students Referred
+    Highest Dropout Course         Revenue Generated
+                                   Conversion Rate
+                                   Commission Paid.
+1. DATA MODEL -- HIGH LEVEL
+
+The developers should expect entities roughly like:
+
+Core                                                 Academic
+
+    Organisation                                         Course
+    OrganisationUser                                     Batch
+    Plan                                                 Track
+    Subscription                                         Module
+                                                         Lesson
+                                                         Material
+
+People                                               Learning
+
+    Application                                          LiveClass
+    Student                                              AttendanceRecord
+    Enrolment                                            Task
+    Lecturer                                             Submission
+    LecturerAssignment                                   Grade
+    AdmissionSpecialist
+
+Finance                                              Communication
+
+    Referral                                             Conversation
+    Commission                                           ConversationMember
+    Withdrawal                                           Message
+    Payment                                              Announcement
+    PaymentTransaction                                   Notification
+                                                         Certificate
+                                                         AuditLog
+
+This is conceptual. Developers may normalise or structure it appropriately.
+But the business meanings must remain consistent.
+1. EVENT-DRIVEN BUSINESS LOGIC &
+COURSE CAPACITY
+
+Event-Driven Business Logic                   Course Capacity
+
+Do not create one enormous function doing     Capacity should belong primarily to the
+everything.                                   intake/Batch where appropriate.
+
+Example event: PAYMENT_CONFIRMED              Example: Course: Data Analytics | September
+                                              Batch: 50 seats.
+Listeners/actions:
+                                              Current Enrolments: One Student successfully
+    Mark Payment Paid                         pays. Enrolments: Status: FULL
+    Approve Application
+    Find/Create Student                       The next person sees: This intake is full. Join
+    Create Enrolment                          the waitlist.
+    Consume Seat
+    Create Commission                         Payment and seat allocation must be designed
+    Send Welcome Email                        to avoid two people buying the final seat
+    Create Audit Log                          simultaneously.
+
+Another: TASK_GRADED                          This requires server-side concurrency
+                                              protection/transaction logic.
+    Update Student Progress
+    Check Module Requirements
+    Unlock Next Module
+    Notify Student
+
+This makes the system easier to maintain and
+scale.
+1. WAITLIST & REFUNDS AND
+COMMISSIONS
+
+Waitlist                                      Refunds and Commissions
+
+If full: Student can submit:                  This must eventually be considered.
+    Name
+    Email                                     Example: Student pays. Admission Specialist
+    Phone/WhatsApp.                           receives pending Commission. Student is
+                                              refunded.
+Waitlist status.
+                                              The Commission should not become payable.
+If seat becomes available: Organisation can
+invite Student.                               Therefore: Payment: REFUNDED |
+Future automation: A place is now available.  Commission: CANCELLED
+Complete your registration within 24 hours.
+                                              If Commission had already been paid, the
+                                              business needs a clawback/negative balance
+                                              policy.
+
+                                              This should be accounted for architecturally
+                                              even if full automation comes later.
+1. AUDIT LOG & ROLE-BASED ACCESS
+CONTROL
+
+Audit Log                                     Role-Based Access Control
+
+Sensitive administrative actions should be    Never depend solely on the menu.
+recorded.
+                                              Example: A Lecturer may not see: Finance. But
+Example:                                      if the Lecturer manually calls: /api/payments --
+                                              the server must reject it.
+   18 Aug 2026 14:32
+   Admin: Sarah James                         Permissions must exist server-side.
+   Action: Changed Student grade
+   Old: 68                                    Future roles may include:
+   New: 82
+                                                  Academic Manager
+Other logged events:                              Admissions Manager
+                                                  Finance Officer
+    Student deleted/suspended                     Assessor
+    Lecturer added/removed                        Support Officer.
+    Payment manually reviewed
+    Commission changed                        Therefore build permissions flexibly enough to
+    Withdrawal approved                       expand.
+    Course price changed
+    Organisation suspended
+    Role changed
+    Support impersonation started.
+
+This is important for security, disputes and
+accountability.
+1. PRIVACY AND DATA SECURITY,
+SUSPENSION & FEATURE FLAGS
+
+Privacy and Data            What Happens If an           Feature Flags
+Security                    Organisation Is
+                            Suspended?                   JIT Platform Admin should
+At minimum:                                              be able to switch features
+                            Do NOT delete the            on/off.
+    HTTPS                   Organisation.                Example:
+    Password hashing
+    Secure session/token    Set: organisation_status =      ZOOM_INTEGRATION
+    handling                SUSPENDED                       = TRUE
+    Tenant isolation                                        ADMISSION_SPECIALIS
+    Role-based access       Platform policy then            T_NETWORK = TRUE
+    Secure file access      controls: Public website        CERTIFICATES = TRUE
+    Paystack signature      availability, Admin login,      AI_COURSE_BUILDER
+    validation              Student access, Lecturer        = FALSE
+    Rate limiting           access, Payment
+    Audit logging           acceptance.                  Feature flags are useful for
+    Expiring                                             controlled releases.
+    password/setup links    Data remains preserved.
+    Controlled data export
+    Controlled deletion     Reactivation should restore
+    Backup/recovery         the Organisation without
+    strategy                reconstructing its
+    Appropriate privacy     database.
+    rights handling.
+
+Because Organisations will
+hold Student personal
+information, privacy must
+be designed into the
+platform rather than added
+after launch.
+1. AI -- FUTURE, NOT MVP BLOCKER
+
+Once the core SaaS works properly, JIT can introduce AI.
+Potential features:
+
+AI Course Builder            AI Quiz Generator            AI Lecturer
+                                                          Assistant
+Organisation enters: Build   Generate questions from
+an eight-week beginner       learning materials.          Help draft feedback.
+Data Analytics programme.
+
+JIT proposes: Modules,
+Lessons, Learning
+objectives, Tasks, Quizzes.
+
+Lecturer reviews before
+publishing.
+
+AI Student Support                      At-Risk Student Detection
+
+Answer questions using approved Course  Example: 14 Students may be at risk of
+materials.                              dropping out.
+
+                                        Reasons: Missed two classes, Three overdue
+                                        Tasks, No LMS activity for seven days.
+
+                                        The Organisation can intervene.
+1. WHAT JIT SAAS SHOULD NOT
+BECOME
+
+Do not design it primarily as:
+Upload a video and sell a course.
+That puts JIT directly into a crowded LMS/course-marketplace category.
+The vision is bigger:
+
+JIT IS AN OPERATING SYSTEM FOR TRAINING INSTITUTES.
+
+It should manage the journey:                                               Teach
+
+                            Attract                                    Deliver engaging,
+                                                                           just-in-time
+                            Draw learners with                             instruction
+                            targeted outreach
+
+                                                       Enrol                                  Certify
+
+                                                Convert interest into                     Validate skills and
+                                                 registered learners                      issue credentials
+1. THE ADMISSION SPECIALIST
+NETWORK IS A KEY
+DIFFERENTIATOR
+
+Most LMS products begin after the Student has already been acquired.
+
+JIT can help the Organisation find Students as well.
+
+That means:             02                                        03
+
+01                      Organisation recruits                     Admission Specialists
+                        Admission Specialists.                    find prospective
+Organisation creates                                              Students.
+Courses.
+
+04                      05                                        06
+
+Students receive        Organisation gets                         Admission Specialists
+appropriate discounts.  enrolments.                               earn Commission.
+
+07
+
+JIT manages the entire process.
+
+That is much more powerful than simply: Create an online course.
+1. RECOMMENDED DEVELOPMENT
+ORDER
+
+Do not attempt every future feature simultaneously.
+
+PHASE 1 -- Convert Current JIT                       PHASE 2 -- Public Website +
+Into Multi-Tenant SaaS                               Admissions
+
+Build: Organisation, Organisation Owner,             Convert existing public Course functionality
+Platform Admin, Organisation Admin, Tenant           to Organisation-specific pages.
+isolation, Organisation branding,
+Subscription architecture, Plan entitlements.        Build/modify: Course Catalogue, Course
+                                                     Details, Batch, Registration, Applications,
+This is the most important phase.                    Waitlist, Organisation branding.
+
+PHASE 3 -- Payments +                                PHASE 4 -- LMS
+Automatic Enrolment
+                                                     Adapt existing: Student Dashboard,
+Build: Paystack per Organisation/payment             Modules, Lessons, Materials, Sequential
+architecture, Payment verification,                  Learning, Tasks, Submissions, Grades,
+Applications, Automatic Student creation,            Progress.
+Enrolment, Capacity management, Emails,
+Idempotency.                                         Everything must now be Organisation-
+                                                     scoped.
+
+PHASE 5 -- Lecturer Operations                       PHASE 6 -- Admission Specialist
+                                                     Network
+Build/adapt: Lecturer Accounts, Lecturer
+Dashboard, Tracks, Classes, Timetable,               Adapt existing agent functionality into:
+Zoom, Attendance, Grading, Chat.                     Admission Specialist Application, Approval,
+                                                     Referral Code, Referral URL, Student
+                                                     Discount, Commission, Dashboard, Direct
+                                                     Student Registration, Withdrawals.
+
+PHASE 7 -- Reporting + Business                      PHASE 8 -- Advanced SaaS
+Management
+                                                     Custom domains, White labelling,
+Build: Revenue analytics, Admissions                 Certificates, Certificate verification,
+analytics, Academic analytics, Lecturer              Advanced roles, CRM, Automations, API, AI.
+reporting, Admission Specialist reporting,
+Exports.
+1. DEFINITION OF A SUCCESSFUL
+SAAS CONVERSION
+
+The development team should use this as the ultimate test:
+Imagine tomorrow a company called: ABC DIGITAL ACADEMY pays for JIT SaaS.
+
+       Can ABC create its institute without JIT developers changing code?
+
+       Can it upload its logo? Can it choose its colours?
+
+       Can it create Courses? Can it set prices? Can it create Batches?
+
+       Can it add Lecturers? Can it recruit Admission Specialists?
+
+       Can Students register? Can Students pay? Can Admission Specialists
+       earn Commission?
+
+       Can Students receive their accounts? Can Lecturers teach them?
+
+       Can Students submit Tasks? Can Lecturers grade them? Can attendance
+       be recorded?
+
+       Can ABC see its own revenue? Can ABC communicate with its Students?
+
+       Can ABC do all of this without seeing Jorsas Institute's data?
+
+       And can Jorsas Institute simultaneously continue operating normally?
+
+If the answer is YES, then JIT has successfully become SaaS.
+If the developers have to copy the application, create a new database, edit code, change logos
+manually and deploy another version every time a new school joins, it is not yet the SaaS we are
+describing.
+1. THE PRODUCT IN ONE SENTENCE
+
+This is the sentence I want the development team to keep in mind throughout development:
+    JIT SaaS allows anyone to create, run and grow their own branded training institute using one
+    complete platform.
+
+And from the customer's perspective:
+    Your school. Your brand. Your Students. Your revenue. Our technology.
+
+That should guide every technical and product decision.
+

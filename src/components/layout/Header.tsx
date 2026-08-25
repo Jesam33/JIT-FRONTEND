@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/lib/content";
 
-export default function Header({ onNavigate }: { onNavigate?: () => void }) {
+export default function Header() {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -33,20 +33,19 @@ export default function Header({ onNavigate }: { onNavigate?: () => void }) {
     <>
       <header className="sticky top-0 z-40 bg-black/55 [html.light_&]:bg-site-bg/75 backdrop-blur-md">
         <div className="container-wide flex items-center justify-between gap-6 py-5 md:py-6">
-          <Link href="/" onMouseDown={onNavigate} className="inline-flex items-center" aria-label="Jorsas home">
+          <Link href="/" className="inline-flex items-center" aria-label="Jorsas home">
             <img src="/images/jorsas-logo-white.png" alt="Jorsas" className="h-7 w-auto sm:h-9 [html.light_&]:hidden" />
             <img src="/images/jorsas-logo-light-mode.png" alt="Jorsas" className="hidden h-7 w-auto sm:h-9 [html.light_&]:block" />
           </Link>
 
-          <nav className="hidden items-center gap-6 rounded-full bg-white px-8 py-4 text-sm text-black lg:flex">
+          <nav className="hidden items-center gap-14 text-sm text-white lg:flex [html.light_&]:text-site-text">
             {navLinks.map((link) => {
               const active = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  onMouseDown={onNavigate}
-                  className={active ? "font-bold text-black" : "text-black/75 transition hover:text-black"}
+                  className={active ? "font-bold text-white [html.light_&]:text-site-text" : "text-white/75 transition hover:text-white [html.light_&]:text-site-text/75 [html.light_&]:hover:text-site-text"}
                 >
                   {link.label}
                 </Link>
@@ -75,8 +74,14 @@ export default function Header({ onNavigate }: { onNavigate?: () => void }) {
 
             <div className="hidden items-center gap-3 md:flex">
               <Link
+                href="/signup"
+                className="inline-flex items-center rounded-full border border-white/35 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
+              >
+                Create your institute
+              </Link>
+
+              <Link
                 href="/qoute"
-                onMouseDown={onNavigate}
                 className="inline-flex items-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
               >
                 Request a Qoute
@@ -153,7 +158,6 @@ export default function Header({ onNavigate }: { onNavigate?: () => void }) {
                   <Link
                     key={link.href}
                     href={link.href}
-onMouseDown={onNavigate}
                     onClick={() => setMobileNavOpen(false)}
                     className={`rounded-xl px-4 py-3 text-sm font-medium transition ${
                       active
@@ -166,10 +170,16 @@ onMouseDown={onNavigate}
                 );
               })}
             </nav>
-            <div className="mt-auto pt-6">
+            <div className="mt-auto space-y-3 pt-6">
+              <Link
+                href="/signup"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center justify-center rounded-full border border-white/35 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
+              >
+                Create your institute
+              </Link>
               <Link
                 href="/qoute"
-                onMouseDown={onNavigate}
                 onClick={() => setMobileNavOpen(false)}
                 className="flex w-full items-center justify-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
               >

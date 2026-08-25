@@ -51,7 +51,7 @@ export default function StudentTimetablePage() {
           <p className="text-sm text-white/50">No classes scheduled yet.</p>
         </div>
       ) : (
-        <CalendarTimetable classes={classes} />
+        <CalendarTimetable classes={classes} studentJoinPath="/lms/app/classroom" />
       )}
     </div>
   );

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Live Classroom</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #0f0f13; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+    #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #e4e4e7; font-size: 16px; flex-direction: column; gap: 18px; background: #0f0f13; z-index: 5; }
+    #loading .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading .sub { font-size: 13px; color: rgba(255,255,255,0.45); }
+    #error { display: none; align-items: center; justify-content: center; height: 100vh; color: #fca5a5; font-size: 15px; flex-direction: column; gap: 12px; padding: 24px; text-align: center; }
+    #error .icon { font-size: 32px; }
+    #error .retry { margin-top: 8px; padding: 10px 24px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: #e4e4e7; font-size: 14px; cursor: pointer; }
+    #error .retry:hover { background: rgba(255,255,255,0.06); }
+    #jitsi-container { width: 100%; height: 100%; }
+    #jitsi-container iframe { width: 100% !important; height: 100% !important; border: 0 !important; }
+  </style>
+</head>
+<body>
+  <div id="error">
+    <div class="icon">!</div>
+    <div id="error-msg">Could not join the classroom session.</div>
+    <button class="retry" onclick="location.reload()">Try Again</button>
+  </div>
+  <div id="jitsi-container">
+    <div id="loading">
+      <div class="spinner"></div>
+      <span>Joining classroom...</span>
+      <div class="sub">Connecting to your live session</div>
+    </div>
+  </div>
+
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var domain = params.get('domain') || '8x8.vc';
+    var appId = params.get('appId') || '';
+    var room = params.get('room') || '';
+    var jwt = params.get('jwt') || '';
+    var userName = params.get('userName') || 'Student';
+
+    function postToParent(type, detail) {
+      try {
+        window.parent.postMessage({ type: type, detail: detail }, '*');
+      } catch (e) {}
+    }
+
+    function removeLoading() {
+      var el = document.getElementById('loading');
+      if (el) el.remove();
+    }
+
+    function showError(msg) {
+      document.getElementById('jitsi-container').style.display = 'none';
+      document.getElementById('error').style.display = 'flex';
+      document.getElementById('error-msg').textContent = msg || 'Could not join the class.';
+      postToParent('jitsi-error', msg);
+    }
+
+    var left = false;
+    function signalLeft() {
+      if (left) return;
+      left = true;
+      postToParent('jitsi-left');
+    }
+
+    function initJitsi() {
+      if (typeof JitsiMeetExternalAPI === 'undefined') {
+        showError('Live class engine is unavailable. Please try again.');
+        return;
+      }
+      try {
+        var api = new JitsiMeetExternalAPI(domain, {
+          // JaaS rooms are namespaced under the app id: "<appId>/<room>".
+          roomName: appId + '/' + room,
+          jwt: jwt,
+          parentNode: document.getElementById('jitsi-container'),
+          width: '100%',
+          height: '100%',
+          userInfo: { displayName: userName },
+          configOverwrite: {
+            prejoinConfig: { enabled: false },
+            disableDeepLinking: true,
+            startWithAudioMuted: false,
+            startWithVideoMuted: false
+          },
+          interfaceConfigOverwrite: {
+            SHOW_JITSI_WATERMARK: false,
+            SHOW_WATERMARK_FOR_GUESTS: false,
+            DEFAULT_BACKGROUND: '#0f0f13',
+            DISABLE_JOIN_LEAVE_NOTIFICATIONS: true
+          }
+        });
+
+        api.addEventListener('videoConferenceJoined', function () {
+          removeLoading();
+          postToParent('jitsi-joined');
+        });
+        api.addEventListener('videoConferenceLeft', function () {
+          signalLeft();
+        });
+        api.addEventListener('readyToClose', function () {
+          signalLeft();
+          try { api.dispose(); } catch (e) {}
+        });
+        api.addEventListener('errorOccurred', function (e) {
+          var msg = (e && e.error && e.error.message) ? e.error.message : 'A live class error occurred.';
+          postToParent('jitsi-error', msg);
+        });
+      } catch (err) {
+        showError(err && err.message ? err.message : 'Unexpected error starting the class.');
+      }
+    }
+
+    if (!appId || !room || !jwt) {
+      showError('Missing live class parameters.');
+    } else {
+      var script = document.createElement('script');
+      script.src = 'https://' + domain + '/' + appId + '/external_api.js';
+      script.async = true;
+      script.onload = initJitsi;
+      script.onerror = function () { showError('Failed to load the live class engine.'); };
+      document.body.appendChild(script);
+    }
+
+    // If the student navigates away / closes the tab, close out attendance.
+    window.addEventListener('beforeunload', signalLeft);
+  </script>
+</body>
+</html>

@@ -10,6 +10,7 @@ type LmsNavbarProps = {
   bellHref: string;
   placeholder: string;
   searchRedirectHref?: string;
+  logoUrl?: string | null;
 };
 
 export default function LmsNavbar({
@@ -17,6 +18,7 @@ export default function LmsNavbar({
   bellHref,
   placeholder,
   searchRedirectHref,
+  logoUrl,
 }: LmsNavbarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,6 +92,16 @@ export default function LmsNavbar({
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-white/15 bg-black/30 p-4 mb-6 sm:flex-row sm:items-center sm:justify-between [html.light_&]:border-site-border [html.light_&]:bg-site-surface [html.light_&]:shadow-sm">
+      {/* Institute logo (white-label) */}
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logoUrl}
+          alt=""
+          className="h-9 w-auto max-w-[150px] shrink-0 self-start object-contain sm:self-center"
+        />
+      ) : null}
+
       {/* Search Bar */}
       <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
         <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-white/40 [html.light_&]:text-black/40">
