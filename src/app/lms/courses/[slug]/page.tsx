@@ -1,10 +1,10 @@
 import { backendFetch, tenantHeaderFromCookie } from "@/lib/backend";
 import { cookies } from "next/headers";
 
-type Props = { params: { slug: string } };
+type Props = { params: Promise<{ slug: string }> };
 
 export default async function CourseDetail({ params }: Props) {
-  const { slug } = params;
+  const { slug } = await params;
   const cookieStore = await cookies();
   const tenant = cookieStore.get?.("tenant")?.value ?? null;
 
