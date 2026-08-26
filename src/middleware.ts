@@ -43,6 +43,28 @@ export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const host = req.headers.get("host") || "";
 
+  // Visitor country from a CDN geo header, if the host provides one (Cloudflare
+  // `cf-ipcountry` / Vercel `x-vercel-ip-country`). Namecheap shared hosting
+  // doesn't, so this is best-effort — the /api/geo route + manual currency
+  // selector are the guaranteed fallback. Set once; never clobber a value the
+  // client already resolved. `decorate()` stamps it onto whichever response we
+  // ultimately return so it applies with or without a tenant match.
+  const geoHeader =
+    req.headers.get("cf-ipcountry") ||
+    req.headers.get("x-vercel-ip-country") ||
+    "";
+  const country =
+    /^[A-Za-z]{2}$/.test(geoHeader) && geoHeader.toUpperCase() !== "XX"
+      ? geoHeader.toUpperCase()
+      : "";
+  const hasCountryCookie = req.cookies.has("country");
+  const decorate = (res: NextResponse): NextResponse => {
+    if (country && !hasCountryCookie) {
+      res.cookies.set("country", country, { path: "/", maxAge: 60 * 60 * 24 * 7 });
+    }
+    return res;
+  };
+
   // 1) Path-based tenant: /t/{slug}/...
   const parts = url.pathname.split("/").filter(Boolean);
   let tenantSlug: string | null = null;
@@ -70,14 +92,14 @@ export async function middleware(req: NextRequest) {
         const cookieVal = json?.tenant?.slug ?? tenantSlug;
         const response = NextResponse.next();
         response.cookies.set("tenant", cookieVal, { path: "/" });
-        return response;
+        return decorate(response);
       }
     } catch {
       // ignore — fall through without setting a cookie
     }
   }
 
-  return NextResponse.next();
+  return decorate(NextResponse.next());
 }
 
 export const config = {

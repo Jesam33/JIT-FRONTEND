@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import InstituteCourseDetail, { type CourseDetailData } from "@/components/institute/InstituteCourseDetail";
+import { pricingQuery } from "@/lib/pricing-query";
 
 type Props = {
   params: Promise<{ slug: string; courseSlug: string }>;
@@ -9,7 +10,7 @@ type Props = {
 async function getCourse(slug: string, courseSlug: string): Promise<CourseDetailData | null> {
   try {
     const baseUrl = process.env.LARAVEL_BACKEND_URL ?? "http://127.0.0.1:8000";
-    const res = await fetch(`${baseUrl}/api/frontend/i/${slug}/courses/${courseSlug}`, { cache: "no-store" });
+    const res = await fetch(`${baseUrl}/api/frontend/i/${slug}/courses/${courseSlug}${await pricingQuery()}`, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {

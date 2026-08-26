@@ -1,4 +1,5 @@
 import InstituteStorefront, { type StorefrontData } from "@/components/institute/InstituteStorefront";
+import { pricingQuery } from "@/lib/pricing-query";
 
 // The apex "Institute" page shows the PRIMARY institute (JIT) only. It sources
 // from the tenant-scoped /primary endpoint — which binds Tenant::primary() on
@@ -7,7 +8,7 @@ import InstituteStorefront, { type StorefrontData } from "@/components/institute
 async function getStorefront(): Promise<StorefrontData | null> {
   try {
     const baseUrl = process.env.LARAVEL_BACKEND_URL ?? "http://127.0.0.1:8000";
-    const res = await fetch(`${baseUrl}/api/frontend/institute/primary`, { cache: "no-store" });
+    const res = await fetch(`${baseUrl}/api/frontend/institute/primary${await pricingQuery()}`, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {

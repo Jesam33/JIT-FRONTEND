@@ -2,6 +2,8 @@ import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
 import type { InstituteProfile } from "@/lib/institute-profile";
 import CourseRegisterClient from "@/components/institute/CourseRegisterClient";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
+import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
+import { formatPrice } from "@/lib/currency";
 
 export type DetailCourse = {
   id: number;
@@ -16,6 +18,15 @@ export type DetailCourse = {
   is_full: boolean;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
+  // Localized DISPLAY pricing + the purchasable gate (see PublicInstituteController).
+  // Optional so any older caller still type-checks; the backend always sends them.
+  currency?: string;
+  display_currency?: string;
+  display_symbol?: string;
+  price_display?: number;
+  is_base_currency?: boolean;
+  charge_currency?: string;
+  purchasable?: boolean;
 };
 
 // The shape returned by /api/frontend/i/{slug}/courses/{courseSlug} and the
@@ -28,8 +39,10 @@ export type CourseDetailData = {
   course: DetailCourse;
 };
 
-function formatPrice(price: number): string {
-  return price <= 0 ? "Free" : `₦${price.toLocaleString()}`;
+// The big headline price in the visitor's display currency (free → "Free").
+function headlinePrice(course: DetailCourse): string {
+  if (course.price <= 0) return "Free";
+  return formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN");
 }
 
 // Presentational course-detail page shared by the apex primary course route and
@@ -84,8 +97,20 @@ export default function InstituteCourseDetail({
 
           <aside className="h-fit rounded-xl border border-white/20 bg-white/5 p-6">
             <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-              {formatPrice(course.price)}
+              {headlinePrice(course)}
             </p>
+            {course.price > 0 && course.is_base_currency === false ? (
+              <p className="mt-1 text-xs text-white/60">
+                Approx. shown in {course.display_currency} · you&apos;ll be charged{" "}
+                {course.charge_currency === "USD" ? "in USD" : formatPrice(course.price, "NGN")}
+              </p>
+            ) : null}
+            {course.price > 0 ? (
+              <div className="mt-3 flex items-center gap-2 text-xs text-white/60">
+                <span>Show price in</span>
+                <CurrencySwitcher active={course.display_currency ?? "NGN"} />
+              </div>
+            ) : null}
 
             <div className="mt-4 space-y-3 text-sm text-white/75">
               <div className="flex justify-between border-b border-white/10 pb-2">

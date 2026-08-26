@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import InstituteStorefront, { type StorefrontData } from "@/components/institute/InstituteStorefront";
+import { pricingQuery } from "@/lib/pricing-query";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -9,7 +10,7 @@ type Props = {
 async function getStorefront(slug: string): Promise<StorefrontData | null> {
   try {
     const baseUrl = process.env.LARAVEL_BACKEND_URL ?? "http://127.0.0.1:8000";
-    const res = await fetch(`${baseUrl}/api/frontend/i/${slug}`, { cache: "no-store" });
+    const res = await fetch(`${baseUrl}/api/frontend/i/${slug}${await pricingQuery()}`, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {

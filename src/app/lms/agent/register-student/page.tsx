@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PUBLIC_API, AGENT_API } from "../../../../lib/api";
 import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
+import { formatPrice } from "../../../../lib/currency";
 import { useAgent } from "../../../../components/AgentContext";
 
 type Course = { id: number; title: string; price: number };
@@ -152,7 +153,7 @@ export default function AgentRegisterStudentPage() {
         <select required value={form.course_id} onChange={(e) => set("course_id", e.target.value)} className="w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-white/30">
           <option value="">Select course</option>
           {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.title} &mdash; &#8358;{Number(c.price).toLocaleString("en-US")}</option>
+            <option key={c.id} value={c.id}>{c.title} &mdash; {formatPrice(Number(c.price), "NGN")}</option>
           ))}
         </select>
 

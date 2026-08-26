@@ -3,12 +3,20 @@
 import { useState } from "react";
 import { PUBLIC_API } from "@/lib/api";
 import { tenantHeaders } from "@/lib/tenant-client";
+import { formatPrice, readCookie } from "@/lib/currency";
 
 type CourseDetail = {
   id: number;
   slug: string;
   title: string;
   price: number;
+  // Localized display fields + the purchasable gate (optional; defaults keep
+  // the apex/NGN flow byte-for-byte unchanged when they're absent).
+  price_display?: number;
+  display_currency?: string;
+  is_base_currency?: boolean;
+  charge_currency?: string;
+  purchasable?: boolean;
 };
 
 const qualifications = [
@@ -79,6 +87,9 @@ export default function CourseRegisterClient({ course, slug }: { course: CourseD
           course_name: course.title,
           referral_code: form.referral_code,
           institute_slug: slug,
+          // Country HINT only (never sets the amount — the server freezes the
+          // charge currency from this). Mirrors the storefront's display hint.
+          country: readCookie("country") || undefined,
         }),
       });
 
@@ -134,6 +145,19 @@ export default function CourseRegisterClient({ course, slug }: { course: CourseD
     );
   }
 
+  // A non-primary institute that hasn't linked a payout bank can't take money
+  // for a paid course yet (mirrors the backend 409 gate in initializePayment).
+  // `purchasable` is only ever false for a paid course, so free courses still
+  // show the form.
+  if (course.purchasable === false) {
+    return (
+      <div className="mt-6 rounded-lg border border-white/15 bg-white/5 p-4 text-sm text-white/70">
+        Registration for this course isn&apos;t open yet — the institute is finishing its payment
+        setup. Please check back soon.
+      </div>
+    );
+  }
+
   return (
     <div className="mt-6">
       <form onSubmit={handleSubmit} className="space-y-3 text-sm">
@@ -167,7 +191,11 @@ export default function CourseRegisterClient({ course, slug }: { course: CourseD
         </div>
         <input value={form.referral_code} onChange={(e) => updateField("referral_code", e.target.value)} placeholder="Referral Code (optional - get 5% discount)" className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
         <button type="submit" disabled={loading} className="w-full rounded-full bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-60">
-          {loading ? "Processing..." : course.price <= 0 ? "Register — Free" : `Register & Pay ₦${course.price.toLocaleString()}`}
+          {loading
+            ? "Processing..."
+            : course.price <= 0
+              ? "Register — Free"
+              : `Register & Pay ${formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN")}`}
         </button>
         {message ? <p className="text-xs text-rose-200">{message}</p> : null}
       </form>

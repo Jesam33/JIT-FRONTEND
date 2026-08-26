@@ -68,6 +68,9 @@ export const OWNER_API = {
   // settle to its bank (institute collects, not the platform). GET + POST share.
   paymentSettings: api("/api/frontend/lms/owner/payment-settings"),
   paymentSettingsUpdate: api("/api/frontend/lms/owner/payment-settings"),
+  // Confirm the account holder's name (Paystack /bank/resolve) before linking —
+  // confirmatory only, never blocks linking if the gateway is down.
+  resolveAccount: api("/api/frontend/lms/owner/resolve-account"),
   signup: api("/api/signup"),
   signupVerify: (ref: string) => api(`/api/signup/verify?reference=${encodeURIComponent(ref)}`),
   plans: api("/api/plans"),

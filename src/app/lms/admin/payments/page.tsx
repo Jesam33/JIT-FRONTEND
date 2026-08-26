@@ -40,6 +40,12 @@ export default function PaymentsPage() {
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
 
+  // Account-name confirmation (Paystack /bank/resolve) — confirmatory only, it
+  // links nothing and never blocks linking if the gateway can't resolve.
+  const [accountName, setAccountName] = useState("");
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState("");
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -70,6 +76,45 @@ export default function PaymentsPage() {
     }
     load();
   }, [load, router]);
+
+  // Confirm the account holder's name once a full 10-digit NUBAN + a bank are
+  // entered. Debounced so we don't hit Paystack on every keystroke. This is
+  // purely confirmatory — it never gates linking, and a down/unconfigured
+  // gateway just leaves the note blank.
+  useEffect(() => {
+    setAccountName("");
+    setResolveError("");
+    if (!bankCode || accountNumber.length !== 10) {
+      setResolving(false);
+      return;
+    }
+    let cancelled = false;
+    setResolving(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(OWNER_API.resolveAccount, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
+          body: JSON.stringify({ account_number: accountNumber, bank_code: bankCode }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (res.ok && json?.account_name) {
+          setAccountName(json.account_name);
+        } else {
+          setResolveError(json?.message || "Couldn’t verify this account — you can still link it.");
+        }
+      } catch {
+        if (!cancelled) setResolveError("Couldn’t verify this account — you can still link it.");
+      } finally {
+        if (!cancelled) setResolving(false);
+      }
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [bankCode, accountNumber]);
 
   const link = async () => {
     setMsg(null);
@@ -269,9 +314,21 @@ export default function PaymentsPage() {
                 className={inputClass}
                 value={accountNumber}
                 inputMode="numeric"
+                maxLength={10}
                 placeholder="0123456789"
-                onChange={(e) => setAccountNumber(e.target.value.replace(/[^\d]/g, ""))}
+                onChange={(e) => setAccountNumber(e.target.value.replace(/[^\d]/g, "").slice(0, 10))}
               />
+              {bankCode && accountNumber.length === 10 ? (
+                <p className="mt-1.5 text-xs" aria-live="polite">
+                  {resolving ? (
+                    <span className="text-site-muted">Verifying account…</span>
+                  ) : accountName ? (
+                    <span className="font-medium text-emerald-300">✓ {accountName}</span>
+                  ) : resolveError ? (
+                    <span className="text-amber-300">{resolveError}</span>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
           </div>
 

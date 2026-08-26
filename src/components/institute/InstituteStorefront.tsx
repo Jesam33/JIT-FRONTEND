@@ -3,7 +3,9 @@ import type { CSSProperties } from "react";
 import SectionHeading from "@/components/ui/SectionHeading";
 import AgentBanner from "@/components/landing/AgentBanner";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
+import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
 import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
+import { formatPrice } from "@/lib/currency";
 import type { InstituteProfile } from "@/lib/institute-profile";
 
 // A single course card in the storefront grid.
@@ -19,6 +21,16 @@ export type StorefrontCourse = {
   is_full: boolean;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
+  // Localized DISPLAY pricing (cosmetic — money is still charged in NGN/USD).
+  // Present on every course from the backend; optional here so a partially
+  // built view (e.g. the apex empty-shell fallback) still type-checks.
+  currency?: string;
+  display_currency?: string;
+  display_symbol?: string;
+  price_display?: number;
+  is_base_currency?: boolean;
+  charge_currency?: string;
+  purchasable?: boolean;
 };
 
 // The shape returned by /api/frontend/i/{slug} and /api/frontend/institute/primary.
@@ -30,8 +42,15 @@ export type StorefrontData = {
   courses: StorefrontCourse[];
 };
 
-function formatPrice(price: number): string {
-  return price <= 0 ? "Free" : `₦${price.toLocaleString()}`;
+// Render a course's price in the visitor's display currency. Free courses (base
+// NGN price ≤ 0 are free everywhere) always read "Free"; a converted price is
+// prefixed "≈" to signal it's an FX estimate (the real charge is NGN/USD).
+function coursePrice(course: StorefrontCourse): string {
+  if (course.price <= 0) return "Free";
+  const amount = course.price_display ?? course.price;
+  const currency = course.display_currency ?? "NGN";
+  const prefix = course.is_base_currency === false ? "≈ " : "";
+  return `${prefix}${formatPrice(amount, currency)}`;
 }
 
 const HEX6 = /^#[0-9a-fA-F]{6}$/;
@@ -111,6 +130,12 @@ export default function InstituteStorefront({
       </section>
 
       <div className="container-wide py-14">
+        {courses.some((c) => c.price > 0) ? (
+          <div className="mb-6 flex items-center justify-end gap-2 text-sm text-site-text/70">
+            <span>Prices in</span>
+            <CurrencySwitcher active={courses.find((c) => c.price > 0)?.display_currency ?? "NGN"} />
+          </div>
+        ) : null}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
             <Link
@@ -126,7 +151,7 @@ export default function InstituteStorefront({
                   <p className="mt-3 line-clamp-3 text-sm text-site-text/75">{course.description}</p>
                 ) : null}
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-2xl font-bold text-site-text">{formatPrice(course.price)}</span>
+                  <span className="text-2xl font-bold text-site-text">{coursePrice(course)}</span>
                   {course.is_full ? (
                     <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold" style={{ color: "#e11d48" }}>
                       Full

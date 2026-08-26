@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import InstituteCourseDetail, { type CourseDetailData } from "@/components/institute/InstituteCourseDetail";
+import { pricingQuery } from "@/lib/pricing-query";
 
 // This route's [slug] is a COURSE slug under the PRIMARY institute (JIT). It
 // sources from the tenant-scoped primary course endpoint so the detail — and
@@ -12,7 +13,7 @@ type Props = {
 async function getCourse(courseSlug: string): Promise<CourseDetailData | null> {
   try {
     const baseUrl = process.env.LARAVEL_BACKEND_URL ?? "http://127.0.0.1:8000";
-    const res = await fetch(`${baseUrl}/api/frontend/institute/primary/courses/${courseSlug}`, {
+    const res = await fetch(`${baseUrl}/api/frontend/institute/primary/courses/${courseSlug}${await pricingQuery()}`, {
       cache: "no-store",
     });
     if (!res.ok) return null;
