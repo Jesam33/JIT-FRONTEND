@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
-import { tenantHeaders, setTenantCookie } from "@/lib/tenant-client";
+import { tenantHeaders, setTenantCookie, isSafeNextPath } from "@/lib/tenant-client";
 import InactivityNotice from "@/components/InactivityNotice";
 import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
@@ -11,6 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired") === "1";
+  const nextParam = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +37,9 @@ function LoginForm() {
     // (branding fetch, portal API calls, and any inactivity → login redirect)
     // stays on this institute instead of falling back to the primary slug.
     setTenantCookie(data?.tenant?.slug);
-    router.push("/lms/app");
+    // Forward to the emailed deep link (?next=) when present + safe, else the
+    // dashboard. isSafeNextPath blocks anything that isn't a same-origin LMS page.
+    router.push(isSafeNextPath(nextParam) ? nextParam : "/lms/app");
   }
 
   return (

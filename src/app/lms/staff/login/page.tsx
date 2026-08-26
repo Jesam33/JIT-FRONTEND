@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
-import { tenantHeaders, setTenantCookie } from "@/lib/tenant-client";
+import { tenantHeaders, setTenantCookie, isSafeNextPath } from "@/lib/tenant-client";
 import InactivityNotice from "@/components/InactivityNotice";
 import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 function StaffLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +39,8 @@ function StaffLoginForm() {
     localStorage.setItem("lms_staff_token", data.token);
     // Pin the institute the backend authenticated us into (see student login).
     setTenantCookie(data?.tenant?.slug);
-    router.push("/lms/staff/app");
+    // Forward to an emailed deep link (?next=) when present + safe, else the dashboard.
+    router.push(isSafeNextPath(nextParam) ? nextParam : "/lms/staff/app");
   }
 
   return (
@@ -82,7 +85,9 @@ function StaffLoginForm() {
 export default function StaffLoginPage() {
   return (
     <InstitutePublicShell>
-      <StaffLoginForm />
+      <Suspense fallback={null}>
+        <StaffLoginForm />
+      </Suspense>
     </InstitutePublicShell>
   );
 }

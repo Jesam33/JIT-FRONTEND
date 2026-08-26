@@ -75,9 +75,20 @@ This version has breaking changes — APIs, conventions, and file structure may 
   attendance and still does not. (This replaces the old Zoom `meeting.ended` webhook.)
 
 ### Notifications
-- `LmsNotification`: student_id, type, title, body, reference_type, reference_id
-- Types: task_graded, mention, scheduled_class, etc.
-- Created when: task is graded, student is @mentioned in chat, class is scheduled
+- Three tables, one per audience: `LmsNotification` (student), `LmsTeacherNotification` (staff), `AgentNotification` (agent). Shape: `{recipient}_id, type, title, body, reference_type, reference_id, is_read, emailed_at, email_attempts`.
+- Types: task_graded, mention, scheduled_class, new_module, new_course, platform_announcement, etc.
+- Created when: task is graded, student is @mentioned in chat, a class is scheduled, a staff publishes a module (`new_module`) or a course is created (`new_course` → enrolled students), or the host broadcasts a platform announcement.
+
+#### Email delivery (every notification is also emailed)
+- A scheduled command **`lms:send-notification-emails`** (runs every minute via `routes/console.php`) sweeps all three tables for rows with `emailed_at IS NULL` and sends each as an email (`LmsNotificationMail`), then stamps `emailed_at`. Mail is `sync` (no queue worker on shared hosting), so the sweep — not the request — does the sending.
+- **Per-institute sender identity (no spoofing):** the email's **from-address stays on the platform's one verified domain** (`MAIL_FROM_ADDRESS`) so SPF/DKIM/DMARC pass and it reaches inboxes — but the **from-NAME is the institute** (recipients see "Brightstone Academy", not "Jorsas"), and **Reply-To is the institute's own email** so replies reach them, not the platform. Reply-To prefers the institute's published public contact email (`settings.profile.contact.email`), falling back to the owner's login email (`tenant_admins.role = owner`); if neither is a valid address, no Reply-To is set. The map is built once per sweep run (two queries) in `SendNotificationEmails::replyToMap()`, and `LmsNotificationMail` re-validates before applying it.
+- The email's button links **into the in-app LMS page** for that notification, built by `App\Support\NotificationLinks::forNotification(audience, reference_type, reference_id, tenantSlug)`. Its path map **must stay in sync** with the frontend `notificationHref` maps in `src/app/lms/app/notifications/page.tsx` and `src/app/lms/staff/notifications/page.tsx` (change one → change both). Links are absolute (`config('saas.frontend_url')` → set `LMS_BASE_URL` in prod) and carry `?tenant={slug}` so a cold tap pins the right institute.
+- Config in `config/saas.php`: `NOTIFICATION_EMAILS_ENABLED` (master off-switch), `NOTIFICATION_EMAIL_EXCLUDE_TYPES` (**defaults to `mention`** — chat @mentions are in-app only, not emailed), `NOTIFICATION_EMAIL_BATCH` (per-table per-tick cap, default 120), `NOTIFICATION_EMAIL_MAX_ATTEMPTS` (give-up count, default 3). Retry counter is `email_attempts`; a bad address is stamped `emailed_at` after max attempts so it stops retrying.
+- **Deep-link auth flow**: a logged-out tap on an emailed link hits the portal guard, which pins the tenant from `?tenant=` and forwards to login with `?next=<original path>`; login validates it via `isSafeNextPath()` (same-origin `/lms/` only, never an auth page) and pushes there after auth. Wired for student + staff logins.
+
+#### Platform announcements (host → everybody, all institutes)
+- The **host** (Botble super-admin, Blade panel at `/admin/lms/announcements` — there is no Next.js host UI) posts a `PlatformAnnouncement` targeting any of `student` / `staff` / `agent`.
+- A scheduled command **`lms:dispatch-announcements`** (also every minute, ordered *before* the email sweep) fans each queued announcement into per-recipient notification rows across **every tenant** (bulk insert, `withoutGlobalScope(TenantScope)`, one transaction per announcement), `type='platform_announcement'`. Those rows are then emailed by the normal sweep on the same tick.
 
 ## Staff Portal
 - URL: `/lms/staff/*` — uses `lms_staff_token`

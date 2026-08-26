@@ -5,6 +5,9 @@ import ChatLayout from "../../../../components/chat/ChatLayout";
 import { STAFF_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
 import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner } from "../../../../components/chat/chat-extras";
+import { toggleReactionLocal, applyReactionsToList, applyReactionBroadcast } from "../../../../lib/chat-reactions";
+import type { ChatReaction, ChatReplyPreview } from "../../../../lib/lms-types";
 
 function renderMentions(text: string, mentionClass = "font-bold text-site-primary") {
   const parts = text.split(/@(\w+)/);
@@ -35,7 +38,10 @@ type GroupMessage = {
   sender_id?: number | null;
   sender_name?: string;
   attachment_url?: string | null;
-  created_at?: string;
+  reply_to_id?: number | null;
+  reply_to?: ChatReplyPreview | null;
+  reactions?: ChatReaction[];
+  created_at: string;
   edited_at?: string | null;
 };
 
@@ -48,7 +54,10 @@ type DmMessage = {
   sender_id?: number | null;
   sender_name?: string;
   attachment_url?: string | null;
-  created_at?: string;
+  reply_to_id?: number | null;
+  reply_to?: ChatReplyPreview | null;
+  reactions?: ChatReaction[];
+  created_at: string;
   edited_at?: string | null;
 };
 
@@ -74,6 +83,8 @@ export default function StaffChatsPage() {
   const [dmAttachment, setDmAttachment] = useState("");
   const [dmSending, setDmSending] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [replyingToGroup, setReplyingToGroup] = useState<{ id: number; name: string; content: string } | null>(null);
+  const [replyingToDm, setReplyingToDm] = useState<{ id: number; name: string; content: string } | null>(null);
 
   const [staffProfile, setStaffProfile] = useState<any | null>(null);
   const [mentionableUsers, setMentionableUsers] = useState<MentionableUser[]>([]);
@@ -205,6 +216,10 @@ export default function StaffChatsPage() {
             return [...prev, data];
           });
         });
+        channel.bind("reaction.updated", (data: { message_id: number; reactions?: ChatReaction[] }) => {
+          if (!data?.message_id) return;
+          setGroupMessages((prev) => applyReactionBroadcast(prev, data.message_id, data.reactions));
+        });
       }
     }
   }, [token, groupMessages]);
@@ -240,6 +255,10 @@ export default function StaffChatsPage() {
             return { ...th, messages: [...th.messages, msgObj] };
           }));
           setTimeout(scrollToBottom, 50);
+        });
+        channel.bind("reaction.updated", (data: { message_id: number; reactions?: ChatReaction[] }) => {
+          if (!data?.message_id) return;
+          setThreads((prev) => prev.map((th) => th.thread_id === t.thread_id ? { ...th, messages: applyReactionBroadcast(th.messages, data.message_id, data.reactions) } : th));
         });
       }
     }
@@ -297,6 +316,61 @@ export default function StaffChatsPage() {
     } catch {}
   };
 
+  const isTempId = (id: number | string) => typeof id === "string" && id.startsWith("temp-");
+
+  const startGroupReply = (msg: GroupMessage) => {
+    if (isTempId(msg.id)) return;
+    setReplyingToGroup({
+      id: msg.id,
+      name: msg.sender_name ?? (msg.sender_role === "teacher" ? "You" : "Student"),
+      content: msg.content ?? (msg.attachment_url ? "Attachment" : ""),
+    });
+  };
+
+  const reactGroupMessage = async (messageId: number | string, emoji: string) => {
+    if (isTempId(messageId)) return;
+    setGroupMessages((prev) => prev.map((m) => (String(m.id) === String(messageId) ? { ...m, reactions: toggleReactionLocal(m.reactions, emoji) } : m)));
+    try {
+      const res = await apiFetchStaff(STAFF_API.reactMessage(messageId as number), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGroupMessages((prev) => applyReactionsToList(prev, data.message_id, data.reactions));
+      }
+    } catch {}
+  };
+
+  const startDmReply = (msg: DmMessage) => {
+    if (isTempId(msg.id)) return;
+    const role = msg.sender_role ?? msg.from_role;
+    setReplyingToDm({
+      id: msg.id,
+      name: msg.sender_name ?? (role === "teacher" ? "You" : activeThread?.student?.name ?? "Student"),
+      content: msg.content ?? msg.body ?? (msg.attachment_url ? "Attachment" : ""),
+    });
+  };
+
+  const reactDmMessage = async (messageId: number | string, emoji: string) => {
+    if (isTempId(messageId)) return;
+    const tid = activeThreadId;
+    if (!tid) return;
+    setThreads((prev) => prev.map((t) => t.thread_id === tid ? { ...t, messages: t.messages.map((m) => (String(m.id) === String(messageId) ? { ...m, reactions: toggleReactionLocal(m.reactions, emoji) } : m)) } : t));
+    try {
+      const res = await apiFetchStaff(STAFF_API.reactMessage(messageId as number), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setThreads((prev) => prev.map((t) => t.thread_id === tid ? { ...t, messages: applyReactionsToList(t.messages, data.message_id, data.reactions) } : t));
+      }
+    } catch {}
+  };
+
   useEffect(() => { scrollToBottom(); }, [groupMessages, activeThread]);
 
   // Mark DM as read when switching threads
@@ -311,7 +385,8 @@ export default function StaffChatsPage() {
     if (!groupBody.trim() && !groupAttachment.trim()) return;
     const bodyToSend = groupBody;
     const attachmentToSend = groupAttachment;
-    setGroupBody(""); setGroupAttachment("");
+    const replyToSend = replyingToGroup;
+    setGroupBody(""); setGroupAttachment(""); setReplyingToGroup(null);
 
     const tempId = `temp-${Date.now()}`;
     const tempMsg: GroupMessage = {
@@ -321,6 +396,8 @@ export default function StaffChatsPage() {
       sender_role: "teacher",
       sender_id: staffProfile?.id ?? 0,
       sender_name: staffProfile?.name ?? "You",
+      reply_to_id: replyToSend?.id ?? null,
+      reply_to: replyToSend ? { id: replyToSend.id, sender_name: replyToSend.name, content: replyToSend.content } : null,
       created_at: new Date().toISOString(),
     };
 
@@ -331,7 +408,7 @@ export default function StaffChatsPage() {
       const res = await apiFetchStaff(STAFF_API.chatGroupMessages, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: bodyToSend, attachment_url: attachmentToSend || null }),
+        body: JSON.stringify({ content: bodyToSend, attachment_url: attachmentToSend || null, reply_to_id: replyToSend?.id ?? null }),
       });
       if (res.ok) {
         const msg = await res.json();
@@ -344,7 +421,8 @@ export default function StaffChatsPage() {
     if (!activeThreadId || (!dmBody.trim() && !dmAttachment.trim())) return;
     const bodyToSend = dmBody;
     const attachmentToSend = dmAttachment;
-    setDmBody(""); setDmAttachment(""); setFeedback("");
+    const replyToSend = replyingToDm;
+    setDmBody(""); setDmAttachment(""); setFeedback(""); setReplyingToDm(null);
 
     const tempId = `temp-${Date.now()}`;
     const tempMsg: DmMessage = {
@@ -354,6 +432,8 @@ export default function StaffChatsPage() {
       sender_role: "teacher",
       sender_id: staffProfile?.id ?? 0,
       sender_name: staffProfile?.name ?? "You",
+      reply_to_id: replyToSend?.id ?? null,
+      reply_to: replyToSend ? { id: replyToSend.id, sender_name: replyToSend.name, content: replyToSend.content } : null,
       created_at: new Date().toISOString(),
     };
 
@@ -364,7 +444,7 @@ export default function StaffChatsPage() {
       const res = await apiFetchStaff(STAFF_API.chatDmMessages, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dm_thread_id: activeThreadId, content: bodyToSend, attachment_url: attachmentToSend || null }),
+        body: JSON.stringify({ dm_thread_id: activeThreadId, content: bodyToSend, attachment_url: attachmentToSend || null, reply_to_id: replyToSend?.id ?? null }),
       });
       const data = await res.json();
       if (!res.ok) { setFeedback(data?.message ?? "Could not send."); return; }
@@ -418,6 +498,7 @@ export default function StaffChatsPage() {
                           </div>
                         ) : (
                           <>
+                            {msg.reply_to ? <ReplyQuote tone="glass" reply={msg.reply_to} placement={isOwn ? "own" : "other"} /> : null}
                             <p className="text-[11px] font-medium text-white/50 mb-0.5">{msg.sender_name ?? (isOwn ? "You" : "Student")}</p>
                             {msg.content ? (
                               <p className="text-sm">
@@ -445,6 +526,12 @@ export default function StaffChatsPage() {
                         </div>
                       ) : null}
                     </div>
+                    {editingMsgId !== msg.id ? (
+                      <div className={`mt-1 flex items-center gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
+                        <MessageToolbar tone="glass" onReply={() => startGroupReply(msg)} onReact={(e) => reactGroupMessage(msg.id, e)} />
+                        <ReactionChips tone="glass" reactions={msg.reactions} onToggle={(e) => reactGroupMessage(msg.id, e)} align={isOwn ? "end" : "start"} />
+                      </div>
+                    ) : null}
                     <p className={`mt-0.5 text-[10px] text-white/40 ${isOwn ? "text-right" : "text-left"}`}>{timeStr}</p>
                   </div>
                 );
@@ -452,7 +539,7 @@ export default function StaffChatsPage() {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className="relative flex gap-2 border-t border-white/10 p-3">
+          <div className="relative border-t border-white/10 p-3">
             {mentionQuery !== null ? (
               <div className="absolute bottom-full left-3 right-3 z-50 mb-2 max-h-40 overflow-y-auto rounded-xl border border-white/15 bg-black/90 p-1 shadow-xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white [html.light_&]:shadow-lg">
                 {filteredMentions.length === 0 ? (
@@ -480,6 +567,10 @@ export default function StaffChatsPage() {
                 )}
               </div>
             ) : null}
+            {replyingToGroup ? (
+              <ReplyingBanner tone="glass" name={replyingToGroup.name} content={replyingToGroup.content} onCancel={() => setReplyingToGroup(null)} />
+            ) : null}
+            <div className="flex gap-2">
             <input
               ref={groupInputRef}
               value={groupBody}
@@ -517,6 +608,7 @@ export default function StaffChatsPage() {
             <button onClick={sendGroupMessage} disabled={groupSending || (!groupBody.trim() && !groupAttachment.trim())} className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50 hover:bg-white/90 transition">
               Send
             </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -535,6 +627,10 @@ export default function StaffChatsPage() {
             sendReply={sendDm}
             sending={dmSending}
             onRefresh={loadThreads}
+            onReplyMessage={(msg: any) => startDmReply(msg)}
+            onReactMessage={(msg: any, emoji: string) => reactDmMessage(msg.id, emoji)}
+            replyingTo={replyingToDm}
+            onCancelReply={() => setReplyingToDm(null)}
             onEditMessage={(msg: any) => {
               const tid = activeThreadId;
               if (!tid) return;

@@ -9,12 +9,19 @@ import DynamicFavicon from "./DynamicFavicon";
 import { STUDENT_API, PUBLIC_API } from "@/lib/api";
 import { brandingStyle, storefrontBackgroundStyle } from "@/lib/owner-branding";
 import { usePortalBranding, isBranded } from "@/lib/use-portal-branding";
-import { tenantLoginPath } from "@/lib/tenant-client";
+import { tenantLoginPath, pinTenantFromLocation } from "@/lib/tenant-client";
 import IdleLogout from "./IdleLogout";
 
 export default function StudentLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const branding = usePortalBranding(STUDENT_API.branding, "lms_student_token", PUBLIC_API.branding);
+
+  // Pin the institute from an emailed link's ?tenant= so branding + the whole
+  // session stay on the right portal (parity with StaffLayoutClient), instead of
+  // defaulting to the primary slug on a deep-linked visit.
+  React.useEffect(() => {
+    pinTenantFromLocation();
+  }, [pathname]);
 
   const publicPaths = [
     "/lms/login",

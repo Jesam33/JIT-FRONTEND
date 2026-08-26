@@ -92,18 +92,63 @@ export function tenantLoginUrls(slug: string): { student: string; staff: string;
 // wildcard DNS) we append ?tenant={slug} so the backend still resolves the
 // institute after the redirect. Relative (not absolute) so it never bounces the
 // user cross-origin — the fix for expired student sessions landing on JIT login.
-export function tenantLoginPath(portal: "student" | "staff" | "owner" = "student"): string {
+//
+// `next` (optional) is a return path so a logged-out email/deep-link tap forwards
+// to the target page after login. It is validated by isSafeNextPath() so it can
+// only ever be a same-origin LMS page (never a login page → no loop, never an
+// absolute URL → no open redirect).
+export function tenantLoginPath(
+  portal: "student" | "staff" | "owner" = "student",
+  next?: string | null,
+): string {
   const base =
     portal === "staff"
       ? "/lms/staff/login"
       : portal === "owner"
         ? "/lms/admin/login"
         : "/lms/login";
+
+  const params = new URLSearchParams();
+
   // On a true subdomain the origin already pins the tenant, so the bare path is
   // correct. Only the bare-domain fallback needs the explicit ?tenant= hint.
-  if (process.env.NEXT_PUBLIC_APP_DOMAIN) return base;
-  const slug = getTenantSlug();
-  return slug ? `${base}?tenant=${encodeURIComponent(slug)}` : base;
+  if (!process.env.NEXT_PUBLIC_APP_DOMAIN) {
+    const slug = getTenantSlug();
+    if (slug) params.set("tenant", slug);
+  }
+
+  if (isSafeNextPath(next)) params.set("next", next);
+
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+// Auth pages a `next=` return path must never point at (they'd loop the user
+// back through login) — the login/reset/setup/invite surfaces for every portal.
+const AUTH_NEXT_DENYLIST = [
+  "/lms/login",
+  "/lms/signup",
+  "/lms/forgot-password",
+  "/lms/reset-password",
+  "/lms/setup-password",
+  "/lms/invite",
+  "/lms/staff/login",
+  "/lms/staff/forgot-password",
+  "/lms/staff/reset-password",
+  "/lms/staff/setup-password",
+  "/lms/admin/login",
+  "/lms/agent/login",
+];
+
+// A `next=` return path is only safe if it is a same-origin LMS page and not an
+// auth page. Shared by BOTH the guards that mint ?next= and the login pages that
+// consume it, so the open-redirect rule can never drift between the two sides.
+// The leading-single-slash `/lms/` prefix blocks `//host`, `https://host`, and
+// any other cross-origin target; the denylist blocks login-loop targets.
+export function isSafeNextPath(next?: string | null): next is string {
+  if (!next || !next.startsWith("/lms/")) return false;
+  if (next.startsWith("//")) return false;
+  return !AUTH_NEXT_DENYLIST.some((p) => next === p || next.startsWith(p + "/") || next.startsWith(p + "?"));
 }
 
 // The public storefront URL an institute shares so prospective students can

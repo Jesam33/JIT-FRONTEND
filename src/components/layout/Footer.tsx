@@ -18,7 +18,7 @@ export default function Footer() {
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-site-text/60">WhatsApp Chat</p>
-            <div className="mt-3 space-y-3 gap-4">
+            <div className="mt-3 flex flex-col items-start gap-3">
               <a
                 href="https://wa.me/2348034585459?text=Hello%20Jorsas%20Tech%2C%20I%27d%20like%20to%20make%20an%20enquiry."
                 target="_blank"

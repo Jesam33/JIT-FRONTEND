@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { STAFF_API, STUDENT_API } from "../../lib/api";
+import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner } from "./chat-extras";
 
 type AnyObj = Record<string, any>;
 
@@ -96,7 +97,7 @@ function scrollToBottom(container: HTMLDivElement | null) {
   });
 }
 
-function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, attachmentUrl, editedAt, onEdit, onDelete, messageObj }: {
+function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, attachmentUrl, editedAt, onEdit, onDelete, onReply, onReact, messageObj }: {
   message: string;
   role: string;
   isMe: boolean;
@@ -107,6 +108,8 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
   editedAt?: string | null;
   onEdit?: (msg: AnyObj) => void;
   onDelete?: (id: number) => void;
+  onReply?: () => void;
+  onReact?: (emoji: string) => void;
   messageObj?: AnyObj;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -178,27 +181,36 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
       ) : isMe && (onEdit || onDelete) ? (
         <div className="w-7 shrink-0" />
       ) : null}
-      <div
-        className={`max-w-[85%] sm:max-w-[70%] break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed border ${
-          isMe
-            ? "rounded-br-md border-site-primary bg-site-primary text-white"
-            : "rounded-bl-md border-site-border bg-site-surface-soft text-site-text"
-        }`}
-      >
-        {message ? <p>{renderMentions(message, isMe ? "font-bold text-white" : "font-bold text-site-primary")}</p> : null}
-        {editedAt ? <span className="ml-1 text-[10px] italic opacity-60">(edited)</span> : null}
-        {attachmentUrl ? (
-          <a
-            href={attachmentUrl}
-            target="_blank"
-            rel="noreferrer"
-            className={`mt-1 inline-flex items-center gap-1.5 text-xs underline ${isMe ? "text-white/80" : "text-site-muted hover:text-site-text"}`}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-            </svg>
-            Attachment
-          </a>
+      <div className={`flex min-w-0 max-w-[85%] flex-col gap-1 sm:max-w-[70%] ${isMe ? "items-end" : "items-start"}`}>
+        <div
+          className={`w-full break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed border ${
+            isMe
+              ? "rounded-br-md border-site-primary bg-site-primary text-white"
+              : "rounded-bl-md border-site-border bg-site-surface-soft text-site-text"
+          }`}
+        >
+          {messageObj?.reply_to ? <ReplyQuote tone="surface" reply={messageObj.reply_to} placement={isMe ? "own" : "other"} /> : null}
+          {message ? <p>{renderMentions(message, isMe ? "font-bold text-white" : "font-bold text-site-primary")}</p> : null}
+          {editedAt ? <span className="ml-1 text-[10px] italic opacity-60">(edited)</span> : null}
+          {attachmentUrl ? (
+            <a
+              href={attachmentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`mt-1 inline-flex items-center gap-1.5 text-xs underline ${isMe ? "text-white/80" : "text-site-muted hover:text-site-text"}`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+              </svg>
+              Attachment
+            </a>
+          ) : null}
+        </div>
+        {onReply || onReact || (messageObj?.reactions && messageObj.reactions.length > 0) ? (
+          <div className={`flex items-center gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
+            {onReply && onReact ? <MessageToolbar tone="surface" onReply={onReply} onReact={onReact} /> : null}
+            {onReact ? <ReactionChips tone="surface" reactions={messageObj?.reactions} onToggle={onReact} align={isMe ? "end" : "start"} /> : null}
+          </div>
         ) : null}
       </div>
       {isMe && (onEdit || onDelete) ? (
@@ -222,13 +234,15 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
   );
 }
 
-function MessageArea({ messages, showAvatarFn, getAvatarUrl, getSenderNameFn, onEditMessage, onDeleteMessage, myRole }: {
+function MessageArea({ messages, showAvatarFn, getAvatarUrl, getSenderNameFn, onEditMessage, onDeleteMessage, onReplyMessage, onReactMessage, myRole }: {
   messages: AnyObj[];
   showAvatarFn: (item: AnyObj, idx: number, arr: AnyObj[]) => boolean;
   getAvatarUrl: (item: AnyObj) => string | null;
   getSenderNameFn: (item: AnyObj) => string;
   onEditMessage?: (msg: AnyObj) => void;
   onDeleteMessage?: (id: number) => void;
+  onReplyMessage?: (msg: AnyObj) => void;
+  onReactMessage?: (msg: AnyObj, emoji: string) => void;
   myRole?: string;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -273,6 +287,8 @@ function MessageArea({ messages, showAvatarFn, getAvatarUrl, getSenderNameFn, on
                       editedAt={item.edited_at}
                       onEdit={onEditMessage}
                       onDelete={onDeleteMessage}
+                      onReply={onReplyMessage ? () => onReplyMessage(item) : undefined}
+                      onReact={onReactMessage ? (emoji) => onReactMessage(item, emoji) : undefined}
                       messageObj={item}
                     />
                 {time ? (
@@ -299,7 +315,7 @@ function ChannelList({ label, children }: { label: string; children: React.React
   );
 }
 
-function InputBar({ value, onChange, placeholder, onSend, sending, attachmentValue, onAttachmentChange, mentionableUsers }: {
+function InputBar({ value, onChange, placeholder, onSend, sending, attachmentValue, onAttachmentChange, mentionableUsers, replyingTo, onCancelReply }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
@@ -308,6 +324,8 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
   attachmentValue?: string;
   onAttachmentChange?: (v: string) => void;
   mentionableUsers?: { id: number; name: string; username: string; role: string }[];
+  replyingTo?: { id: number; name: string; content: string } | null;
+  onCancelReply?: () => void;
 }) {
   const [showAttach, setShowAttach] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -390,6 +408,9 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
 
   return (
     <div className="relative space-y-2">
+      {replyingTo && onCancelReply ? (
+        <ReplyingBanner tone="surface" name={replyingTo.name} content={replyingTo.content} onCancel={onCancelReply} />
+      ) : null}
       {mentionQuery !== null ? (
         <div className="absolute bottom-full left-4 right-4 z-50 mb-2 max-h-40 overflow-y-auto rounded-xl border border-site-border bg-site-surface p-1 shadow-xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white [html.light_&]:shadow-lg">
           {filtered.length === 0 ? (
@@ -636,6 +657,10 @@ export default function ChatLayout(props: AnyObj) {
     sendReply,
     sending,
     onRefresh,
+    onReplyMessage,
+    onReactMessage,
+    replyingTo,
+    onCancelReply,
   } = props;
 
   function showAvatar(item: AnyObj, idx: number, arr: AnyObj[]) {
@@ -749,6 +774,8 @@ export default function ChatLayout(props: AnyObj) {
               getSenderNameFn={getSenderNameFn}
               onEditMessage={onEditMessage}
               onDeleteMessage={onDeleteMessage}
+              onReplyMessage={onReplyMessage}
+              onReactMessage={onReactMessage}
               myRole="teacher"
             />
 
@@ -761,6 +788,8 @@ export default function ChatLayout(props: AnyObj) {
                 sending={sending}
                 attachmentValue={messageAttachment}
                 onAttachmentChange={setMessageAttachment}
+                replyingTo={replyingTo}
+                onCancelReply={onCancelReply}
               />
             </div>
           </>

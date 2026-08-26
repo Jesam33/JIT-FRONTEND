@@ -75,7 +75,7 @@ export const navLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/institute", label: "Institute" },
   // { href: "/real-estate", label: "Real Estate" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/policies", label: "Policies" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact" },
 ];
@@ -305,24 +305,16 @@ export const faqGroups: FaqGroup[] = [
 
 export const pricingPlans: PricingPlan[] = [
   {
-    slug: "free",
-    name: "Free",
-    price: "₦0",
+    slug: "basic",
+    name: "Basic",
+    price: "₦5,000/mo",
+    popular: true,
     features: [
       "Full LMS access",
       "Unlimited courses & modules",
       "Student & staff portals",
       "Attendance & grading",
       "Group & direct chat",
-    ],
-  },
-  {
-    slug: "basic",
-    name: "Basic",
-    price: "₦5,000/mo",
-    popular: true,
-    features: [
-      "Everything in Free",
       "Priority email support",
       "Custom branding",
       "Certificates",

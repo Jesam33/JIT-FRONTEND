@@ -7,6 +7,8 @@ import { apiFetch, okJson } from "../../../../lib/fetch-with-timeout";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
+import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner } from "../../../../components/chat/chat-extras";
+import { toggleReactionLocal, applyReactionsToList, applyReactionBroadcast } from "../../../../lib/chat-reactions";
 
 function renderMentions(text: string, mentionClass = "font-bold text-site-primary") {
   const parts = text.split(/@(\w+)/);
@@ -45,6 +47,9 @@ export default function StudentChatsPage() {
   const [editingAttachment, setEditingAttachment] = useState("");
   const [menuMsgId, setMenuMsgId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // reply state (staged parent message being replied to)
+  const [replyingTo, setReplyingTo] = useState<{ id: number; name: string; content: string } | null>(null);
 
   // mention state
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -157,6 +162,10 @@ export default function StudentChatsPage() {
           setUnreadGroup((n) => n + 1);
         }
       });
+      channel.bind("reaction.updated", (data: { message_id: number; reactions?: { emoji: string; count: number }[] }) => {
+        if (!data?.message_id) return;
+        setGroupMessages((prev) => applyReactionBroadcast(prev, data.message_id, data.reactions));
+      });
     }
 
     const dmId = chatBootstrap?.dm_thread?.id;
@@ -179,6 +188,10 @@ export default function StudentChatsPage() {
         if (chatTabRef.current !== "dm" && (data.sender_role === "teacher" || data.from_role === "teacher")) {
           setUnreadDm((n) => n + 1);
         }
+      });
+      channel.bind("reaction.updated", (data: { message_id: number; reactions?: { emoji: string; count: number }[] }) => {
+        if (!data?.message_id) return;
+        setDmMessages((prev) => applyReactionBroadcast(prev, data.message_id, data.reactions));
       });
     }
   }, [token, chatBootstrap]);
@@ -265,12 +278,45 @@ export default function StudentChatsPage() {
     } catch {}
   };
 
+  const isTempId = (id: number | string) => typeof id === "string" && id.startsWith("temp-");
+
+  const startReply = (msg: any) => {
+    if (isTempId(msg.id)) return; // can't reply to a message that hasn't been sent yet
+    const role = msg.sender_role ?? msg.from_role;
+    setReplyingTo({
+      id: msg.id,
+      name: msg.sender_name ?? (role === "teacher" ? "Instructor" : "Student"),
+      content: msg.content ?? (msg.attachment_url ? "Attachment" : ""),
+    });
+  };
+
+  const reactToMessage = async (messageId: number | string, emoji: string) => {
+    if (isTempId(messageId)) return; // no server id yet
+    const isGroup = chatTab === "track";
+    const setter = isGroup ? setGroupMessages : setDmMessages;
+    // optimistic toggle, reconciled by the POST response
+    setter((prev) => prev.map((m) => (String(m.id) === String(messageId) ? { ...m, reactions: toggleReactionLocal(m.reactions, emoji) } : m)));
+    try {
+      const res = await apiFetch(STUDENT_API.reactMessage(messageId as number), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setter((prev) => applyReactionsToList(prev, data.message_id, data.reactions));
+      }
+    } catch {}
+  };
+
   async function sendMessage() {
     if (!chatBody.trim() && !chatAttachmentUrl.trim()) return;
     const contentToSend = chatBody;
     const attachmentToSend = chatAttachmentUrl;
+    const replyToSend = replyingTo;
     setChatBody("");
     setChatAttachmentUrl("");
+    setReplyingTo(null);
     setMentionQuery(null);
     setMentionIndex(-1);
 
@@ -282,6 +328,8 @@ export default function StudentChatsPage() {
       sender_role: "student",
       sender_id: profile?.id ?? 0,
       sender_name: profile ? `${profile.first_name} ${profile.last_name}` : "You",
+      reply_to_id: replyToSend?.id ?? null,
+      reply_to: replyToSend ? { id: replyToSend.id, sender_name: replyToSend.name, content: replyToSend.content } : null,
       created_at: new Date().toISOString(),
     };
 
@@ -301,6 +349,7 @@ export default function StudentChatsPage() {
         body: JSON.stringify({
           content: contentToSend,
           attachment_url: attachmentToSend || null,
+          reply_to_id: replyToSend?.id ?? null,
         }),
       });
 
@@ -414,6 +463,7 @@ export default function StudentChatsPage() {
                         </div>
                       ) : (
                         <>
+                          {msg.reply_to ? <ReplyQuote tone="glass" reply={msg.reply_to} placement={isOwn ? "own" : "other"} /> : null}
                           <p className="text-[11px] font-medium text-white/50 mb-0.5">{senderLabel}</p>
                           {msg.content ? (
                             <p className="text-sm">
@@ -441,6 +491,12 @@ export default function StudentChatsPage() {
                       </div>
                     ) : null}
                   </div>
+                  {editingMsgId !== msg.id ? (
+                    <div className={`mt-1 flex items-center gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
+                      <MessageToolbar tone="glass" onReply={() => startReply(msg)} onReact={(e) => reactToMessage(msg.id, e)} />
+                      <ReactionChips tone="glass" reactions={msg.reactions} onToggle={(e) => reactToMessage(msg.id, e)} align={isOwn ? "end" : "start"} />
+                    </div>
+                  ) : null}
                   <p className={`mt-0.5 text-[10px] text-white/40 ${isOwn ? "text-right" : "text-left"}`}>{timeStr}</p>
                 </div>
               );
@@ -449,7 +505,7 @@ export default function StudentChatsPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="relative flex gap-2 border-t border-white/10 p-3">
+        <div className="relative border-t border-white/10 p-3">
           {mentionQuery !== null && chatTab === "track" ? (
             <div className="absolute bottom-full left-3 right-3 z-50 mb-2 max-h-40 overflow-y-auto rounded-xl border border-white/15 bg-black/90 p-1 shadow-xl [html.light_&]:border-neutral-300 [html.light_&]:bg-white [html.light_&]:shadow-lg">
               {filteredMentions.length === 0 ? (
@@ -477,6 +533,10 @@ export default function StudentChatsPage() {
               )}
             </div>
           ) : null}
+          {replyingTo ? (
+            <ReplyingBanner tone="glass" name={replyingTo.name} content={replyingTo.content} onCancel={() => setReplyingTo(null)} />
+          ) : null}
+          <div className="flex gap-2">
           <input
             ref={groupInputRef}
             value={chatBody}
@@ -497,6 +557,7 @@ export default function StudentChatsPage() {
           <button onClick={sendMessage} disabled={sending || (!chatBody.trim() && !chatAttachmentUrl.trim())} className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50 hover:bg-white/90 transition">
             Send
           </button>
+          </div>
         </div>
       </div>
     </section>

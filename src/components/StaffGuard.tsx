@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../lib/api";
 import { apiFetchStaff } from "../lib/fetch-with-timeout";
-import { tenantLoginPath, setTenantCookie } from "../lib/tenant-client";
+import { tenantLoginPath, setTenantCookie, pinTenantFromLocation } from "../lib/tenant-client";
 
 const PUBLIC_PATHS = [
   "/lms/staff/login",
@@ -30,7 +30,11 @@ export default function StaffGuard({ children }: { children: React.ReactNode }) 
     const token = localStorage.getItem("lms_staff_token") ?? "";
 
     if (!token) {
-      router.replace(tenantLoginPath("staff"));
+      // Cold tap on an emailed staff deep link: pin the institute from the
+      // link's ?tenant= before building the login path, and carry the target as
+      // ?next= so login forwards there instead of the default dashboard.
+      pinTenantFromLocation();
+      router.replace(tenantLoginPath("staff", pathname));
       return;
     }
 

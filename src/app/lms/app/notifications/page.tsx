@@ -12,6 +12,8 @@ function notificationHref(n: NotificationItem): string | null {
   if (n.reference_type === "task" && n.reference_id) return `/lms/tasks/${n.reference_id}`;
   if (n.reference_type === "group_chat") return "/lms/app/chats";
   if (n.reference_type === "scheduled_class") return "/lms/app/classroom";
+  if (n.reference_type === "module") return n.reference_id ? `/lms/app/modules/${n.reference_id}` : "/lms/app/modules";
+  if (n.reference_type === "course") return "/lms/app/modules";
   return null;
 }
 

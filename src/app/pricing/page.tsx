@@ -6,11 +6,11 @@ export default function PricingPage() {
   return (
     <section>
       <InnerPageHero title="Simple pricing that grows with you" subtitle="FLEXIBLE PRICING PLAN">
-        <p>Start free and launch your institute today. Upgrade any time — no long-term contracts.</p>
+        <p>Launch your institute today and upgrade any time — no long-term contracts.</p>
       </InnerPageHero>
 
       <div className="container-wide py-14">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
           {pricingPlans.map((plan) => (
             <article
               key={plan.slug}
@@ -32,9 +32,9 @@ export default function PricingPage() {
               </ul>
               <Link
                 href={`/signup?plan=${plan.slug}`}
-                className="mt-8 inline-flex justify-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:brightness-90"
+                className="mt-8 inline-flex justify-center rounded-full bg-[#ed180d] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-110"
               >
-                {plan.slug === "free" ? "Start free" : `Choose ${plan.name}`}
+                Choose {plan.name}
               </Link>
             </article>
           ))}

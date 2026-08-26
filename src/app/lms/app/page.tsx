@@ -292,7 +292,13 @@ export default function StudentDashboardPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">Announcements</p>
           <div className="mt-4 space-y-3 text-sm text-white/75">
             {(data.notifications ?? []).slice(0, 3).map((item) => {
-              const href = item.reference_type === "task" && item.reference_id ? `/lms/tasks/${item.reference_id}` : null;
+              const href =
+                item.reference_type === "task" && item.reference_id ? `/lms/tasks/${item.reference_id}`
+                : item.reference_type === "group_chat" ? "/lms/app/chats"
+                : item.reference_type === "scheduled_class" ? "/lms/app/classroom"
+                : item.reference_type === "module" ? (item.reference_id ? `/lms/app/modules/${item.reference_id}` : "/lms/app/modules")
+                : item.reference_type === "course" ? "/lms/app/modules"
+                : null;
               return (
                 <div
                   key={item.id}
