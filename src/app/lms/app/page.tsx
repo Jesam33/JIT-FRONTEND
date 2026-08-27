@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { DashboardPayload } from "../../../lib/lms-types";
 import { formatLocalDateTime, formatRelativeCountdown, canJoinClassroom, getToken } from "../../../lib/lms-utils";
 import LoadingSpinner from "../../../components/LoadingSpinner";
+import StarRating from "../../../components/ui/StarRating";
 import { STUDENT_API } from "../../../lib/api";
 import { apiFetch } from "../../../lib/fetch-with-timeout";
 
@@ -17,6 +18,8 @@ export default function StudentDashboardPage() {
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [joining, setJoining] = useState<number | null>(null);
+  const [ratingBusy, setRatingBusy] = useState(false);
+  const [ratingMsg, setRatingMsg] = useState("");
 
   const token = useMemo(() => getToken(), []);
 
@@ -79,6 +82,12 @@ export default function StudentDashboardPage() {
   }, [joinMessage]);
 
   useEffect(() => {
+    if (!ratingMsg) return;
+    const timeoutId = window.setTimeout(() => setRatingMsg(""), 4000);
+    return () => window.clearTimeout(timeoutId);
+  }, [ratingMsg]);
+
+  useEffect(() => {
     const intervalId = window.setInterval(() => setCurrentTime(Date.now()), 60000);
     return () => window.clearInterval(intervalId);
   }, []);
@@ -102,6 +111,48 @@ export default function StudentDashboardPage() {
 
   function openMaterials() {
     router.push("/lms/app/materials");
+  }
+
+  // Submit (or update) the student's 1–5 rating for their enrolled course. The
+  // backend enforces enrollment + one-row-per-student; we optimistically show the
+  // chosen value and reconcile from the returned aggregate.
+  async function submitRating(n: number) {
+    const rating = data.rating;
+    if (!rating || ratingBusy) return;
+    setRatingBusy(true);
+    setRatingMsg("");
+    // Show the picked star immediately; the response confirms the aggregate.
+    setData((prev) => (prev.rating ? { ...prev, rating: { ...prev.rating, your_rating: n } } : prev));
+    try {
+      const response = await apiFetch(STUDENT_API.rateCourse(rating.course_id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ rating: n }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        setRatingMsg(payload?.message ?? "Couldn't save your rating. Please try again.");
+        return;
+      }
+      setData((prev) =>
+        prev.rating
+          ? {
+              ...prev,
+              rating: {
+                ...prev.rating,
+                your_rating: payload?.your_rating ?? n,
+                average: payload?.rating_average ?? prev.rating.average,
+                count: payload?.rating_count ?? prev.rating.count,
+              },
+            }
+          : prev,
+      );
+      setRatingMsg("Thanks for rating!");
+    } catch {
+      setRatingMsg("Couldn't save your rating. Please try again.");
+    } finally {
+      setRatingBusy(false);
+    }
   }
 
   function openTimetable() {
@@ -168,6 +219,29 @@ export default function StudentDashboardPage() {
             {unreadNotifications.length ? <p className="mt-1 text-xs text-amber-200">You have {unreadNotifications.length} unread notification{unreadNotifications.length > 1 ? "s" : ""}.</p> : null}
           </div>
         </div>
+        {data.rating ? (
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white">
+                {data.rating.your_rating ? "Your rating" : "Rate this course"}
+              </p>
+              <p className="mt-0.5 text-xs text-white/60">
+                {data.rating.count > 0
+                  ? `Course average ${data.rating.average.toFixed(1)} from ${data.rating.count} rating${data.rating.count === 1 ? "" : "s"}`
+                  : "Be the first to rate this course."}
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <StarRating
+                value={data.rating.your_rating ?? 0}
+                size="lg"
+                onRate={submitRating}
+                disabled={ratingBusy}
+              />
+              {ratingMsg ? <span className="text-xs text-emerald-300">{ratingMsg}</span> : null}
+            </div>
+          </div>
+        ) : null}
         {joinMessage ? <p className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">{joinMessage}</p> : null}
       </div>
 

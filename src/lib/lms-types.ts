@@ -53,6 +53,15 @@ export type DashboardPayload = {
   }>;
   tasks?: TaskItem[];
   notifications?: NotificationItem[];
+  // The student's own rating for their enrolled course + the course aggregate,
+  // so the dashboard can render a pre-filled "Rate this course" control. Null
+  // when the student has no resolved course.
+  rating?: {
+    course_id: number;
+    your_rating: number | null;
+    average: number;
+    count: number;
+  } | null;
 };
 
 export type ChatReaction = {

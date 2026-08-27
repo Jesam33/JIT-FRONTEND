@@ -3,6 +3,7 @@ import type { InstituteProfile } from "@/lib/institute-profile";
 import CourseRegisterClient from "@/components/institute/CourseRegisterClient";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
+import StarRating from "@/components/ui/StarRating";
 import { formatPrice } from "@/lib/currency";
 
 export type DetailCourse = {
@@ -27,6 +28,14 @@ export type DetailCourse = {
   is_base_currency?: boolean;
   charge_currency?: string;
   purchasable?: boolean;
+  // Udemy-style card signals (honestly derived server-side — see CourseCards).
+  original_price?: number | null;
+  original_price_display?: number | null;
+  cover_image_url?: string | null;
+  rating_average?: number;
+  rating_count?: number;
+  instructor_name?: string | null;
+  is_bestseller?: boolean;
 };
 
 // The shape returned by /api/frontend/i/{slug}/courses/{courseSlug} and the
@@ -43,6 +52,22 @@ export type CourseDetailData = {
 function headlinePrice(course: DetailCourse): string {
   if (course.price <= 0) return "Free";
   return formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN");
+}
+
+// The struck-through "was" price beside the headline — only when a real original
+// was entered AND it exceeds the current price (compared in the same currency space).
+function detailOriginalPrice(course: DetailCourse): string | null {
+  if (course.price <= 0) return null;
+  const orig = course.original_price_display ?? course.original_price ?? null;
+  const current = course.price_display ?? course.price;
+  if (orig == null || !(orig > current)) return null;
+  return formatPrice(orig, course.display_currency ?? "NGN");
+}
+
+// First character of the title, for the branded placeholder when no cover is set.
+function coverInitial(title: string): string {
+  const c = (title || "").trim().charAt(0);
+  return c ? c.toUpperCase() : "•";
 }
 
 // Presentational course-detail page shared by the apex primary course route and
@@ -62,10 +87,44 @@ export default function InstituteCourseDetail({
         <div className="container-wide">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <article className="rounded-xl border border-white/20 bg-white/5 p-6 md:p-8">
+            {/* Cover hero — owner upload or branded initial placeholder. */}
+            <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-lg ring-1 ring-inset ring-[color:var(--color-primary)]/40">
+              {course.cover_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={course.cover_image_url} alt={course.title} className="h-full w-full object-cover" />
+              ) : (
+                <div
+                  className="flex h-full w-full items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 45%, #000))" }}
+                >
+                  <span className="text-6xl font-black text-white/90" style={{ fontFamily: "var(--font-display)" }}>
+                    {coverInitial(course.title)}
+                  </span>
+                </div>
+              )}
+              {course.is_bestseller ? (
+                <span className="absolute left-3 top-3 rounded-sm px-2 py-0.5 text-[11px] font-bold" style={{ backgroundColor: "#ccfbf1", color: "#115e59" }}>
+                  Bestseller
+                </span>
+              ) : null}
+            </div>
+
             <p className="text-xs uppercase tracking-[0.2em] text-white/60">{institute.name}</p>
             <h1 className="mt-3 text-3xl font-bold md:text-4xl" style={{ fontFamily: "var(--font-display)" }}>
               {course.title}
             </h1>
+
+            {/* Rating summary (real reviews only) + instructor line. */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+              {(course.rating_count ?? 0) > 0 ? (
+                <StarRating value={course.rating_average ?? 0} count={course.rating_count ?? 0} size="md" labelClassName="text-white/70" />
+              ) : (
+                <span className="rounded bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/70">New course</span>
+              )}
+              {course.instructor_name ? (
+                <span className="text-sm text-white/60">By {course.instructor_name}</span>
+              ) : null}
+            </div>
 
             {course.description ? (
               <div className="mt-6 text-sm leading-7 text-white/85">
@@ -96,9 +155,14 @@ export default function InstituteCourseDetail({
           </article>
 
           <aside className="h-fit rounded-xl border border-white/20 bg-white/5 p-6">
-            <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-              {headlinePrice(course)}
-            </p>
+            <div className="flex flex-wrap items-baseline gap-2">
+              <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
+                {headlinePrice(course)}
+              </p>
+              {detailOriginalPrice(course) ? (
+                <span className="text-lg text-white/40 line-through">{detailOriginalPrice(course)}</span>
+              ) : null}
+            </div>
             {course.price > 0 && course.is_base_currency === false ? (
               <p className="mt-1 text-xs text-white/60">
                 Approx. shown in {course.display_currency} · you&apos;ll be charged{" "}

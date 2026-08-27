@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Suspense } from "react";
 import "./globals.css";
 import AppChrome from "@/components/layout/AppChrome";
+import BrandingGuard from "@/components/BrandingGuard";
 import TopProgressBar from "@/components/TopProgressBar";
 
 const dmSans = DM_Sans({
@@ -61,6 +62,13 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  // Only the /lms portals and /i institute mini-sites wear an
+                  // institute palette; every other route is the primary Jorsas
+                  // marketing site and must stay on the default theme, so a stale
+                  // 'tenant' cookie can't bleed institute colors onto the landing
+                  // page. Mirrors the branded-area check in AppChrome.tsx.
+                  var path = location.pathname;
+                  if (!(path.startsWith('/lms') || path === '/i' || path.startsWith('/i/'))) return;
                   var m = document.cookie.match(/(?:^|;\\s*)tenant=([^;]*)/);
                   var slug = (m && m[1]) ? decodeURIComponent(m[1]) : ${JSON.stringify(process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas")};
                   var raw = localStorage.getItem('lms_branding:' + slug);
@@ -89,6 +97,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <TopProgressBar />
         </Suspense>
+        <BrandingGuard />
         <AppChrome>{children}</AppChrome>
       </body>
     </html>

@@ -42,6 +42,14 @@ const SAMPLE_COURSES: StorefrontCourse[] = [
     is_full: false,
     is_live_available: true,
     is_prerecorded_available: true,
+    // Sample card signals — this is the owner's DESIGN preview widget (clearly
+    // labelled "sample courses"), not the live storefront, so populated values
+    // here don't breach the "no dummy on the storefront" rule.
+    original_price: 200000,
+    rating_average: 4.7,
+    rating_count: 214,
+    instructor_name: "Lead Instructor",
+    is_bestseller: true,
   },
   {
     id: -2,
@@ -55,6 +63,10 @@ const SAMPLE_COURSES: StorefrontCourse[] = [
     is_full: false,
     is_live_available: false,
     is_prerecorded_available: true,
+    // A brand-new course: no reviews yet → the card shows the "New" chip.
+    rating_average: 0,
+    rating_count: 0,
+    is_bestseller: false,
   },
 ];
 

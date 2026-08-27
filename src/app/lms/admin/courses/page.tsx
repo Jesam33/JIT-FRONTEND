@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
 import { useToast } from "@/components/ToastProvider";
+import StarRating from "@/components/ui/StarRating";
 
 type Course = {
   id: number;
@@ -12,6 +13,12 @@ type Course = {
   description: string | null;
   requirements: string | null;
   price: number | string | null;
+  original_price?: number | string | null;
+  cover_image_url?: string | null;
+  rating_average?: number;
+  rating_count?: number;
+  instructor_name?: string | null;
+  is_bestseller?: boolean;
   max_students: number | null;
   students_count: number;
   tracks_count: number;
@@ -28,11 +35,18 @@ function formatPrice(price: Course["price"]): string {
   return `₦${n.toLocaleString()}`;
 }
 
+// First character of the title, for the branded placeholder when no cover is set.
+function coverInitial(title: string): string {
+  const c = (title || "").trim().charAt(0);
+  return c ? c.toUpperCase() : "•";
+}
+
 const emptyForm = {
   title: "",
   description: "",
   requirements: "",
   price: "",
+  originalPrice: "",
   maxStudents: "",
   isLive: true,
   isPrerecorded: true,
@@ -53,6 +67,11 @@ export default function OwnerCoursesPage() {
   const [saveMsg, setSaveMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // Cover image is managed separately from the text form: it POSTs immediately on
+  // pick/remove (the endpoint needs the course id, so it's only shown while editing).
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const coverFileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   const setField = <K extends keyof typeof emptyForm>(key: K, value: (typeof emptyForm)[K]) =>
@@ -91,6 +110,7 @@ export default function OwnerCoursesPage() {
   const resetForm = () => {
     setEditingId(null);
     setForm({ ...emptyForm });
+    setCoverUrl(null);
     setSaveMsg(null);
   };
 
@@ -102,11 +122,13 @@ export default function OwnerCoursesPage() {
       description: c.description ?? "",
       requirements: c.requirements ?? "",
       price: c.price === null || c.price === undefined ? "" : String(c.price),
+      originalPrice: c.original_price === null || c.original_price === undefined ? "" : String(c.original_price),
       maxStudents: c.max_students ? String(c.max_students) : "",
       isLive: !!c.is_live_available,
       isPrerecorded: !!c.is_prerecorded_available,
       isActive: !!c.is_active,
     });
+    setCoverUrl(c.cover_image_url ?? null);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -121,6 +143,10 @@ export default function OwnerCoursesPage() {
       setSaveMsg({ kind: "err", text: "Price must be a number (0 or more)." });
       return;
     }
+    if (form.originalPrice !== "" && (Number.isNaN(Number(form.originalPrice)) || Number(form.originalPrice) < 0)) {
+      setSaveMsg({ kind: "err", text: "Original price must be a number (0 or more)." });
+      return;
+    }
     if (form.maxStudents !== "" && (!Number.isInteger(Number(form.maxStudents)) || Number(form.maxStudents) < 0)) {
       setSaveMsg({ kind: "err", text: "Capacity must be a whole number (0 = unlimited)." });
       return;
@@ -131,6 +157,7 @@ export default function OwnerCoursesPage() {
       description: form.description.trim() || null,
       requirements: form.requirements.trim() || null,
       price: form.price === "" ? 0 : Number(form.price),
+      original_price: form.originalPrice === "" ? null : Number(form.originalPrice),
       max_students: form.maxStudents === "" ? 0 : Number(form.maxStudents),
       is_live_available: form.isLive,
       is_prerecorded_available: form.isPrerecorded,
@@ -154,14 +181,90 @@ export default function OwnerCoursesPage() {
         setSaveMsg({ kind: "err", text: json?.message || `Could not save (HTTP ${res.status}).` });
         return;
       }
-      setSaveMsg({ kind: "ok", text: editingId ? `Updated “${title}”.` : `Created “${title}”.` });
-      toast(editingId ? `Course “${title}” updated.` : `Course “${title}” created.`, "success");
-      resetForm();
+      if (editingId) {
+        setSaveMsg({ kind: "ok", text: `Updated “${title}”.` });
+        toast(`Course “${title}” updated.`, "success");
+        resetForm();
+      } else {
+        // Drop straight into edit mode for the just-created course so the owner
+        // can add a cover image (the uploader needs the new course id).
+        const created: Course | undefined = json?.course;
+        toast(`Course “${title}” created.`, "success");
+        if (created?.id) {
+          startEdit(created);
+          setSaveMsg({ kind: "ok", text: `Created “${title}”. Add a cover image below (optional).` });
+        } else {
+          resetForm();
+        }
+      }
       load();
     } catch (err) {
       setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const onPickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingId) return;
+    setCoverBusy(true);
+    setSaveMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(OWNER_API.courseCover(editingId), {
+        method: "POST",
+        headers: ownerAuthHeaders(), // no Content-Type — browser sets the multipart boundary
+        body: fd,
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const j = await res.json().catch(() => null);
+      if (!res.ok) {
+        setSaveMsg({ kind: "err", text: j?.message ?? "Upload failed. Use a PNG/JPG under 4MB." });
+        return;
+      }
+      const updated: Course | undefined = j?.course;
+      setCoverUrl(updated?.cover_image_url ?? null);
+      setSaveMsg({ kind: "ok", text: "Cover image updated." });
+      load();
+    } catch (err) {
+      setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setCoverBusy(false);
+      if (coverFileRef.current) coverFileRef.current.value = "";
+    }
+  };
+
+  const removeCover = async () => {
+    if (!editingId) return;
+    setCoverBusy(true);
+    setSaveMsg(null);
+    try {
+      const res = await fetch(OWNER_API.courseCover(editingId), {
+        method: "POST",
+        headers: { ...ownerAuthHeaders(), "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ remove_cover: true }),
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const j = await res.json().catch(() => null);
+      if (!res.ok) {
+        setSaveMsg({ kind: "err", text: j?.message ?? "Could not remove cover." });
+        return;
+      }
+      setCoverUrl(null);
+      setSaveMsg({ kind: "ok", text: "Cover image removed." });
+      load();
+    } catch (err) {
+      setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setCoverBusy(false);
     }
   };
 
@@ -249,7 +352,7 @@ export default function OwnerCoursesPage() {
             placeholder="Requirements / prerequisites (optional)"
             className={inputClass}
           />
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
                 Price (₦)
@@ -263,6 +366,21 @@ export default function OwnerCoursesPage() {
                 placeholder="0 (free)"
                 className={inputClass}
               />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                Original price (₦)
+              </label>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.originalPrice}
+                onChange={(e) => setField("originalPrice", e.target.value)}
+                placeholder="Optional"
+                className={inputClass}
+              />
+              <p className="mt-1 text-[11px] text-white/40">Shown struck-through when higher than the price.</p>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
@@ -293,6 +411,56 @@ export default function OwnerCoursesPage() {
               Published (visible on your public page)
             </label>
           </div>
+
+          {/* Cover image — the storefront card's thumbnail. Managed inline (POSTs
+              immediately); only available once the course exists (needs its id). */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">Cover image</label>
+            {editingId ? (
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-[color:var(--color-primary)]/40">
+                  {coverUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div
+                      className="flex h-full w-full items-center justify-center"
+                      style={{ background: "linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 45%, #000))" }}
+                    >
+                      <span className="text-2xl font-black text-white/90">{coverInitial(form.title)}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <input ref={coverFileRef} type="file" accept="image/*" onChange={onPickCover} className="hidden" />
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => coverFileRef.current?.click()}
+                      disabled={coverBusy}
+                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/10 disabled:opacity-60"
+                    >
+                      {coverBusy ? "Working…" : coverUrl ? "Replace cover" : "Upload cover"}
+                    </button>
+                    {coverUrl ? (
+                      <button
+                        type="button"
+                        onClick={removeCover}
+                        disabled={coverBusy}
+                        className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-60"
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
+                  <p className="text-[11px] text-white/40">Shown on your public course card. PNG/JPG under 4MB. No cover → a branded placeholder.</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-white/40">You can add a cover image right after creating the course.</p>
+            )}
+          </div>
+
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="submit"
@@ -315,10 +483,10 @@ export default function OwnerCoursesPage() {
       {/* Table */}
       <div className="overflow-hidden rounded-[20px] border border-white/20 bg-white/[0.04]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[820px] text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-[11px] uppercase tracking-wide text-site-muted">
-                <th className="px-5 py-3 font-semibold">Title</th>
+                <th className="px-5 py-3 font-semibold">Course</th>
                 <th className="px-5 py-3 font-semibold">Price</th>
                 <th className="px-5 py-3 font-semibold">Students</th>
                 <th className="px-5 py-3 font-semibold">Tracks</th>
@@ -329,8 +497,46 @@ export default function OwnerCoursesPage() {
             <tbody>
               {courses.map((c) => (
                 <tr key={c.id} className="border-b border-white/5 last:border-0">
-                  <td className="px-5 py-3 text-white">{c.title}</td>
-                  <td className="px-5 py-3 text-site-muted">{formatPrice(c.price)}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative aspect-video w-16 shrink-0 overflow-hidden rounded-md ring-1 ring-inset ring-[color:var(--color-primary)]/30">
+                        {c.cover_image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.cover_image_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div
+                            className="flex h-full w-full items-center justify-center"
+                            style={{ background: "linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 45%, #000))" }}
+                          >
+                            <span className="text-sm font-black text-white/90">{coverInitial(c.title)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-medium text-white">{c.title}</span>
+                          {c.is_bestseller ? (
+                            <span className="shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: "#ccfbf1", color: "#115e59" }}>
+                              Bestseller
+                            </span>
+                          ) : null}
+                        </div>
+                        {(c.rating_count ?? 0) > 0 ? (
+                          <div className="mt-1">
+                            <StarRating value={c.rating_average ?? 0} count={c.rating_count ?? 0} size="sm" />
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-[11px] text-white/40">No ratings yet</p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-3 text-site-muted">
+                    <div>{formatPrice(c.price)}</div>
+                    {c.original_price != null && Number(c.original_price) > Number(c.price ?? 0) ? (
+                      <div className="text-[11px] text-white/40 line-through">{formatPrice(c.original_price)}</div>
+                    ) : null}
+                  </td>
                   <td className="px-5 py-3 text-site-muted">{c.students_count}</td>
                   <td className="px-5 py-3 text-site-muted">{c.tracks_count}</td>
                   <td className="px-5 py-3">

@@ -48,6 +48,8 @@ export const OWNER_API = {
   storeCourse: api("/api/frontend/lms/owner/courses"),
   updateCourse: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}`),
   deleteCourse: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}`),
+  // Upload / remove a course cover image (multipart; POST {remove_cover:true} to clear).
+  courseCover: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}/cover`),
   // Owner cohort management (create + assign/reassign an instructor).
   createTrack: api("/api/frontend/lms/owner/tracks"),
   updateTrack: (id: string | number) => api(`/api/frontend/lms/owner/tracks/${id}`),
@@ -88,6 +90,9 @@ export const STUDENT_API = {
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/notifications/${id}/read`),
   attendance: api("/api/frontend/lms/attendance"),
   courses: api("/api/frontend/lms/courses"),
+  // Rate the course the student is enrolled in (1–5). One rating per student per
+  // course; re-posting updates it. Returns the fresh {rating_average, rating_count}.
+  rateCourse: (id: string | number) => api(`/api/frontend/lms/courses/${id}/rate`),
   classroomJoin: (id: string | number) => api(`/api/frontend/lms/classrooms/${id}/join`),
   classroomSdkSignature: (id: string | number) => api(`/api/frontend/lms/classrooms/${id}/sdk-signature`),
   // Client-side attendance close-out posted when the embedded live room tears down.
