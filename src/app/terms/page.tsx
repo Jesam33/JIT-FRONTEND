@@ -23,11 +23,11 @@ export default function TermsPage() {
             <Section title="3. Payments and Fees">
               Course fees are as displayed at the time of registration. Payments are processed via Paystack and are subject to
               their terms. All fees are non-refundable unless otherwise stated in our refund policy. Referral discounts and
-              agent-registered students are subject to specific pricing rules.
+              students registered by Admission Marketers are subject to specific pricing rules.
             </Section>
 
-            <Section title="4. Agent Program Terms">
-              Agents must provide accurate information during the application process. Agent commissions are calculated as 10%
+            <Section title="4. Admission-Marketer Program Terms">
+              Admission Marketers must provide accurate information during the application process. Admission-Marketer commissions are calculated as 10%
               of the full course price for both referral and direct registrations. Commissions become payable upon successful
               student enrollment and payment. We reserve the right to modify commission rates with 30 days&#39; notice.
               Withdrawal requests are processed manually by the administration and paid to the bank account you provide.

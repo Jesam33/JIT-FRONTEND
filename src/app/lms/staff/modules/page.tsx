@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { STAFF_API, api } from "../../../../lib/api";
 import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
 import { useToast } from "../../../../components/ToastProvider";
+import { uploadToBunny, type BunnyUploadSession } from "../../../../lib/bunny-upload";
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
@@ -16,6 +17,12 @@ type ModuleContent = {
   content_url: string | null;
   content_body: string | null;
   sort_order: number;
+  // Externally-hosted video (Bunny Stream) pointers — set only for a video whose
+  // file was uploaded to Bunny (content_url is then the player embed URL).
+  provider?: string | null;
+  external_id?: string | null;
+  thumbnail_url?: string | null;
+  status?: string | null;
 };
 
 type Module = {
@@ -77,6 +84,11 @@ export default function StaffModulesPage() {
   const [newContentType, setNewContentType] = useState("text");
   const [newContentUrl, setNewContentUrl] = useState("");
   const [newContentBody, setNewContentBody] = useState("");
+  // Video content uploads its file straight to Bunny (bytes never touch our
+  // server); contentUploadPct drives the progress bar during that upload.
+  const [contentVideoFile, setContentVideoFile] = useState<File | null>(null);
+  const [contentUploadPct, setContentUploadPct] = useState<number | null>(null);
+  const contentFileRef = useRef<HTMLInputElement | null>(null);
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedDesc, setSchedDesc] = useState("");
@@ -191,24 +203,54 @@ export default function StaffModulesPage() {
 
   async function addContent(moduleId: number) {
     if (!newContentTitle.trim()) return;
+    if (newContentType === "video" && !contentVideoFile) { showToast("Choose a video file to upload.", "error"); return; }
     setSaving(true);
     try {
+      let contentUrl: string | null = newContentUrl || null;
+      let bunnyFields: Record<string, unknown> = {};
+
+      // Video content: upload the picked file straight to Bunny (the bytes never
+      // touch our server), then store the player embed URL as the content_url.
+      if (newContentType === "video" && contentVideoFile) {
+        const upRes = await apiFetchStaff(STAFF_API.videoUpload, {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({ title: newContentTitle.trim() }),
+        });
+        if (upRes.status === 402) { showToast("Video lessons need the Basic plan or higher — ask your academy admin to upgrade.", "error"); return; }
+        if (upRes.status === 503) { showToast("Video uploads aren't available right now. Please try again later.", "error"); return; }
+        if (!upRes.ok) { showToast(`Could not start the upload (HTTP ${upRes.status}).`, "error"); return; }
+        const session = (await upRes.json()) as BunnyUploadSession;
+        setContentUploadPct(0);
+        await uploadToBunny(session, contentVideoFile, setContentUploadPct);
+        contentUrl = session.embed_url;
+        bunnyFields = {
+          provider: "bunny_stream",
+          external_id: session.video_id,
+          thumbnail_url: session.thumbnail_url ?? null,
+          status: "processing",
+        };
+      }
+
       const res = await apiFetchStaff(STAFF_API.moduleContents(moduleId), {
         method: "POST",
         headers: jsonHeaders,
         body: JSON.stringify({
           title: newContentTitle.trim(),
           type: newContentType,
-          content_url: newContentUrl || null,
+          content_url: contentUrl,
           content_body: newContentBody || null,
+          ...bunnyFields,
         }),
       });
       if (!res.ok) { showToast("Failed to add content", "error"); return; }
       showToast("Content added", "success");
       setNewContentTitle(""); setNewContentType("text"); setNewContentUrl(""); setNewContentBody("");
+      setContentVideoFile(null);
+      if (contentFileRef.current) contentFileRef.current.value = "";
       await load();
-    } catch { showToast("Failed to add content", "error"); }
-    setSaving(false);
+    } catch (e) { showToast(e instanceof Error ? e.message : "Failed to add content", "error"); }
+    finally { setSaving(false); setContentUploadPct(null); }
   }
 
   async function reorderContent(contentId: number, direction: "up" | "down") {
@@ -516,13 +558,34 @@ export default function StaffModulesPage() {
                     <select value={newContentType} onChange={(e) => setNewContentType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
                       {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
-                    <div>
-                      <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
-                      <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link — no file uploads. Leave blank for text/code content.</p>
-                    </div>
+                    {newContentType === "video" ? (
+                      <div>
+                        <input
+                          ref={contentFileRef}
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => setContentVideoFile(e.target.files?.[0] ?? null)}
+                          className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                        />
+                        <p className="mt-1 text-[11px] text-white/40">Upload a video file — it&apos;s hosted externally and streamed to students, so it never loads down your server. MP4, WebM or MOV.</p>
+                        {contentUploadPct !== null ? (
+                          <div className="mt-2">
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                              <div className="h-full rounded-full bg-white transition-all" style={{ width: `${contentUploadPct}%` }} />
+                            </div>
+                            <p className="mt-1 text-[11px] text-white/50">{contentUploadPct < 100 ? `Uploading… ${contentUploadPct}%` : "Finishing up…"}</p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div>
+                        <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                        <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link — no file uploads. Leave blank for text/code content.</p>
+                      </div>
+                    )}
                     <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={4} />
-                    <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim()} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
-                      {saving ? "Adding…" : "Add Content"}
+                    <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim() || (newContentType === "video" && !contentVideoFile)} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
+                      {saving ? (newContentType === "video" ? "Uploading…" : "Adding…") : "Add Content"}
                     </button>
                   </div>
                 </div>

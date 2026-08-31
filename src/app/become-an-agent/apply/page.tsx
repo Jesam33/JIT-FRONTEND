@@ -104,7 +104,7 @@ export default function AgentApplyPage() {
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Application Submitted!</h1>
             <p className="text-sm text-site-muted leading-relaxed">
-              Thank you for applying to be a Jorsas Agent! Our partnership team is reviewing your profile. We will email you once your portal credentials and referral code are generated.
+              Thank you for applying to be a Jorsas Admission Marketer! Our partnership team is reviewing your profile. We will email you once your portal credentials and referral code are generated.
             </p>
           </div>
           <div className="pt-2">
@@ -142,9 +142,9 @@ export default function AgentApplyPage() {
           {/* Left Column - Information Summary */}
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-red-500">Agent Onboarding</span>
+              <span className="text-xs uppercase font-extrabold tracking-widest text-red-500">Admission-Marketer Onboarding</span>
               <h1 className="text-3xl font-extrabold sm:text-4xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>
-                Start your agent application
+                Start your Admission-Marketer application
               </h1>
               <p className="text-site-muted leading-relaxed">
                 Connect your audience with high-quality tech training courses. Follow our 2-step application process to get verified.
@@ -182,7 +182,7 @@ export default function AgentApplyPage() {
             <div className="rounded-2xl border border-red-500/10 bg-red-500/5 p-5 space-y-2">
               <h5 className="font-bold text-red-500 text-sm">⚠️ Double Check Your Email</h5>
               <p className="text-xs text-site-muted leading-relaxed">
-                We generate your agent account credentials and onboarding dashboard access details using the email address you submit here. Make sure it is active.
+                We generate your Admission-Marketer account credentials and onboarding dashboard access details using the email address you submit here. Make sure it is active.
               </p>
             </div>
           </div>

@@ -50,6 +50,14 @@ export type DashboardPayload = {
     file_url: string;
     type?: "file" | "link" | "image" | "video";
     session_id?: number | null;
+    // Externally-hosted video (Bunny Stream) pointers. Present only for a video
+    // uploaded to Bunny: `provider` is "bunny_stream", `file_url` is the player
+    // embed URL (an <iframe> src, NOT a file), `thumbnail_url` the poster image.
+    provider?: string | null;
+    external_id?: string | null;
+    thumbnail_url?: string | null;
+    duration_seconds?: number | null;
+    status?: string | null;
   }>;
   tasks?: TaskItem[];
   notifications?: NotificationItem[];

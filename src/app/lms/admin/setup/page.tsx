@@ -5,10 +5,11 @@ import { AUTH_API } from "@/lib/api";
 import { setOwnerToken } from "@/lib/owner-client";
 import { resetBrandingToDefault, clearCachedBranding } from "@/lib/branding-cache";
 import { getTenantSlug } from "@/lib/tenant-client";
+import { AuthPasswordField, AuthSubmitButton, AuthMessage } from "@/components/auth/AuthLayout";
 
 export default function SetupPage() {
   return (
-    <Suspense fallback={<main className="site-shell" />}>
+    <Suspense fallback={null}>
       <SetupInner />
     </Suspense>
   );
@@ -21,18 +22,21 @@ function SetupInner() {
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // This is a platform onboarding page for a brand-new institute, so it must
-  // always render in the default Jorsas theme. A stale `tenant` cookie + cached
-  // branding (e.g. from an institute that was later deleted) would otherwise
-  // bleed its colors in through the global pre-paint script (app/layout.tsx).
-  // Reset the live :root to default on mount and drop the stale cache so it
-  // can't reappear on refresh. Safe: setup resolves the tenant from the invite
-  // token server-side — the cookie/cache play no part in it. Once the owner
-  // logs into their new institute, OwnerLayoutClient re-pins the correct cookie.
+  // always render in the default Jorsas theme — hence it deliberately does NOT
+  // use the <AuthLayout> wrapper (which fetches + applies public institute
+  // branding). A stale `tenant` cookie + cached branding (e.g. from an institute
+  // that was later deleted) would otherwise bleed its colors in through the
+  // global pre-paint script (app/layout.tsx). Reset the live :root to default on
+  // mount and drop the stale cache so it can't reappear on refresh. Safe: setup
+  // resolves the tenant from the invite token server-side — the cookie/cache
+  // play no part in it. Once the owner logs into their new institute,
+  // OwnerLayoutClient re-pins the correct cookie. (We still reuse AuthLayout's
+  // token-based field primitives so this screen matches the rest of the auth
+  // family and is light/dark correct.)
   useEffect(() => {
     resetBrandingToDefault();
     clearCachedBranding(getTenantSlug());
@@ -85,77 +89,69 @@ function SetupInner() {
     }
   };
 
-  const inputCls = "w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white";
-
   return (
-    <main className="site-shell">
-      <section className="container-wide section-pad">
-        <div className="mx-auto max-w-md">
-          <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
-            <h1 className="mb-1 text-2xl font-semibold text-white">Set up your owner account</h1>
-            <p className="mb-6 text-sm text-site-muted">Choose a password to finish creating your institute.</p>
-
-            {!token && <div className="text-sm text-site-muted">No setup token provided.</div>}
-            {token && !email && !error && <div className="text-sm text-site-muted">Checking your invite…</div>}
-            {error && (
-              <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                {error}
-              </div>
-            )}
-
-            {email && (
-              <form onSubmit={submit} className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm text-white/80">Email</label>
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white">
-                    {email}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm text-white/80">Password</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                      className={`${inputCls} pr-12`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="absolute inset-y-0 right-3 flex items-center text-white/70"
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm text-white/80">Confirm password</label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="Re-enter your password"
-                    className={inputCls}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full rounded-full bg-white px-5 py-3 text-sm font-semibold text-black disabled:opacity-60"
-                >
-                  {loading ? "Setting up…" : "Set up account"}
-                </button>
-              </form>
-            )}
+    // Plain <div>, no opaque background and no `site-shell` of its own: the root
+    // AppChrome already paints the ambient "pill" glow behind every page, so this
+    // clean surface card simply sits over it — matching the login / forgot / reset
+    // screens instead of a flat black canvas.
+    <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center gap-6 px-4 py-10">
+      <div className="w-full max-w-md">
+        {/* Neutral education mark — this is platform onboarding, before the
+            institute has any branding of its own to show. */}
+        <div className="mb-6 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-site-surface text-site-muted ring-1 ring-site-border">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M22 10L12 5 2 10l10 5 10-5z" />
+              <path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5" />
+            </svg>
           </div>
         </div>
-      </section>
-    </main>
+
+        <div className="rounded-2xl border border-site-border bg-site-surface p-7 shadow-sm sm:p-8">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-semibold text-site-text">Set up your owner account</h1>
+            <p className="mt-1.5 text-sm text-site-muted">Choose a password to finish creating your Online Academy.</p>
+          </div>
+
+          {!token && <p className="text-sm text-site-muted">No setup token provided.</p>}
+          {token && !email && !error && <p className="text-sm text-site-muted">Checking your invite…</p>}
+          {error && <AuthMessage tone="error">{error}</AuthMessage>}
+
+          {email && (
+            <form onSubmit={submit} className="space-y-4">
+              <div>
+                <span className="mb-1.5 block text-sm font-medium text-site-text/80">Email</span>
+                <div className="w-full rounded-xl border border-site-border bg-site-bg px-4 py-2.5 text-sm text-site-muted">
+                  {email}
+                </div>
+              </div>
+
+              <AuthPasswordField
+                label="Password"
+                hint="At least 8 characters."
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+              />
+
+              <AuthPasswordField
+                label="Confirm password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Re-enter your password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+              />
+
+              <AuthSubmitButton loading={loading}>{loading ? "Setting up…" : "Set up account"}</AuthSubmitButton>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

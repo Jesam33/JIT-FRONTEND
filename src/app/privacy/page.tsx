@@ -17,14 +17,14 @@ export default function PrivacyPage() {
 
             <Section title="2. How We Use Your Information">
               Your information is used to process registrations, manage enrollments, facilitate payments, communicate important updates,
-              provide customer support, and improve our educational services. Agent-specific information is used to track referrals,
+              provide customer support, and improve our educational services. Information specific to Admission Marketers is used to track referrals,
               calculate commissions, and process withdrawal requests.
             </Section>
 
-            <Section title="3. Agent Program Data">
-              If you are an agent, we collect additional information including bank account details for payout processing,
+            <Section title="3. Admission-Marketer Program Data">
+              If you are an Admission Marketer, we collect additional information including bank account details for payout processing,
               referral codes, commission records, and withdrawal history. This data is shared with our administrative team
-              solely for managing the agent program.
+              solely for managing the Admission-Marketer program.
             </Section>
 
             <Section title="4. Payment Processing">

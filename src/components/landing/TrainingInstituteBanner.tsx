@@ -31,7 +31,7 @@ export default function TrainingInstituteBanner() {
                       href="/signup"
                       className="inline-flex  items-center gap-2 rounded-full border border-white/10 bg-transparent px-6 py-3 text-sm font-semibold text-site-text transition hover:bg-white/5"
                     >
-                      Register Your Institute
+                      Register Your Online Academy
                     </Link>
                   </div>
               </div>

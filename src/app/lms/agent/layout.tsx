@@ -36,7 +36,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             <AgentSidebar />
             <main className="relative min-w-0 pb-8">
               <LmsNavbar
-                portalName="Agent Portal"
+                portalName="Admission Marketer Portal"
                 bellHref="/lms/agent/notifications"
                 placeholder="Search commissions or students..."
               />

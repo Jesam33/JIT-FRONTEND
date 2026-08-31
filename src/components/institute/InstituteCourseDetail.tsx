@@ -2,6 +2,7 @@ import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
 import type { InstituteProfile } from "@/lib/institute-profile";
 import CourseRegisterClient from "@/components/institute/CourseRegisterClient";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
+import PoweredByJorsas from "@/components/institute/PoweredByJorsas";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
 import StarRating from "@/components/ui/StarRating";
 import { formatPrice } from "@/lib/currency";
@@ -41,7 +42,9 @@ export type DetailCourse = {
 // The shape returned by /api/frontend/i/{slug}/courses/{courseSlug} and the
 // primary equivalent.
 export type CourseDetailData = {
-  institute: { name: string; slug: string };
+  // See StorefrontData — true keeps the "Powered by Jorsas" strip (free tier),
+  // false when a paid plan removes branding.
+  institute: { name: string; slug: string; show_powered_by?: boolean };
   branding: OwnerBranding;
   // Optional: powers the shared contact footer at the foot of the mini-site.
   profile?: InstituteProfile;
@@ -200,7 +203,7 @@ export default function InstituteCourseDetail({
                 This course is currently full. Check back later for available slots.
               </div>
             ) : (
-              <CourseRegisterClient course={course} slug={registerSlug} />
+              <CourseRegisterClient course={course} slug={registerSlug} branding={branding} />
             )}
           </aside>
         </div>
@@ -208,6 +211,8 @@ export default function InstituteCourseDetail({
       </section>
 
       <InstituteContactFooter profile={profile} instituteName={institute.name} />
+
+      {institute.show_powered_by ? <PoweredByJorsas /> : null}
     </div>
   );
 }

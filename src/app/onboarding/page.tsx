@@ -54,21 +54,21 @@ function OnboardingInner() {
       <section className="container-wide section-pad">
         <div className="mx-auto max-w-2xl">
           <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
-            <h1 className="mb-1 text-2xl font-semibold text-white">Setting up your institute</h1>
+            <h1 className="mb-1 text-2xl font-semibold text-white">Setting up your Online Academy</h1>
             <p className="mb-6 text-sm text-site-muted">
               We&apos;re provisioning your LMS. This page updates automatically.
             </p>
 
             {!tenant && (
               <div className="text-sm text-site-muted">
-                No institute reference provided.
+                No Online Academy reference provided.
               </div>
             )}
 
             {tenant && (
               <div className="space-y-4">
                 <div className="text-sm text-site-muted">
-                  Institute:{" "}
+                  Online Academy:{" "}
                   <span className="font-semibold text-white">
                     {tenantName ? decodeURIComponent(tenantName) : tenant}
                   </span>
@@ -85,7 +85,7 @@ function OnboardingInner() {
                   <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
                     <div className="font-semibold capitalize">{status}</div>
                     <p className="mt-2 text-emerald-100/80">
-                      Your institute is ready. Check your email for the owner setup link, or sign in below.
+                      Your Online Academy is ready. Check your email for the owner setup link, or sign in below.
                     </p>
                     <Link
                       href="/lms/admin/login"

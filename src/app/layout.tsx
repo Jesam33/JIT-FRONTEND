@@ -18,15 +18,34 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://jorsastech.com"),
   title: "Jorsas Tech",
   description: "Jorsas Tech digital consulting and engineering",
-  // Default browser-tab icon, driven through metadata (served from public/) rather
-  // than the app/favicon.ico file convention. File-convention icons have HIGHER
-  // priority than generateMetadata and are injected on EVERY route, so a per-tenant
-  // page could never override them — that's why institute storefronts kept showing
-  // the Jorsas favicon. As metadata, a deeper segment (e.g. /i/[slug]) REPLACES this
-  // icons key, so each institute's own logo becomes the sole favicon on its page.
-  icons: { icon: "/favicon.ico" },
+  applicationName: "Jorsas Tech",
+  // Default browser-tab + search-result icon, driven through metadata (served from
+  // public/) rather than the app/favicon.ico file convention. File-convention icons
+  // have HIGHER priority than generateMetadata and are injected on EVERY route, so a
+  // per-tenant page could never override them — that's why institute storefronts kept
+  // showing the Jorsas favicon. As metadata, a deeper segment (e.g. /i/[slug])
+  // REPLACES this icons key, so each institute's own logo becomes the sole favicon on
+  // its page. Theme-aware: the WHITE mark shows on dark browser tabs / OS themes,
+  // the dark mark on light ones — so the favicon never disappears into a dark tab
+  // (the black mark used to vanish there). The colored mark stays the OpenGraph +
+  // Organization logo below, which render on light social/search cards.
+  icons: {
+    icon: [
+      { url: "/images/jorsas-logo-white.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/images/jorsas-logo-light-mode.png", media: "(prefers-color-scheme: light)" },
+    ],
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Jorsas Tech",
+    title: "Jorsas Tech",
+    description: "Jorsas Tech digital consulting and engineering",
+    url: "https://jorsastech.com",
+    images: [{ url: "/images/jorsas-logo-light-mode.png" }],
+  },
 };
 
 export default function RootLayout({
@@ -90,6 +109,21 @@ export default function RootLayout({
                 } catch (e) {}
               })()
             `,
+          }}
+        />
+        {/* Organization structured data — the canonical signal Google uses to pick
+            the logo it shows for the site (Knowledge Panel / rich results). Points at
+            the correct brand mark so search stops surfacing the old favicon. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Jorsas Tech",
+              url: "https://jorsastech.com",
+              logo: "https://jorsastech.com/images/jorsas-logo-light-mode.png",
+            }),
           }}
         />
       </head>

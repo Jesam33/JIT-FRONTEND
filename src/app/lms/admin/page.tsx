@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
-import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
+import { ownerAuthHeaders, getOwnerToken, readOwnerBranding } from "@/lib/owner-client";
+import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { tenantLoginUrls, tenantStorefrontUrl, tenantLoginPath } from "@/lib/tenant-client";
 
 type Overview = {
@@ -14,10 +15,18 @@ type Overview = {
   current_period_end: string | null;
   counts: { students: number; staff: number; courses: number; tracks: number };
   recent_students: Array<{ id: number; name: string; email: string | null; created_at: string | null }>;
+  // The academy's own branding (colors/logo + entity_label). Present on the owner
+  // overview payload; used to render this academy's configurable noun in copy.
+  branding?: OwnerBranding | null;
 };
 
 // Real per-institute analytics (fix #1) — 6-month series + funnel + totals.
+// `advanced` (Pro+) gates the time-series trend charts; the KPI totals and the
+// registration funnel are standard analytics shown on every plan. When advanced
+// is false the backend returns empty `series`, so the trend charts are hidden
+// behind an upgrade prompt rather than rendered flat.
 type Analytics = {
+  advanced: boolean;
   months: string[];
   series: { students: number[]; enrollments: number[]; revenue: number[] };
   totals: { revenue: number; students: number; enrollments: number; active_courses: number };
@@ -218,13 +227,17 @@ export default function OwnerDashboardPage() {
   const isPaid = plan !== "free";
   const links = data ? tenantLoginUrls(data.tenant.slug) : null;
   const currency = analytics?.currency ?? "₦";
+  // This academy's configurable noun (Jorsas → "Institute", others → their own
+  // label / "Online Academy"). Read from the loaded overview, falling back to the
+  // shell's branding cookie so the right word shows even before the fetch lands.
+  const label = academyLabel(data?.branding ?? readOwnerBranding()).singular;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">Dashboard</h1>
         <p className="mt-1 text-sm text-site-muted">
-          {data ? `Managing ${data.tenant.name}` : "Your institute at a glance"}
+          {data ? `Managing ${data.tenant.name}` : `Your ${label} at a glance`}
         </p>
       </div>
 
@@ -265,39 +278,63 @@ export default function OwnerDashboardPage() {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                <div className={chartCard}>
-                  <div className="mb-4 flex items-baseline justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-white">Revenue</h3>
-                    <span className="text-xs text-site-muted">
-                      Last 6 months · {money(analytics.series.revenue.reduce((a, b) => a + b, 0), currency)}
-                    </span>
-                  </div>
-                  <BarChart
-                    values={analytics.series.revenue}
-                    labels={analytics.months}
-                    format={(n) => money(n, currency)}
-                  />
-                </div>
+                {/* Trend charts are advanced analytics (Pro+). On plans without
+                    it the backend sends empty series, so show one upgrade card
+                    in their place — the funnel below stays on every plan. */}
+                {analytics.advanced ? (
+                  <>
+                    <div className={chartCard}>
+                      <div className="mb-4 flex items-baseline justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-white">Revenue</h3>
+                        <span className="text-xs text-site-muted">
+                          Last 6 months · {money(analytics.series.revenue.reduce((a, b) => a + b, 0), currency)}
+                        </span>
+                      </div>
+                      <BarChart
+                        values={analytics.series.revenue}
+                        labels={analytics.months}
+                        format={(n) => money(n, currency)}
+                      />
+                    </div>
 
-                <div className={chartCard}>
-                  <div className="mb-4 flex items-baseline justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-white">New students</h3>
-                    <span className="text-xs text-site-muted">
-                      Last 6 months · {analytics.series.students.reduce((a, b) => a + b, 0)}
-                    </span>
-                  </div>
-                  <AreaChart values={analytics.series.students} labels={analytics.months} />
-                </div>
+                    <div className={chartCard}>
+                      <div className="mb-4 flex items-baseline justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-white">New students</h3>
+                        <span className="text-xs text-site-muted">
+                          Last 6 months · {analytics.series.students.reduce((a, b) => a + b, 0)}
+                        </span>
+                      </div>
+                      <AreaChart values={analytics.series.students} labels={analytics.months} />
+                    </div>
 
-                <div className={chartCard}>
-                  <div className="mb-4 flex items-baseline justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-white">Enrolments</h3>
-                    <span className="text-xs text-site-muted">
-                      Last 6 months · {analytics.series.enrollments.reduce((a, b) => a + b, 0)}
+                    <div className={chartCard}>
+                      <div className="mb-4 flex items-baseline justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-white">Enrolments</h3>
+                        <span className="text-xs text-site-muted">
+                          Last 6 months · {analytics.series.enrollments.reduce((a, b) => a + b, 0)}
+                        </span>
+                      </div>
+                      <BarChart values={analytics.series.enrollments} labels={analytics.months} />
+                    </div>
+                  </>
+                ) : (
+                  <div className={`${chartCard} flex flex-col items-center justify-center gap-3 text-center`}>
+                    <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80">
+                      Pro
                     </span>
+                    <h3 className="text-base font-semibold text-white">Trend analytics</h3>
+                    <p className="max-w-xs text-sm text-site-muted">
+                      Track revenue, new students and enrolments over time. Upgrade to Pro to unlock
+                      6-month trend charts.
+                    </p>
+                    <Link
+                      href="/lms/admin/billing"
+                      className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                    >
+                      Upgrade to Pro
+                    </Link>
                   </div>
-                  <BarChart values={analytics.series.enrollments} labels={analytics.months} />
-                </div>
+                )}
 
                 <div className={chartCard}>
                   <div className="mb-4 flex items-baseline justify-between gap-3">
@@ -388,7 +425,7 @@ export default function OwnerDashboardPage() {
               <h2 className="mb-1 text-lg font-semibold text-white">Share with your people</h2>
               <p className="mb-4 text-sm text-site-muted">
                 Your public page is where new students browse your courses and register on their own.
-                The sign-in links below are for people already in your institute.
+                The sign-in links below are for people already in your {label}.
               </p>
               <div className="mb-3">
                 <CopyRow label="Public page — for new students" url={tenantStorefrontUrl(data.tenant.slug)} />

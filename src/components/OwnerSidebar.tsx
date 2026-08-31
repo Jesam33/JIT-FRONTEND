@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { clearOwnerToken } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
-import type { OwnerBranding } from "@/lib/owner-branding";
+import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 
 export type OwnerIdentity = {
   name?: string | null;
@@ -15,9 +15,14 @@ export type OwnerIdentity = {
   branding?: OwnerBranding | null;
 };
 
+// A per-item `badge` (e.g. "Pro") is a small pill after the label — used to mark a
+// paid-tier entry that stays VISIBLE to every plan (clicking it on a lower plan hits
+// the backend gate → 402 → UpgradeModal), rather than being hidden.
+type SidebarItem = { href: string; label: string; badge?: string };
+
 type SidebarGroup = {
   label: string;
-  items: { href: string; label: string }[];
+  items: SidebarItem[];
 };
 
 // Institute-scoped navigation, echoing the reference admin panel: a top-level
@@ -37,6 +42,12 @@ const groups: SidebarGroup[] = [
     ],
   },
   {
+    label: "Content tools",
+    // Visible to every plan; the Gamma generator itself is Pro+ (the page shows the
+    // upgrade prompt when a lower-plan owner tries to generate).
+    items: [{ href: "/lms/admin/ai-materials", label: "Create with AI", badge: "Pro" }],
+  },
+  {
     label: "Staff operations",
     items: [{ href: "/lms/admin/staff", label: "Staff Accounts" }],
   },
@@ -52,7 +63,8 @@ const groups: SidebarGroup[] = [
 ];
 
 function IdentityCard({ identity }: { identity: OwnerIdentity | null }) {
-  const name = identity?.name || "Your institute";
+  const label = academyLabel(identity?.branding).singular;
+  const name = identity?.name || `Your ${label}`;
   const logo = identity?.branding?.logo_url;
   const initials = (identity?.name || "In")
     .split(" ")
@@ -78,7 +90,7 @@ function IdentityCard({ identity }: { identity: OwnerIdentity | null }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-white">{name}</p>
         <p className="truncate text-[11px] text-white/55">
-          {identity?.email || "Institute owner"}
+          {identity?.email || `${label} owner`}
         </p>
       </div>
       {identity?.plan && (
@@ -131,6 +143,11 @@ export default function OwnerSidebar({
                 }`}
               >
                 <span className="flex-1">{item.label}</span>
+                {item.badge ? (
+                  <span className="ml-2 shrink-0 rounded-full border border-amber-300/40 bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-200">
+                    {item.badge}
+                  </span>
+                ) : null}
               </Link>
             ))}
           </div>

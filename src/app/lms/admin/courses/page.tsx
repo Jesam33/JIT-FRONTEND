@@ -2,9 +2,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
-import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
+import { ownerAuthHeaders, getOwnerToken, maybeUpgrade, readOwnerBranding } from "@/lib/owner-client";
+import { academyLabel } from "@/lib/owner-branding";
 import { useToast } from "@/components/ToastProvider";
 import StarRating from "@/components/ui/StarRating";
+import { cropImageToAspect } from "@/lib/image";
 
 type Course = {
   id: number;
@@ -67,12 +69,20 @@ export default function OwnerCoursesPage() {
   const [saveMsg, setSaveMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  // Cover image is managed separately from the text form: it POSTs immediately on
-  // pick/remove (the endpoint needs the course id, so it's only shown while editing).
+  // Cover image is managed separately from the text form. In EDIT mode it POSTs
+  // immediately on pick/remove. In CREATE mode the course doesn't exist yet (the
+  // endpoint needs its id), so the pick is staged here and uploaded right after the
+  // course is created — that's what makes a cover compulsory "during setup".
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   const coverFileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
+
+  // Every course cover is cropped to this exact ratio so the storefront grid is
+  // uniform (the card is object-cover aspect-video).
+  const COVER_ASPECT = 16 / 9;
 
   const setField = <K extends keyof typeof emptyForm>(key: K, value: (typeof emptyForm)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -107,16 +117,32 @@ export default function OwnerCoursesPage() {
     load();
   }, [load, router]);
 
+  // Revoke the staged-cover object URL when it changes or the page unmounts.
+  useEffect(() => {
+    return () => {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
+
+  // Drop any staged (not-yet-uploaded) cover. The object URL is revoked by the
+  // cleanup effect below when coverPreview changes / on unmount.
+  const clearStagedCover = () => {
+    setCoverFile(null);
+    setCoverPreview(null);
+  };
+
   const resetForm = () => {
     setEditingId(null);
     setForm({ ...emptyForm });
     setCoverUrl(null);
+    clearStagedCover();
     setSaveMsg(null);
   };
 
   const startEdit = (c: Course) => {
     setEditingId(c.id);
     setSaveMsg(null);
+    clearStagedCover();
     setForm({
       title: c.title ?? "",
       description: c.description ?? "",
@@ -151,6 +177,12 @@ export default function OwnerCoursesPage() {
       setSaveMsg({ kind: "err", text: "Capacity must be a whole number (0 = unlimited)." });
       return;
     }
+    // A cover is compulsory when creating a course (it fronts the storefront card).
+    // In edit mode the course already has one — replacing it is optional.
+    if (!editingId && !coverFile) {
+      setSaveMsg({ kind: "err", text: "Add a cover image — it's required for every course." });
+      return;
+    }
 
     const body = {
       title,
@@ -172,10 +204,6 @@ export default function OwnerCoursesPage() {
         headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
         body: JSON.stringify(body),
       });
-      if (res.status === 401 || res.status === 403) {
-        router.replace("/lms/admin/login");
-        return;
-      }
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setSaveMsg({ kind: "err", text: json?.message || `Could not save (HTTP ${res.status}).` });
@@ -186,13 +214,23 @@ export default function OwnerCoursesPage() {
         toast(`Course “${title}” updated.`, "success");
         resetForm();
       } else {
-        // Drop straight into edit mode for the just-created course so the owner
-        // can add a cover image (the uploader needs the new course id).
         const created: Course | undefined = json?.course;
         toast(`Course “${title}” created.`, "success");
-        if (created?.id) {
+        // Upload the staged cover to the just-created course, then finish. The
+        // create gate above guarantees coverFile is set here.
+        if (created?.id && coverFile) {
+          const ok = await uploadCover(created.id, coverFile);
+          if (ok) {
+            clearStagedCover();
+            resetForm();
+            setSaveMsg({ kind: "ok", text: `Created and published “${title}”.` });
+          } else {
+            // Cover upload failed — keep the owner in edit mode so they can retry
+            // the cover on the now-created course rather than losing their work.
+            startEdit(created);
+          }
+        } else if (created?.id) {
           startEdit(created);
-          setSaveMsg({ kind: "ok", text: `Created “${title}”. Add a cover image below (optional).` });
         } else {
           resetForm();
         }
@@ -205,37 +243,70 @@ export default function OwnerCoursesPage() {
     }
   };
 
-  const onPickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !editingId) return;
+  // POST a cover file to an existing course. Returns true on success. Manages
+  // coverBusy itself so both the picker (edit mode) and the create flow can call it.
+  const uploadCover = async (id: number, file: File): Promise<boolean> => {
     setCoverBusy(true);
-    setSaveMsg(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch(OWNER_API.courseCover(editingId), {
+      const res = await fetch(OWNER_API.courseCover(id), {
         method: "POST",
         headers: ownerAuthHeaders(), // no Content-Type — browser sets the multipart boundary
         body: fd,
       });
       if (res.status === 401 || res.status === 403) {
         router.replace("/lms/admin/login");
-        return;
+        return false;
       }
       const j = await res.json().catch(() => null);
       if (!res.ok) {
         setSaveMsg({ kind: "err", text: j?.message ?? "Upload failed. Use a PNG/JPG under 4MB." });
-        return;
+        return false;
       }
       const updated: Course | undefined = j?.course;
       setCoverUrl(updated?.cover_image_url ?? null);
-      setSaveMsg({ kind: "ok", text: "Cover image updated." });
-      load();
+      return true;
     } catch (err) {
       setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+      return false;
     } finally {
       setCoverBusy(false);
-      if (coverFileRef.current) coverFileRef.current.value = "";
+    }
+  };
+
+  const onPickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.files?.[0];
+    if (coverFileRef.current) coverFileRef.current.value = "";
+    if (!raw) return;
+    setSaveMsg(null);
+    setCoverBusy(true);
+
+    // Crop to a uniform 16:9 before it ever leaves the browser, so every course
+    // card is the same shape regardless of what the owner picked.
+    let cropped: File;
+    try {
+      cropped = await cropImageToAspect(raw, COVER_ASPECT, 1600);
+    } catch (err) {
+      setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : "Could not read that image." });
+      setCoverBusy(false);
+      return;
+    }
+
+    if (!editingId) {
+      // CREATE mode: stage locally; it uploads when the course is created.
+      setCoverFile(cropped);
+      setCoverPreview(URL.createObjectURL(cropped));
+      setSaveMsg({ kind: "ok", text: "Cover ready — create the course to publish it." });
+      setCoverBusy(false);
+      return;
+    }
+
+    // EDIT mode: upload immediately (uploadCover clears coverBusy in its finally).
+    const ok = await uploadCover(editingId, cropped);
+    if (ok) {
+      setSaveMsg({ kind: "ok", text: "Cover image updated." });
+      load();
     }
   };
 
@@ -297,6 +368,10 @@ export default function OwnerCoursesPage() {
   const inputClass =
     "w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-white/40";
 
+  // This academy's configurable noun (Jorsas → "Institute", others → their label),
+  // read synchronously from the shell's branding cookie — no extra fetch here.
+  const label = academyLabel(readOwnerBranding()).singular;
+
   return (
     <div className="space-y-6">
       <div>
@@ -316,7 +391,7 @@ export default function OwnerCoursesPage() {
             <p className="mt-1 text-sm text-site-muted">
               {editingId
                 ? "Update the details, pricing, and availability for this program."
-                : "Add a program your institute offers. Set its description, price, and capacity."}
+                : `Add a program your ${label} offers. Set its description, price, and capacity.`}
             </p>
           </div>
           {editingId && (
@@ -412,53 +487,62 @@ export default function OwnerCoursesPage() {
             </label>
           </div>
 
-          {/* Cover image — the storefront card's thumbnail. Managed inline (POSTs
-              immediately); only available once the course exists (needs its id). */}
+          {/* Cover image — fronts the storefront card. Required for every course and
+              cropped to a uniform 16:9 on pick. In create mode the pick is staged and
+              uploaded the moment the course is created; in edit mode it uploads now. */}
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">Cover image</label>
-            {editingId ? (
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-[color:var(--color-primary)]/40">
-                  {coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={coverUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div
-                      className="flex h-full w-full items-center justify-center"
-                      style={{ background: "linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 45%, #000))" }}
-                    >
-                      <span className="text-2xl font-black text-white/90">{coverInitial(form.title)}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <input ref={coverFileRef} type="file" accept="image/*" onChange={onPickCover} className="hidden" />
-                  <div className="flex flex-wrap gap-2">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+              Cover image <span className="text-red-300/80">*</span>
+            </label>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-[color:var(--color-primary)]/40">
+                {(editingId ? coverUrl : coverPreview) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={(editingId ? coverUrl : coverPreview) as string} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div
+                    className="flex h-full w-full items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 45%, #000))" }}
+                  >
+                    <span className="text-2xl font-black text-white/90">{coverInitial(form.title)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <input ref={coverFileRef} type="file" accept="image/*" onChange={onPickCover} className="hidden" />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => coverFileRef.current?.click()}
+                    disabled={coverBusy}
+                    className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/10 disabled:opacity-60"
+                  >
+                    {coverBusy ? "Working…" : (editingId ? coverUrl : coverPreview) ? "Replace cover" : "Upload cover"}
+                  </button>
+                  {editingId && coverUrl ? (
                     <button
                       type="button"
-                      onClick={() => coverFileRef.current?.click()}
+                      onClick={removeCover}
                       disabled={coverBusy}
-                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/85 transition hover:bg-white/10 disabled:opacity-60"
+                      className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-60"
                     >
-                      {coverBusy ? "Working…" : coverUrl ? "Replace cover" : "Upload cover"}
+                      Remove
                     </button>
-                    {coverUrl ? (
-                      <button
-                        type="button"
-                        onClick={removeCover}
-                        disabled={coverBusy}
-                        className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-60"
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                  </div>
-                  <p className="text-[11px] text-white/40">Shown on your public course card. PNG/JPG under 4MB. No cover → a branded placeholder.</p>
+                  ) : null}
+                  {!editingId && coverPreview ? (
+                    <button
+                      type="button"
+                      onClick={clearStagedCover}
+                      disabled={coverBusy}
+                      className="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-white/60 transition hover:bg-white/10 disabled:opacity-60"
+                    >
+                      Clear
+                    </button>
+                  ) : null}
                 </div>
+                <p className="text-[11px] text-white/40">Required. We crop to 16:9 (wide) — a landscape photo works best. PNG/JPG under 4MB.</p>
               </div>
-            ) : (
-              <p className="text-[11px] text-white/40">You can add a cover image right after creating the course.</p>
-            )}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4">

@@ -128,7 +128,7 @@ export default function AgentProfilePage() {
 
   const initials = profile
     ? profile.name.split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase()
-    : "AG";
+    : "AM";
 
   if (loading) return <p className="text-sm text-white/60">Loading...</p>;
   if (!profile) return <p className="text-sm text-white/60">Failed to load profile.</p>;

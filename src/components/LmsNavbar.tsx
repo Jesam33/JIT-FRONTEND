@@ -49,7 +49,8 @@ export default function LmsNavbar({
   useEffect(() => {
     const name = portalName.toLowerCase();
     const isStudent = name.includes("student");
-    const isAgent = name.includes("agent");
+    // Portal tag reads "Admission Marketer Portal"; also accept the legacy "agent" word.
+    const isAgent = name.includes("marketer") || name.includes("agent");
     let tokenKey = "lms_staff_token";
     let apiEndpoint = STAFF_API.notificationUnread;
     if (isStudent) { tokenKey = "lms_student_token"; apiEndpoint = STUDENT_API.chatUnread; }
@@ -98,7 +99,7 @@ export default function LmsNavbar({
         <img
           src={logoUrl}
           alt=""
-          className="h-9 w-auto max-w-[150px] shrink-0 self-start object-contain sm:self-center"
+          className="h-10 w-10 shrink-0 self-start rounded-full object-contain ring-1 ring-white/20 sm:self-center [html.light_&]:ring-black/10"
         />
       ) : null}
 

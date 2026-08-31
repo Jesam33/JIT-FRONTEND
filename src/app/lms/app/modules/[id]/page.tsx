@@ -13,6 +13,11 @@ type ModuleContent = {
   content_url: string | null;
   content_body: string | null;
   sort_order: number;
+  // Externally-hosted video (Bunny Stream) pointers — content_url is the player
+  // embed URL for a video uploaded to Bunny.
+  provider?: string | null;
+  thumbnail_url?: string | null;
+  status?: string | null;
 };
 
 type Module = {
@@ -46,8 +51,20 @@ function renderContent(c: ModuleContent) {
       ) : null;
     case "video":
       return c.content_url ? (
-        <div className="aspect-video">
-          <iframe src={c.content_url} className="h-full w-full rounded" allowFullScreen title={c.title} />
+        <div>
+          <div className="aspect-video overflow-hidden rounded bg-black">
+            <iframe
+              src={c.content_url}
+              className="h-full w-full"
+              loading="lazy"
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              title={c.title}
+            />
+          </div>
+          {c.provider === "bunny_stream" && c.status === "processing" ? (
+            <p className="mt-1 text-[11px] text-amber-300/80">Still processing — if it doesn&apos;t play yet, check back in a few minutes.</p>
+          ) : null}
         </div>
       ) : null;
     case "slides":

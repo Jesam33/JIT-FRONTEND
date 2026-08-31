@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PUBLIC_API } from "@/lib/api";
 import { tenantHeaders } from "@/lib/tenant-client";
 import { formatPrice, readCookie } from "@/lib/currency";
+import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 
 type CourseDetail = {
   id: number;
@@ -62,7 +63,17 @@ const initialForm: FormData = {
 // creating the registration — essential on /i/{slug} storefronts, which carry
 // no tenant cookie (the page was server-rendered). Absent → backend falls back
 // to the header/primary tenant, preserving the apex flow's behaviour.
-export default function CourseRegisterClient({ course, slug }: { course: CourseDetail; slug?: string }) {
+// `branding` threads this academy's configurable noun into visitor-facing copy.
+export default function CourseRegisterClient({
+  course,
+  slug,
+  branding,
+}: {
+  course: CourseDetail;
+  slug?: string;
+  branding?: OwnerBranding | null;
+}) {
+  const label = academyLabel(branding).singular;
   const [form, setForm] = useState<FormData>(initialForm);
   const [step, setStep] = useState<"form" | "paying" | "done">("form");
   const [loading, setLoading] = useState(false);
@@ -152,7 +163,7 @@ export default function CourseRegisterClient({ course, slug }: { course: CourseD
   if (course.purchasable === false) {
     return (
       <div className="mt-6 rounded-lg border border-white/15 bg-white/5 p-4 text-sm text-white/70">
-        Registration for this course isn&apos;t open yet — the institute is finishing its payment
+        Registration for this course isn&apos;t open yet — the {label} is finishing its payment
         setup. Please check back soon.
       </div>
     );

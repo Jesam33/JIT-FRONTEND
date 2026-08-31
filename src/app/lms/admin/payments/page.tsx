@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
-import { getOwnerToken, ownerAuthHeaders } from "@/lib/owner-client";
+import { getOwnerToken, ownerAuthHeaders, readOwnerBranding } from "@/lib/owner-client";
+import { academyLabel } from "@/lib/owner-branding";
 import { tenantLoginPath } from "@/lib/tenant-client";
 
 type Bank = { name: string; code: string };
@@ -13,6 +14,11 @@ type PaymentSettings = {
   payment: {
     configured: boolean;
     subaccount_code: string | null;
+    // Whether the platform created this subaccount (split follows the plan) or the
+    // owner pasted a code (its split is their own, unknown to us).
+    managed: boolean;
+    // The split actually recorded on the linked subaccount, if known.
+    subaccount_commission_percent: number | null;
     business_name: string | null;
     bank_code: string | null;
     bank_name: string | null;
@@ -183,6 +189,14 @@ export default function PaymentsPage() {
 
   const configured = data?.payment.configured;
   const commission = data?.platform_commission_percent ?? 0;
+  const managed = data?.payment.managed ?? false;
+  const linkedSplit = data?.payment.subaccount_commission_percent ?? null;
+  // A managed subaccount's split should track the plan; flag it if it has drifted
+  // (e.g. a sync that didn't confirm). A pasted code's split is unknown to us.
+  const splitDrifted = !!configured && managed && linkedSplit != null && linkedSplit !== commission;
+  const pastedCode = !!configured && !managed;
+  // This academy's configurable noun, read synchronously from the shell cookie.
+  const label = academyLabel(readOwnerBranding()).singular;
 
   return (
     <div className="space-y-6">
@@ -194,9 +208,10 @@ export default function PaymentsPage() {
       </div>
 
       <p className="max-w-2xl text-sm text-site-muted">
-        Link your institute&apos;s own bank so course fees paid by students settle to{" "}
-        <span className="text-white">your account</span> — not the platform. We keep a{" "}
-        <span className="text-white">{commission}%</span> commission on each payment; the rest is yours.
+        Link your {label}&apos;s own bank so course fees paid by students settle to{" "}
+        <span className="text-white">your account</span> — not the platform. The applicable platform
+        fee is deducted from each eligible successful course sale —{" "}
+        <span className="text-white">{commission}%</span> on your current plan.
       </p>
 
       {msg && (
@@ -258,6 +273,33 @@ export default function PaymentsPage() {
               </div>
             )}
           </dl>
+
+          {/* Platform fee / payout split on this academy's course sales. */}
+          <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-xs uppercase tracking-wide text-site-muted">
+                Platform fee on course sales
+              </span>
+              <span className="text-lg font-semibold text-white">{commission}%</span>
+            </div>
+            <p className="mt-1 text-xs text-site-muted">
+              Deducted from each successful course sale on your current plan — the rest settles to your
+              bank.
+            </p>
+            {splitDrifted && (
+              <p className="mt-2 text-xs text-amber-300">
+                Your linked payout split is currently {linkedSplit}%. It updates to {commission}%
+                automatically after a plan change; if it doesn&apos;t, disconnect and relink your bank.
+              </p>
+            )}
+            {pastedCode && (
+              <p className="mt-2 text-xs text-site-muted">
+                This account was linked by subaccount code, so its split is controlled on your Paystack
+                account and may differ from your plan fee.
+              </p>
+            )}
+          </div>
+
           <button
             onClick={disconnect}
             disabled={saving}
@@ -276,13 +318,13 @@ export default function PaymentsPage() {
         <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
           <h2 className="text-lg font-semibold text-white">Link your payout bank</h2>
           <p className="mt-1 text-sm text-site-muted">
-            We&apos;ll create a secure Paystack payout account for your institute. Fees settle to this
+            We&apos;ll create a secure Paystack payout account for your {label}. Fees settle to this
             bank automatically.
           </p>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm text-white/80">Business / institute name</label>
+              <label className="mb-1.5 block text-sm text-white/80">Business / {label} name</label>
               <input
                 className={inputClass}
                 value={businessName}

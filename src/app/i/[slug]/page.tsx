@@ -21,7 +21,7 @@ async function getStorefront(slug: string): Promise<StorefrontData | null> {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getStorefront(slug);
-  if (!data) return { title: "Institute Not Found" };
+  if (!data) return { title: "Online Academy Not Found" };
   const logo = data.branding?.logo_url;
   return {
     title: `${data.institute.name} | Courses`,

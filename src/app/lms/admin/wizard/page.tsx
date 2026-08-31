@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
-import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
+import { ownerAuthHeaders, getOwnerToken, readOwnerBranding } from "@/lib/owner-client";
+import { academyLabel } from "@/lib/owner-branding";
 
 export default function WizardPage() {
   const router = useRouter();
@@ -16,6 +17,10 @@ export default function WizardPage() {
   const [staffEmail, setStaffEmail] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // This academy's configurable noun (Jorsas → "Institute", others → their label),
+  // read synchronously from the shell's branding cookie.
+  const label = academyLabel(readOwnerBranding()).singular;
 
   // Resolve the tenant from the owner session (never typed by hand).
   useEffect(() => {
@@ -37,7 +42,7 @@ export default function WizardPage() {
           setTenantId(json.tenant?.id ?? null);
           setOrgName(json.tenant?.name ?? "");
         } else {
-          setMsg(`Could not load your institute (HTTP ${res.status}).`);
+          setMsg(`Could not load your ${label} (HTTP ${res.status}).`);
         }
       } catch (e) {
         setMsg(e instanceof Error ? e.message : String(e));
@@ -108,13 +113,18 @@ export default function WizardPage() {
   const inputCls = "w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white";
   const primaryBtn = "rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60";
 
+  // Renders as plain content INSIDE the owner shell (this route isn't a
+  // PUBLIC_PATH, so OwnerLayoutClient wraps it with the sidebar/topbar and the
+  // branded container). Must NOT add its own `site-shell` or `container-wide`:
+  // site-shell paints an opaque base + a hardcoded blue glow that would sit on
+  // top of the academy's customised background, and a second container-wide
+  // double-wraps the width → horizontal overflow. (Same fix as billing/verify.)
   return (
-    <main className="site-shell">
-      <section className="container-wide section-pad">
-        <div className="mx-auto max-w-2xl">
-          <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+    <div className="py-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
             <h1 className="mb-1 text-2xl font-semibold text-white">Onboarding wizard</h1>
-            <p className="mb-6 text-sm text-site-muted">A few quick steps to get your institute running.</p>
+            <p className="mb-6 text-sm text-site-muted">A few quick steps to get your {label} running.</p>
 
             {!ready && <div className="text-sm text-site-muted">Loading…</div>}
 
@@ -127,7 +137,7 @@ export default function WizardPage() {
 
                 {step === 1 && (
                   <div className="space-y-3">
-                    <label className="block text-sm text-white/80">Institute name</label>
+                    <label className="block text-sm text-white/80">{label} name</label>
                     <input value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputCls} />
                     <button onClick={doOrg} disabled={busy} className={primaryBtn}>
                       Save &amp; continue
@@ -191,9 +201,8 @@ export default function WizardPage() {
                 )}
               </>
             )}
-          </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

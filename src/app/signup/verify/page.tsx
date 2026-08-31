@@ -75,7 +75,7 @@ function PageContent() {
           {status === "verifying" ? (
             <>
               <h1 className="text-2xl font-bold text-white">Confirming your payment…</h1>
-              <p className="mt-4 text-site-muted">Please wait while we set up your institute.</p>
+              <p className="mt-4 text-site-muted">Please wait while we set up your Online Academy.</p>
             </>
           ) : status === "success" ? (
             <>
@@ -92,7 +92,7 @@ function PageContent() {
 
               {data?.front_door && (
                 <div className="mt-6 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left">
-                  <div className="text-xs uppercase tracking-wide text-site-muted">Your institute address</div>
+                  <div className="text-xs uppercase tracking-wide text-site-muted">Your Online Academy address</div>
                   <div className="truncate text-sm text-white">{data.front_door}</div>
                 </div>
               )}

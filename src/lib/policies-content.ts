@@ -17,7 +17,7 @@ export type Policy = {
   blocks: PolicyBlock[];
 };
 
-export const policies: Policy[] = [
+const policiesRaw: Policy[] = [
   {
     "id": "certificates-and-credentials",
     "title": "JIT CAMPUS CERTIFICATE ISSUANCE, VERIFICATION AND CREDENTIAL POLICY",
@@ -32,7 +32,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Schools, deliver Courses and Programmes, appoint Lecturers and Admission Specialists, enrol Students and administer educational activities."
+        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Online Academies, deliver Courses and Programmes, appoint Lecturers and Admission Marketers, enrol Students and administer educational activities."
       },
       {
         "type": "paragraph",
@@ -40,7 +40,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may provide technology that enables Schools to:"
+        "text": "JIT Campus may provide technology that enables Online Academies to:"
       },
       {
         "type": "list",
@@ -57,7 +57,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Unless expressly stated otherwise, certificates generated through a School on JIT Campus are issued by that School and not by Jorsas Tech or JIT Campus."
+        "text": "Unless expressly stated otherwise, certificates generated through an Online Academy on JIT Campus are issued by that Online Academy and not by Jorsas Tech or JIT Campus."
       },
       {
         "type": "paragraph",
@@ -88,7 +88,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School may issue a certificate to recognise that a Student has satisfied requirements established by that School."
+        "text": "An Online Academy may issue a certificate to recognise that a Student has satisfied requirements established by that Online Academy."
       },
       {
         "type": "paragraph",
@@ -109,7 +109,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The meaning of a certificate should be determined by the School and accurately communicated to Students."
+        "text": "The meaning of a certificate should be determined by the Online Academy and accurately communicated to Students."
       },
       {
         "type": "part",
@@ -136,11 +136,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School may issue a Certificate of Achievement where the Student has met specified assessment or performance requirements."
+        "text": "An Online Academy may issue a Certificate of Achievement where the Student has met specified assessment or performance requirements."
       },
       {
         "type": "paragraph",
-        "text": "The School is responsible for determining those requirements."
+        "text": "The Online Academy is responsible for determining those requirements."
       },
       {
         "type": "section",
@@ -177,7 +177,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The School remains responsible for accurately describing what each credential represents."
+        "text": "The Online Academy remains responsible for accurately describing what each credential represents."
       },
       {
         "type": "part",
@@ -187,11 +187,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "7",
-        "title": "School-Issued Certificates"
+        "title": "Online Academy-Issued Certificates"
       },
       {
         "type": "paragraph",
-        "text": "Unless expressly stated otherwise, a certificate generated for a Course is issued by the School responsible for that Course."
+        "text": "Unless expressly stated otherwise, a certificate generated for a Course is issued by the Online Academy responsible for that Course."
       },
       {
         "type": "paragraph",
@@ -203,7 +203,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "operates a School through JIT Campus and issues a certificate to a Student, the certificate is ordinarily an ABC Digital Academy certificate."
+        "text": "operates an Online Academy through JIT Campus and issues a certificate to a Student, the certificate is ordinarily an ABC Digital Academy certificate."
       },
       {
         "type": "paragraph",
@@ -220,7 +220,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School must not state:"
+        "text": "An Online Academy must not state:"
       },
       {
         "type": "paragraph",
@@ -245,7 +245,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Such circumstances should be clearly distinguished from independent Schools operating through JIT Campus."
+        "text": "Such circumstances should be clearly distinguished from independent Online Academies operating through JIT Campus."
       },
       {
         "type": "part",
@@ -255,11 +255,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "10",
-        "title": "School Requirements"
+        "title": "Online Academy Requirements"
       },
       {
         "type": "paragraph",
-        "text": "Each School determines the requirements a Student must satisfy before receiving its certificate."
+        "text": "Each Online Academy determines the requirements a Student must satisfy before receiving its certificate."
       },
       {
         "type": "paragraph",
@@ -285,7 +285,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a Course offers a certificate, Schools should clearly communicate material certificate requirements to Students."
+        "text": "Where a Course offers a certificate, Online Academies should clearly communicate material certificate requirements to Students."
       },
       {
         "type": "paragraph",
@@ -303,11 +303,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may allow Schools to configure certificates for automatic issuance."
+        "text": "JIT Campus may allow Online Academies to configure certificates for automatic issuance."
       },
       {
         "type": "paragraph",
-        "text": "For example, a School may configure the Platform to issue a certificate when:"
+        "text": "For example, an Online Academy may configure the Platform to issue a certificate when:"
       },
       {
         "type": "list",
@@ -320,15 +320,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "13",
-        "title": "School Responsibility for Configuration"
+        "title": "Online Academy Responsibility for Configuration"
       },
       {
         "type": "paragraph",
-        "text": "The School is responsible for ensuring that its certificate rules are configured correctly."
+        "text": "The Online Academy is responsible for ensuring that its certificate rules are configured correctly."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is not responsible for an incorrect academic outcome caused by a School deliberately or incorrectly configuring its completion criteria, except to the extent that the issue results from a malfunction of JIT Campus itself."
+        "text": "JIT Campus is not responsible for an incorrect academic outcome caused by an Online Academy deliberately or incorrectly configuring its completion criteria, except to the extent that the issue results from a malfunction of JIT Campus itself."
       },
       {
         "type": "part",
@@ -342,7 +342,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where manual certificate issuance is available, only appropriately authorised School Users should issue certificates."
+        "text": "Where manual certificate issuance is available, only appropriately authorised Online Academy Users should issue certificates."
       },
       {
         "type": "section",
@@ -351,7 +351,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School Owner, Lecturer or administrator must not knowingly issue a certificate to falsely represent that a Student completed requirements they did not complete."
+        "text": "An Online Academy Owner, Lecturer or administrator must not knowingly issue a certificate to falsely represent that a Student completed requirements they did not complete."
       },
       {
         "type": "part",
@@ -371,8 +371,8 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Student name;",
-          "School name;",
-          "School logo;",
+          "Online Academy name;",
+          "Online Academy logo;",
           "Course or Programme title;",
           "completion date;",
           "issue date;",
@@ -396,7 +396,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a certificate contains an error, correction may be requested through the relevant School."
+        "text": "Where a certificate contains an error, correction may be requested through the relevant Online Academy."
       },
       {
         "type": "part",
@@ -438,7 +438,7 @@ export const policies: Policy[] = [
         "items": [
           "JIT Campus accredited the Course;",
           "Jorsas Tech approved the curriculum;",
-          "the School is government accredited;",
+          "the Online Academy is government accredited;",
           "the qualification is regulated;",
           "the credential is equivalent to a degree;",
           "the Student is professionally licensed; or",
@@ -464,7 +464,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "This confirms that the certificate corresponds with a credential issued by the named School through JIT Campus. Verification does not constitute accreditation, professional recognition or endorsement by JIT Campus or Jorsas Tech."
+        "text": "This confirms that the certificate corresponds with a credential issued by the named Online Academy through JIT Campus. Verification does not constitute accreditation, professional recognition or endorsement by JIT Campus or Jorsas Tech."
       },
       {
         "type": "part",
@@ -523,7 +523,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a School states that a Course or certificate is accredited, recognised or regulated, the School is responsible for ensuring that the claim is accurate."
+        "text": "Where an Online Academy states that a Course or certificate is accredited, recognised or regulated, the Online Academy is responsible for ensuring that the claim is accurate."
       },
       {
         "type": "section",
@@ -532,7 +532,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where appropriate, a School making an accreditation claim should identify:"
+        "text": "Where appropriate, an Online Academy making an accreditation claim should identify:"
       },
       {
         "type": "list",
@@ -551,11 +551,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not need to verify every School before it can create Courses."
+        "text": "JIT Campus does not need to verify every Online Academy before it can create Courses."
       },
       {
         "type": "paragraph",
-        "text": "However, where a School makes a significant accreditation or regulatory claim, JIT Campus may request supporting evidence where reasonably necessary, including following:"
+        "text": "However, where an Online Academy makes a significant accreditation or regulatory claim, JIT Campus may request supporting evidence where reasonably necessary, including following:"
       },
       {
         "type": "list",
@@ -574,7 +574,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School must not knowingly claim that its Course is:"
+        "text": "An Online Academy must not knowingly claim that its Course is:"
       },
       {
         "type": "list",
@@ -611,7 +611,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School providing such education is responsible for ensuring that it has the authority required to offer or award the relevant qualification."
+        "text": "An Online Academy providing such education is responsible for ensuring that it has the authority required to offer or award the relevant qualification."
       },
       {
         "type": "section",
@@ -620,7 +620,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Creating a School or Course through JIT Campus does not give the School regulatory authority."
+        "text": "Creating an Online Academy or Course through JIT Campus does not give the Online Academy regulatory authority."
       },
       {
         "type": "paragraph",
@@ -674,7 +674,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools must not guarantee that a certificate will result in employment unless there is a legitimate basis for such a guarantee."
+        "text": "Online Academies must not guarantee that a certificate will result in employment unless there is a legitimate basis for such a guarantee."
       },
       {
         "type": "paragraph",
@@ -695,7 +695,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not guarantee that every employer will recognise every certificate issued by every School."
+        "text": "JIT Campus does not guarantee that every employer will recognise every certificate issued by every Online Academy."
       },
       {
         "type": "paragraph",
@@ -713,7 +713,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools must not falsely represent certificates as providing:"
+        "text": "Online Academies must not falsely represent certificates as providing:"
       },
       {
         "type": "list",
@@ -738,11 +738,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "33",
-        "title": "School Branding"
+        "title": "Online Academy Branding"
       },
       {
         "type": "paragraph",
-        "text": "Schools may customise certificates using available functionality."
+        "text": "Online Academies may customise certificates using available functionality."
       },
       {
         "type": "paragraph",
@@ -751,10 +751,10 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School logo;",
-          "School colours;",
+          "Online Academy logo;",
+          "Online Academy colours;",
           "authorised signatures;",
-          "School name; and",
+          "Online Academy name; and",
           "Course information."
         ]
       },
@@ -778,7 +778,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools must not design certificates to deliberately imitate:"
+        "text": "Online Academies must not design certificates to deliberately imitate:"
       },
       {
         "type": "list",
@@ -792,7 +792,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "where the School has no authority to issue such credentials."
+        "text": "where the Online Academy has no authority to issue such credentials."
       },
       {
         "type": "part",
@@ -806,7 +806,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may identify persons authorised to sign or approve certificates."
+        "text": "Online Academies may identify persons authorised to sign or approve certificates."
       },
       {
         "type": "paragraph",
@@ -815,8 +815,8 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School Owner;",
-          "School Director;",
+          "Online Academy Owner;",
+          "Online Academy Director;",
           "Lecturer;",
           "Programme Lead; or",
           "another authorised person."
@@ -885,11 +885,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "40",
-        "title": "School Revocation"
+        "title": "Online Academy Revocation"
       },
       {
         "type": "paragraph",
-        "text": "A School may revoke or withdraw a certificate where there are legitimate grounds."
+        "text": "An Online Academy may revoke or withdraw a certificate where there are legitimate grounds."
       },
       {
         "type": "paragraph",
@@ -904,7 +904,7 @@ export const policies: Policy[] = [
           "fraudulent assessment;",
           "falsification of Course completion;",
           "administrative mistake; or",
-          "another legitimate reason under School rules."
+          "another legitimate reason under Online Academy rules."
         ]
       },
       {
@@ -967,7 +967,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "systematic certificate fraud;",
-          "fake Schools;",
+          "fake Online Academies;",
           "forged credentials;",
           "false accreditation;",
           "Platform manipulation;",
@@ -982,11 +982,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus will not ordinarily decide whether a Student academically deserved a School’s certificate."
+        "text": "JIT Campus will not ordinarily decide whether a Student academically deserved an Online Academy’s certificate."
       },
       {
         "type": "paragraph",
-        "text": "That remains a School academic decision."
+        "text": "That remains an Online Academy academic decision."
       },
       {
         "type": "paragraph",
@@ -1033,7 +1033,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Account suspension;",
-          "School suspension;",
+          "Online Academy suspension;",
           "removal of certificate privileges;",
           "termination of Platform access; or",
           "referral to competent authorities where appropriate."
@@ -1082,7 +1082,7 @@ export const policies: Policy[] = [
           "their name;",
           "Course;",
           "grade;",
-          "School;",
+          "Online Academy;",
           "completion status;",
           "date;",
           "accreditation; or",
@@ -1112,7 +1112,7 @@ export const policies: Policy[] = [
         "items": [
           "Student name;",
           "Course;",
-          "School;",
+          "Online Academy;",
           "issue date;",
           "certificate identifier; and",
           "certificate status."
@@ -1134,7 +1134,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXIII",
-        "title": "CERTIFICATES AFTER SCHOOL CLOSURE"
+        "title": "CERTIFICATES AFTER ONLINE ACADEMY CLOSURE"
       },
       {
         "type": "section",
@@ -1143,7 +1143,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where technically and legally practicable, JIT Campus may retain verification records for legitimately issued certificates after a School closes."
+        "text": "Where technically and legally practicable, JIT Campus may retain verification records for legitimately issued certificates after an Online Academy closes."
       },
       {
         "type": "paragraph",
@@ -1160,21 +1160,21 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools and Students should retain appropriate copies of important credentials."
+        "text": "Online Academies and Students should retain appropriate copies of important credentials."
       },
       {
         "type": "part",
         "label": "PART XXIV",
-        "title": "SCHOOL SUSPENSION"
+        "title": "ONLINE ACADEMY SUSPENSION"
       },
       {
         "type": "section",
         "num": "53",
-        "title": "Certificates From Suspended Schools"
+        "title": "Certificates From Suspended Online Academies"
       },
       {
         "type": "paragraph",
-        "text": "Suspension of a School does not automatically mean that every certificate previously issued by that School was fraudulent."
+        "text": "Suspension of an Online Academy does not automatically mean that every certificate previously issued by that Online Academy was fraudulent."
       },
       {
         "type": "paragraph",
@@ -1183,11 +1183,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "54",
-        "title": "Fraudulent School"
+        "title": "Fraudulent Online Academy"
       },
       {
         "type": "paragraph",
-        "text": "Where a School is determined to have been created primarily to issue fraudulent credentials, JIT Campus may invalidate or restrict relevant certificate records."
+        "text": "Where an Online Academy is determined to have been created primarily to issue fraudulent credentials, JIT Campus may invalidate or restrict relevant certificate records."
       },
       {
         "type": "part",
@@ -1207,7 +1207,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Student;",
-          "School;",
+          "Online Academy;",
           "Course;",
           "issue date;",
           "certificate identifier;",
@@ -1233,7 +1233,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a certificate is incorrectly generated because of a verified JIT Campus technical error, JIT Campus may work with the School to:"
+        "text": "Where a certificate is incorrectly generated because of a verified JIT Campus technical error, JIT Campus may work with the Online Academy to:"
       },
       {
         "type": "list",
@@ -1246,7 +1246,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The School remains responsible for determining whether the Student academically qualifies for the certificate."
+        "text": "The Online Academy remains responsible for determining whether the Student academically qualifies for the certificate."
       },
       {
         "type": "part",
@@ -1275,7 +1275,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "should ordinarily raise the issue with the School."
+        "text": "should ordinarily raise the issue with the Online Academy."
       },
       {
         "type": "section",
@@ -1301,7 +1301,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXVIII",
-        "title": "SCHOOL RESPONSIBILITY"
+        "title": "ONLINE ACADEMY RESPONSIBILITY"
       },
       {
         "type": "section",
@@ -1310,7 +1310,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools remain responsible for:"
+        "text": "Online Academies remain responsible for:"
       },
       {
         "type": "list",
@@ -1335,7 +1335,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not automatically assume responsibility for the academic judgment of independent Schools."
+        "text": "JIT Campus does not automatically assume responsibility for the academic judgment of independent Online Academies."
       },
       {
         "type": "part",
@@ -1381,7 +1381,7 @@ export const policies: Policy[] = [
         "items": [
           "JIT Campus Terms and Conditions;",
           "Privacy Policy;",
-          "School Owner and School Management Policy;",
+          "Online Academy Owner and Online Academy Management Policy;",
           "Academic Regulations and Assessment Policy;",
           "Academic Integrity Policy;",
           "Intellectual Property and Copyright Policy;",
@@ -1401,7 +1401,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Questions concerning eligibility for a particular certificate should ordinarily be directed to the School that issued it."
+        "text": "Questions concerning eligibility for a particular certificate should ordinarily be directed to the Online Academy that issued it."
       },
       {
         "type": "paragraph",
@@ -1451,7 +1451,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Schools, deliver Courses and Programmes, appoint Lecturers and Admission Specialists, enrol Students and administer educational activities."
+        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Online Academies, deliver Courses and Programmes, appoint Lecturers and Admission Marketers, enrol Students and administer educational activities."
       },
       {
         "type": "paragraph",
@@ -1464,10 +1464,10 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School Owners;",
-          "Schools;",
+          "Online Academy Owners;",
+          "Online Academies;",
           "Lecturers;",
-          "Admission Specialists;",
+          "Admission Marketers;",
           "Students;",
           "administrators;",
           "content creators;",
@@ -1477,7 +1477,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus recognises that educational content may contain valuable intellectual property belonging to Schools, Lecturers, Students, Jorsas Tech or third parties."
+        "text": "JIT Campus recognises that educational content may contain valuable intellectual property belonging to Online Academies, Lecturers, Students, Jorsas Tech or third parties."
       },
       {
         "type": "paragraph",
@@ -1641,21 +1641,21 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School may accurately state that it uses or is hosted on JIT Campus where this is true."
+        "text": "An Online Academy may accurately state that it uses or is hosted on JIT Campus where this is true."
       },
       {
         "type": "part",
         "label": "PART III",
-        "title": "SCHOOL INTELLECTUAL PROPERTY"
+        "title": "ONLINE ACADEMY INTELLECTUAL PROPERTY"
       },
       {
         "type": "section",
         "num": "7",
-        "title": "School Content"
+        "title": "Online Academy Content"
       },
       {
         "type": "paragraph",
-        "text": "A School may own or control intellectual property relating to content it creates or legitimately acquires."
+        "text": "An Online Academy may own or control intellectual property relating to content it creates or legitimately acquires."
       },
       {
         "type": "paragraph",
@@ -1665,7 +1665,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Course materials;",
-          "School branding;",
+          "Online Academy branding;",
           "videos;",
           "presentations;",
           "assessments;",
@@ -1673,7 +1673,7 @@ export const policies: Policy[] = [
           "curriculum;",
           "graphics;",
           "training materials;",
-          "School logos;",
+          "Online Academy logos;",
           "and other educational resources."
         ]
       },
@@ -1684,15 +1684,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "8",
-        "title": "School Responsibility"
+        "title": "Online Academy Responsibility"
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for ensuring that their School has appropriate rights to materials uploaded through the School."
+        "text": "Online Academy Owners are responsible for ensuring that their Online Academy has appropriate rights to materials uploaded through the Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "Schools must not knowingly upload:"
+        "text": "Online Academies must not knowingly upload:"
       },
       {
         "type": "list",
@@ -1701,7 +1701,7 @@ export const policies: Policy[] = [
           "unlawfully copied textbooks;",
           "stolen videos;",
           "copyrighted training materials without permission;",
-          "another School’s content presented as their own; or",
+          "another Online Academy’s content presented as their own; or",
           "other material they do not have the right to use."
         ]
       },
@@ -1726,7 +1726,7 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "the Lecturer’s agreement with the School;",
+          "the Lecturer’s agreement with the Online Academy;",
           "employment arrangements;",
           "commissioning arrangements;",
           "copyright law;",
@@ -1736,7 +1736,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not automatically determine ownership disputes between a Lecturer and a School."
+        "text": "JIT Campus does not automatically determine ownership disputes between a Lecturer and an Online Academy."
       },
       {
         "type": "section",
@@ -1752,7 +1752,7 @@ export const policies: Policy[] = [
         "items": [
           "created the material;",
           "obtained permission to use it;",
-          "received authority from the relevant School; or",
+          "received authority from the relevant Online Academy; or",
           "otherwise have a legitimate right to make it available."
         ]
       },
@@ -1816,7 +1816,7 @@ export const policies: Policy[] = [
         "items": [
           "store the work;",
           "display it to authorised Users;",
-          "deliver it to the relevant Lecturer or School;",
+          "deliver it to the relevant Lecturer or Online Academy;",
           "process it for assessment;",
           "maintain academic records;",
           "support academic integrity processes;",
@@ -1892,7 +1892,7 @@ export const policies: Policy[] = [
           "claim ownership of User content;",
           "sell a Lecturer’s entire Course as JIT Campus content;",
           "publish private Student assignments publicly;",
-          "commercially license a School’s proprietary Course to unrelated third parties; or",
+          "commercially license an Online Academy’s proprietary Course to unrelated third parties; or",
           "use confidential material for unrelated purposes"
         ]
       },
@@ -1938,7 +1938,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Students may generally use Course materials for legitimate personal study, subject to any additional restrictions disclosed by the School."
+        "text": "Students may generally use Course materials for legitimate personal study, subject to any additional restrictions disclosed by the Online Academy."
       },
       {
         "type": "paragraph",
@@ -1966,13 +1966,13 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where live classes are recorded, the School or Lecturer should ensure that recording is consistent with applicable:"
+        "text": "Where live classes are recorded, the Online Academy or Lecturer should ensure that recording is consistent with applicable:"
       },
       {
         "type": "list",
         "items": [
           "privacy requirements;",
-          "School rules;",
+          "Online Academy rules;",
           "consent requirements;",
           "intellectual property rights; and",
           "JIT Campus policies."
@@ -1991,7 +1991,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "who created the recording;",
-          "the School–Lecturer agreement;",
+          "the Online Academy–Lecturer agreement;",
           "applicable copyright law;",
           "Platform terms; and",
           "any separate contractual arrangements."
@@ -2014,7 +2014,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "applicable law;",
-          "School rules;",
+          "Online Academy rules;",
           "Lecturer rights;",
           "other Students’ privacy; or",
           "JIT Campus policies."
@@ -2052,15 +2052,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "23",
-        "title": "Reuse by Schools"
+        "title": "Reuse by Online Academies"
       },
       {
         "type": "paragraph",
-        "text": "Schools may reuse their own assessment materials where they have the right to do so."
+        "text": "Online Academies may reuse their own assessment materials where they have the right to do so."
       },
       {
         "type": "paragraph",
-        "text": "Users must not improperly copy another School’s assessment content."
+        "text": "Users must not improperly copy another Online Academy’s assessment content."
       },
       {
         "type": "part",
@@ -2070,16 +2070,16 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "24",
-        "title": "School Trademarks"
+        "title": "Online Academy Trademarks"
       },
       {
         "type": "paragraph",
-        "text": "Schools remain responsible for ensuring that:"
+        "text": "Online Academies remain responsible for ensuring that:"
       },
       {
         "type": "list",
         "items": [
-          "their School name;",
+          "their Online Academy name;",
           "logo;",
           "branding;",
           "Course names; and",
@@ -2097,11 +2097,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Users must not use branding in a way that falsely makes a School appear to be an existing institution."
+        "text": "Users must not use branding in a way that falsely makes an Online Academy appear to be an existing institution."
       },
       {
         "type": "paragraph",
-        "text": "For example, a User must not copy the branding of a recognised university and create a misleadingly similar School on JIT Campus."
+        "text": "For example, a User must not copy the branding of a recognised university and create a misleadingly similar Online Academy on JIT Campus."
       },
       {
         "type": "part",
@@ -2115,7 +2115,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools, Lecturers and Students may sometimes use third-party content for legitimate educational purposes."
+        "text": "Online Academies, Lecturers and Students may sometimes use third-party content for legitimate educational purposes."
       },
       {
         "type": "paragraph",
@@ -2207,7 +2207,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools and Lecturers may use AI-generated material where permitted and appropriate."
+        "text": "Online Academies and Lecturers may use AI-generated material where permitted and appropriate."
       },
       {
         "type": "paragraph",
@@ -2300,7 +2300,7 @@ export const policies: Policy[] = [
           "contact details;",
           "identification of the protected work;",
           "identification of the allegedly infringing content;",
-          "relevant School or User;",
+          "relevant Online Academy or User;",
           "explanation of the rights claimed;",
           "evidence of ownership or authority where appropriate; and",
           "any other information reasonably necessary to review the complaint."
@@ -2409,7 +2409,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XVIII",
-        "title": "DISPUTES BETWEEN SCHOOLS AND LECTURERS"
+        "title": "DISPUTES BETWEEN ONLINE ACADEMIES AND LECTURERS"
       },
       {
         "type": "section",
@@ -2418,7 +2418,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School and Lecturer may disagree about ownership of Course materials."
+        "text": "An Online Academy and Lecturer may disagree about ownership of Course materials."
       },
       {
         "type": "paragraph",
@@ -2459,7 +2459,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools and Lecturers should not automatically claim ownership of Student work merely because it was submitted for assessment."
+        "text": "Online Academies and Lecturers should not automatically claim ownership of Student work merely because it was submitted for assessment."
       },
       {
         "type": "paragraph",
@@ -2472,7 +2472,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may legitimately use Student submissions for:"
+        "text": "Online Academies may legitimately use Student submissions for:"
       },
       {
         "type": "list",
@@ -2510,7 +2510,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School may add its own:"
+        "text": "An Online Academy may add its own:"
       },
       {
         "type": "list",
@@ -2526,11 +2526,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "47",
-        "title": "School Certificate Branding"
+        "title": "Online Academy Certificate Branding"
       },
       {
         "type": "paragraph",
-        "text": "Schools remain responsible for ensuring that their certificate design does not falsely imply:"
+        "text": "Online Academies remain responsible for ensuring that their certificate design does not falsely imply:"
       },
       {
         "type": "list",
@@ -2572,21 +2572,21 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXII",
-        "title": "CONTENT AFTER ACCOUNT OR SCHOOL CLOSURE"
+        "title": "CONTENT AFTER ACCOUNT OR ONLINE ACADEMY CLOSURE"
       },
       {
         "type": "section",
         "num": "50",
-        "title": "School Closure"
+        "title": "Online Academy Closure"
       },
       {
         "type": "paragraph",
-        "text": "When a School closes, access to Course materials may be restricted or removed depending on:"
+        "text": "When an Online Academy closes, access to Course materials may be restricted or removed depending on:"
       },
       {
         "type": "list",
         "items": [
-          "School settings;",
+          "Online Academy settings;",
           "Student access rights;",
           "subscription status;",
           "legal requirements;",
@@ -2657,11 +2657,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "54",
-        "title": "School Due Diligence"
+        "title": "Online Academy Due Diligence"
       },
       {
         "type": "paragraph",
-        "text": "Schools should take reasonable care when using third-party or Lecturer-provided materials, particularly where they intend to commercially sell Courses."
+        "text": "Online Academies should take reasonable care when using third-party or Lecturer-provided materials, particularly where they intend to commercially sell Courses."
       },
       {
         "type": "part",
@@ -2767,12 +2767,12 @@ export const policies: Policy[] = [
         "items": [
           "JIT Campus Terms and Conditions;",
           "Privacy Policy;",
-          "School Owner and School Management Policy;",
+          "Online Academy Owner and Online Academy Management Policy;",
           "Acceptable Use and Prohibited Activities Policy;",
           "Academic Integrity Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct; and",
+          "Admission Marketer Code of Conduct; and",
           "Complaints, Appeals and Dispute Resolution Policy."
         ]
       },
@@ -2830,7 +2830,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Schools, deliver Courses and Programmes, appoint Lecturers and Admission Specialists, enrol Students and administer educational activities."
+        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Online Academies, deliver Courses and Programmes, appoint Lecturers and Admission Marketers, enrol Students and administer educational activities."
       },
       {
         "type": "paragraph",
@@ -2842,7 +2842,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "1. matters for which an individual School is responsible; and"
+        "text": "1. matters for which an individual Online Academy is responsible; and"
       },
       {
         "type": "paragraph",
@@ -2850,11 +2850,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides the technology and infrastructure. Individual Schools remain responsible for their own academic decisions, Courses, Lecturers, Admission Specialists, Student management and internal educational operations."
+        "text": "JIT Campus provides the technology and infrastructure. Individual Online Academies remain responsible for their own academic decisions, Courses, Lecturers, Admission Marketers, Student management and internal educational operations."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is therefore not automatically responsible for investigating or deciding every dispute arising between Users of an independent School."
+        "text": "JIT Campus is therefore not automatically responsible for investigating or deciding every dispute arising between Users of an independent Online Academy."
       },
       {
         "type": "paragraph",
@@ -2882,7 +2882,7 @@ export const policies: Policy[] = [
           "reasonably fair;",
           "transparent;",
           "appropriate to the nature of the complaint; and",
-          "clear about whether responsibility lies with the School or JIT Campus."
+          "clear about whether responsibility lies with the Online Academy or JIT Campus."
         ]
       },
       {
@@ -2899,9 +2899,9 @@ export const policies: Policy[] = [
         "items": [
           "Students;",
           "prospective Students;",
-          "School Owners;",
+          "Online Academy Owners;",
           "Lecturers;",
-          "Admission Specialists; and",
+          "Admission Marketers; and",
           "other Users affected by activities conducted through JIT Campus."
         ]
       },
@@ -2928,7 +2928,7 @@ export const policies: Policy[] = [
         "items": [
           "Course delivery;",
           "Lecturer conduct;",
-          "Admission Specialist conduct;",
+          "Admission Marketer conduct;",
           "Student behaviour;",
           "admission processes;",
           "payments;",
@@ -2949,16 +2949,16 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART III",
-        "title": "SCHOOL MATTERS AND JIT CAMPUS MATTERS"
+        "title": "ONLINE ACADEMY MATTERS AND JIT CAMPUS MATTERS"
       },
       {
         "type": "section",
         "num": "5",
-        "title": "School-Level Matters"
+        "title": "Online Academy-Level Matters"
       },
       {
         "type": "paragraph",
-        "text": "The following matters should normally be raised with the relevant School first:"
+        "text": "The following matters should normally be raised with the relevant Online Academy first:"
       },
       {
         "type": "list",
@@ -2971,17 +2971,17 @@ export const policies: Policy[] = [
           "Course-specific admission decisions;",
           "attendance;",
           "Student progression;",
-          "School certificates;",
-          "School-specific refund decisions;",
+          "Online Academy certificates;",
+          "Online Academy-specific refund decisions;",
           "Course scheduling;",
           "internal Student discipline;",
-          "School-specific academic rules; and",
-          "ordinary disputes between Users within the School."
+          "Online Academy-specific academic rules; and",
+          "ordinary disputes between Users within the Online Academy."
         ]
       },
       {
         "type": "paragraph",
-        "text": "These matters are generally within the School’s control."
+        "text": "These matters are generally within the Online Academy’s control."
       },
       {
         "type": "section",
@@ -3018,7 +3018,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A User does not need to complete a School’s internal complaint process before contacting JIT Campus where the matter involves a serious concern such as:"
+        "text": "A User does not need to complete an Online Academy’s internal complaint process before contacting JIT Campus where the matter involves a serious concern such as:"
       },
       {
         "type": "list",
@@ -3031,41 +3031,41 @@ export const policies: Policy[] = [
           "significant privacy or security breaches;",
           "malicious Account takeover;",
           "unlawful Platform activity; or",
-          "serious misconduct by the School itself."
+          "serious misconduct by the Online Academy itself."
         ]
       },
       {
         "type": "part",
         "label": "PART IV",
-        "title": "SCHOOL COMPLAINT PROCEDURES"
+        "title": "ONLINE ACADEMY COMPLAINT PROCEDURES"
       },
       {
         "type": "section",
         "num": "8",
-        "title": "School Responsibility"
+        "title": "Online Academy Responsibility"
       },
       {
         "type": "paragraph",
-        "text": "Schools are encouraged to provide Students with a reasonable method for raising concerns."
+        "text": "Online Academies are encouraged to provide Students with a reasonable method for raising concerns."
       },
       {
         "type": "paragraph",
-        "text": "Depending on the size and nature of the School, this may be:"
+        "text": "Depending on the size and nature of the Online Academy, this may be:"
       },
       {
         "type": "list",
         "items": [
           "an in-Platform complaint function;",
-          "a designated School administrator;",
+          "a designated Online Academy administrator;",
           "an email address;",
-          "a School Owner;",
+          "an Online Academy Owner;",
           "an academic administrator; or",
           "another appropriate mechanism."
         ]
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not require every small School to establish a complex complaints department."
+        "text": "JIT Campus does not require every small Online Academy to establish a complex complaints department."
       },
       {
         "type": "section",
@@ -3082,7 +3082,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools are responsible for determining what additional procedures are appropriate or legally required for their activities."
+        "text": "Online Academies are responsible for determining what additional procedures are appropriate or legally required for their activities."
       },
       {
         "type": "part",
@@ -3107,7 +3107,7 @@ export const policies: Policy[] = [
         "items": [
           "the complainant’s name;",
           "Account email or relevant Account information;",
-          "relevant School;",
+          "relevant Online Academy;",
           "relevant Course where applicable;",
           "description of the issue;",
           "relevant dates;",
@@ -3150,7 +3150,7 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "primarily a School matter;",
+          "primarily an Online Academy matter;",
           "primarily a JIT Campus matter;",
           "a matter involving both;",
           "a safeguarding concern;",
@@ -3163,11 +3163,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "13",
-        "title": "Referring a Matter to the School"
+        "title": "Referring a Matter to the Online Academy"
       },
       {
         "type": "paragraph",
-        "text": "Where the complaint concerns a matter that should reasonably be handled by the School, JIT Campus may direct the complainant to the relevant School."
+        "text": "Where the complaint concerns a matter that should reasonably be handled by the Online Academy, JIT Campus may direct the complainant to the relevant Online Academy."
       },
       {
         "type": "paragraph",
@@ -3175,7 +3175,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "That is normally an academic matter for the School."
+        "text": "That is normally an academic matter for the Online Academy."
       },
       {
         "type": "section",
@@ -3192,7 +3192,7 @@ export const policies: Policy[] = [
           "concerns JIT Campus directly;",
           "involves mandatory Platform rules;",
           "creates a serious safety concern;",
-          "affects multiple Schools;",
+          "affects multiple Online Academies;",
           "involves suspected fraud;",
           "concerns Platform security;",
           "concerns JIT Campus’s processing of personal information; or",
@@ -3211,7 +3211,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where appropriate, Users and Schools are encouraged to resolve straightforward problems informally."
+        "text": "Where appropriate, Users and Online Academies are encouraged to resolve straightforward problems informally."
       },
       {
         "type": "paragraph",
@@ -3300,9 +3300,9 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "the complainant;",
-          "the School;",
+          "the Online Academy;",
           "the Lecturer;",
-          "the Admission Specialist;",
+          "the Admission Marketer;",
           "the Student; or",
           "another relevant User."
         ]
@@ -3364,9 +3364,9 @@ export const policies: Policy[] = [
           "content removal;",
           "warning;",
           "feature restriction;",
-          "referral back to the School;",
+          "referral back to the Online Academy;",
           "temporary Account suspension;",
-          "School suspension;",
+          "Online Academy suspension;",
           "Account termination;",
           "referral to another appropriate process; or",
           "no further action where the complaint is not substantiated."
@@ -3388,13 +3388,13 @@ export const policies: Policy[] = [
           "provide compensation;",
           "issue a refund;",
           "suspend another User;",
-          "remove a School; or",
+          "remove an Online Academy; or",
           "overturn an academic decision."
         ]
       },
       {
         "type": "paragraph",
-        "text": "The outcome depends on the circumstances and the responsibilities of JIT Campus and the relevant School."
+        "text": "The outcome depends on the circumstances and the responsibilities of JIT Campus and the relevant Online Academy."
       },
       {
         "type": "part",
@@ -3408,7 +3408,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Academic decisions are generally the responsibility of the relevant School."
+        "text": "Academic decisions are generally the responsibility of the relevant Online Academy."
       },
       {
         "type": "paragraph",
@@ -3423,17 +3423,17 @@ export const policies: Policy[] = [
           "resits;",
           "academic misconduct findings;",
           "Course completion; and",
-          "School-issued certification."
+          "Online Academy-issued certification."
         ]
       },
       {
         "type": "section",
         "num": "23",
-        "title": "School Appeals"
+        "title": "Online Academy Appeals"
       },
       {
         "type": "paragraph",
-        "text": "Schools may establish processes allowing Students to challenge academic decisions."
+        "text": "Online Academies may establish processes allowing Students to challenge academic decisions."
       },
       {
         "type": "paragraph",
@@ -3447,7 +3447,7 @@ export const policies: Policy[] = [
           "relevant evidence not considered;",
           "bias;",
           "irregular assessment procedure; or",
-          "another ground recognised by the School."
+          "another ground recognised by the Online Academy."
         ]
       },
       {
@@ -3457,7 +3457,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not ordinarily substitute its judgment for that of a School or Lecturer concerning academic quality."
+        "text": "JIT Campus does not ordinarily substitute its judgment for that of an Online Academy or Lecturer concerning academic quality."
       },
       {
         "type": "paragraph",
@@ -3487,7 +3487,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The School remains responsible for the resulting academic decision."
+        "text": "The Online Academy remains responsible for the resulting academic decision."
       },
       {
         "type": "part",
@@ -3512,7 +3512,7 @@ export const policies: Policy[] = [
         "items": [
           "Account suspension;",
           "Account termination;",
-          "School suspension;",
+          "Online Academy suspension;",
           "removal of significant content;",
           "payment restrictions; or",
           "another substantial Platform-level action."
@@ -3571,11 +3571,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a dispute concerns the price or refund conditions of a particular School’s Course, the Student should ordinarily contact the School first."
+        "text": "Where a dispute concerns the price or refund conditions of a particular Online Academy’s Course, the Student should ordinarily contact the Online Academy first."
       },
       {
         "type": "paragraph",
-        "text": "The School remains responsible for its own Course pricing and applicable refund terms."
+        "text": "The Online Academy remains responsible for its own Course pricing and applicable refund terms."
       },
       {
         "type": "section",
@@ -3613,16 +3613,16 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XIII",
-        "title": "COMPLAINTS ABOUT SCHOOL OWNERS"
+        "title": "COMPLAINTS ABOUT ONLINE ACADEMY OWNERS"
       },
       {
         "type": "section",
         "num": "32",
-        "title": "School Owner Conduct"
+        "title": "Online Academy Owner Conduct"
       },
       {
         "type": "paragraph",
-        "text": "Users may report a School Owner to JIT Campus where there is a credible allegation involving:"
+        "text": "Users may report an Online Academy Owner to JIT Campus where there is a credible allegation involving:"
       },
       {
         "type": "list",
@@ -3641,15 +3641,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "33",
-        "title": "School Quality Complaints"
+        "title": "Online Academy Quality Complaints"
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not automatically guarantee the quality of every independent School."
+        "text": "JIT Campus does not automatically guarantee the quality of every independent Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "General dissatisfaction with teaching quality should ordinarily be raised with the School."
+        "text": "General dissatisfaction with teaching quality should ordinarily be raised with the Online Academy."
       },
       {
         "type": "paragraph",
@@ -3667,7 +3667,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Ordinary complaints about Lecturers should generally be handled by the School that appointed them."
+        "text": "Ordinary complaints about Lecturers should generally be handled by the Online Academy that appointed them."
       },
       {
         "type": "paragraph",
@@ -3688,20 +3688,20 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XV",
-        "title": "COMPLAINTS ABOUT ADMISSION SPECIALISTS"
+        "title": "COMPLAINTS ABOUT ADMISSION MARKETERS"
       },
       {
         "type": "section",
         "num": "35",
-        "title": "Admission Specialist Complaints"
+        "title": "Admission Marketer Complaints"
       },
       {
         "type": "paragraph",
-        "text": "Schools are ordinarily responsible for their Admission Specialists."
+        "text": "Online Academies are ordinarily responsible for their Admission Marketers."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may intervene where an Admission Specialist is alleged to have engaged in:"
+        "text": "JIT Campus may intervene where an Admission Marketer is alleged to have engaged in:"
       },
       {
         "type": "list",
@@ -3763,7 +3763,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a concern relates primarily to how an independent School uses information under its own responsibility, the User may also need to contact that School."
+        "text": "Where a concern relates primarily to how an independent Online Academy uses information under its own responsibility, the User may also need to contact that Online Academy."
       },
       {
         "type": "paragraph",
@@ -3858,7 +3858,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where there is clear evidence that a User knowingly fabricated a serious allegation for the purpose of harming another User, JIT Campus or the relevant School may take appropriate action."
+        "text": "Where there is clear evidence that a User knowingly fabricated a serious allegation for the purpose of harming another User, JIT Campus or the relevant Online Academy may take appropriate action."
       },
       {
         "type": "part",
@@ -4036,7 +4036,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXV",
-        "title": "SCHOOL COMPLAINT MANAGEMENT TOOLS"
+        "title": "ONLINE ACADEMY COMPLAINT MANAGEMENT TOOLS"
       },
       {
         "type": "section",
@@ -4045,7 +4045,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where available, JIT Campus may provide Schools with tools to:"
+        "text": "Where available, JIT Campus may provide Online Academies with tools to:"
       },
       {
         "type": "list",
@@ -4062,7 +4062,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Use of these tools does not make JIT Campus the decision-maker for the School’s complaint."
+        "text": "Use of these tools does not make JIT Campus the decision-maker for the Online Academy’s complaint."
       },
       {
         "type": "section",
@@ -4071,7 +4071,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where supported, School or JIT Campus complaints may use statuses such as:"
+        "text": "Where supported, Online Academy or JIT Campus complaints may use statuses such as:"
       },
       {
         "type": "paragraph",
@@ -4093,25 +4093,25 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides infrastructure connecting Schools, Students, Lecturers and Admission Specialists."
+        "text": "JIT Campus provides infrastructure connecting Online Academies, Students, Lecturers and Admission Marketers."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is not the automatic adjudicator of every disagreement occurring within an independent School."
+        "text": "JIT Campus is not the automatic adjudicator of every disagreement occurring within an independent Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "The relevant School remains responsible for its:"
+        "text": "The relevant Online Academy remains responsible for its:"
       },
       {
         "type": "list",
         "items": [
           "academic decisions;",
           "Lecturer management;",
-          "Admission Specialist management;",
+          "Admission Marketer management;",
           "Course delivery;",
           "internal Student matters; and",
-          "School-specific policies."
+          "Online Academy-specific policies."
         ]
       },
       {
@@ -4167,15 +4167,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "55",
-        "title": "Relationship With School Policies"
+        "title": "Relationship With Online Academy Policies"
       },
       {
         "type": "paragraph",
-        "text": "Schools may maintain their own complaints and appeals procedures."
+        "text": "Online Academies may maintain their own complaints and appeals procedures."
       },
       {
         "type": "paragraph",
-        "text": "Where a School’s procedure concerns matters within that School, the School’s procedure will ordinarily apply."
+        "text": "Where an Online Academy’s procedure concerns matters within that Online Academy, the Online Academy’s procedure will ordinarily apply."
       },
       {
         "type": "paragraph",
@@ -4202,7 +4202,7 @@ export const policies: Policy[] = [
           "Academic Integrity Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct; and",
+          "Admission Marketer Code of Conduct; and",
           "Safeguarding, Equality and Anti-Harassment Policy."
         ]
       },
@@ -4222,7 +4222,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Complaints concerning an individual School’s Course, Lecturer, assessment or admission decision should ordinarily be directed to that School first unless the complaint involves a serious Platform-level issue."
+        "text": "Complaints concerning an individual Online Academy’s Course, Lecturer, assessment or admission decision should ordinarily be directed to that Online Academy first unless the complaint involves a serious Platform-level issue."
       },
       {
         "type": "paragraph",
@@ -4260,8 +4260,8 @@ export const policies: Policy[] = [
   },
   {
     "id": "school-owner-management",
-    "title": "JIT CAMPUS SCHOOL OWNER AND SCHOOL MANAGEMENT POLICY",
-    "shortTitle": "School Owner & Management",
+    "title": "JIT CAMPUS ONLINE ACADEMY OWNER AND ONLINE ACADEMY MANAGEMENT POLICY",
+    "shortTitle": "Online Academy Owner & Management",
     "lastUpdated": "18 August 2026",
     "effectiveDate": "18 August 2026",
     "blocks": [
@@ -4272,32 +4272,32 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Schools, create Courses and Programmes, appoint Lecturers and Admission Specialists, enrol Students and administer educational activities."
+        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Online Academies, create Courses and Programmes, appoint Lecturers and Admission Marketers, enrol Students and administer educational activities."
       },
       {
         "type": "paragraph",
-        "text": "This School Owner and School Management Policy (“Policy”) sets out the responsibilities of individuals and organisations that create, own, administer or manage Schools through JIT Campus."
+        "text": "This Online Academy Owner and Online Academy Management Policy (“Policy”) sets out the responsibilities of individuals and organisations that create, own, administer or manage Online Academies through JIT Campus."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides the technology and infrastructure that enables a School Owner to establish and operate a digital School."
+        "text": "JIT Campus provides the technology and infrastructure that enables an Online Academy Owner to establish and operate a digital Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "The School Owner remains responsible for the operation of their School, the information they publish, the Users they appoint, the Courses they provide and the educational services delivered through their School."
+        "text": "The Online Academy Owner remains responsible for the operation of their Online Academy, the information they publish, the Users they appoint, the Courses they provide and the educational services delivered through their Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not ordinarily require identity documents, academic certificates, company-registration documents or accreditation documents before a User creates a School."
+        "text": "JIT Campus does not ordinarily require identity documents, academic certificates, company-registration documents or accreditation documents before a User creates an Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "Instead, Users who create Schools are required to comply with this Policy, the JIT Campus Terms and Conditions and other applicable Platform rules."
+        "text": "Instead, Users who create Online Academies are required to comply with this Policy, the JIT Campus Terms and Conditions and other applicable Platform rules."
       },
       {
         "type": "part",
         "label": "PART I",
-        "title": "WHO IS A SCHOOL OWNER?"
+        "title": "WHO IS AN ONLINE ACADEMY OWNER?"
       },
       {
         "type": "section",
@@ -4306,11 +4306,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School Owner is a User who creates a School through JIT Campus or is otherwise granted ownership-level control over a School."
+        "text": "An Online Academy Owner is a User who creates an Online Academy through JIT Campus or is otherwise granted ownership-level control over an Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "Depending on available functionality, a School Owner may be:"
+        "text": "Depending on available functionality, an Online Academy Owner may be:"
       },
       {
         "type": "list",
@@ -4330,15 +4330,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "3",
-        "title": "Meaning of “School”"
+        "title": "Meaning of “Online Academy”"
       },
       {
         "type": "paragraph",
-        "text": "For JIT Campus purposes, the term “School” is a Platform designation for an educational or training environment created through JIT Campus."
+        "text": "For JIT Campus purposes, the term “Online Academy” is a Platform designation for an educational or training environment created through JIT Campus."
       },
       {
         "type": "paragraph",
-        "text": "A School may provide:"
+        "text": "An Online Academy may provide:"
       },
       {
         "type": "list",
@@ -4358,12 +4358,12 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The use of the word “School” on JIT Campus does not automatically mean that the provider is formally registered, accredited, government-approved or authorised to award regulated qualifications."
+        "text": "The use of the word “Online Academy” on JIT Campus does not automatically mean that the provider is formally registered, accredited, government-approved or authorised to award regulated qualifications."
       },
       {
         "type": "part",
         "label": "PART II",
-        "title": "CREATING A SCHOOL"
+        "title": "CREATING AN ONLINE ACADEMY"
       },
       {
         "type": "section",
@@ -4372,7 +4372,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A User may create a School after satisfying the normal JIT Campus Account-registration requirements."
+        "text": "A User may create an Online Academy after satisfying the normal JIT Campus Account-registration requirements."
       },
       {
         "type": "paragraph",
@@ -4406,64 +4406,64 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "simply to create a School."
+        "text": "simply to create an Online Academy."
       },
       {
         "type": "section",
         "num": "5",
-        "title": "School Creation Information"
+        "title": "Online Academy Creation Information"
       },
       {
         "type": "paragraph",
-        "text": "When creating a School, the School Owner may be asked to provide information including:"
+        "text": "When creating an Online Academy, the Online Academy Owner may be asked to provide information including:"
       },
       {
         "type": "list",
         "items": [
-          "School name;",
-          "School description;",
+          "Online Academy name;",
+          "Online Academy description;",
           "logo;",
           "subject or learning category;",
-          "School contact details;",
+          "Online Academy contact details;",
           "location where relevant;",
           "Courses or Programmes;",
-          "School branding; and",
-          "other information necessary to configure the School."
+          "Online Academy branding; and",
+          "other information necessary to configure the Online Academy."
         ]
       },
       {
         "type": "section",
         "num": "6",
-        "title": "School Owner Declaration"
+        "title": "Online Academy Owner Declaration"
       },
       {
         "type": "paragraph",
-        "text": "By creating a School, the School Owner confirms that:"
+        "text": "By creating an Online Academy, the Online Academy Owner confirms that:"
       },
       {
         "type": "list",
         "items": [
-          "they have authority to create and operate the School;",
+          "they have authority to create and operate the Online Academy;",
           "the information they provide will not knowingly be false or misleading;",
           "they will comply with JIT Campus policies;",
-          "they will take responsibility for Users appointed to privileged roles within their School;",
+          "they will take responsibility for Users appointed to privileged roles within their Online Academy;",
           "they will not falsely claim accreditation or regulatory approval; and",
-          "they will operate their School for legitimate purposes."
+          "they will operate their Online Academy for legitimate purposes."
         ]
       },
       {
         "type": "part",
         "label": "PART III",
-        "title": "SCHOOL NAMES AND IDENTITY"
+        "title": "ONLINE ACADEMY NAMES AND IDENTITY"
       },
       {
         "type": "section",
         "num": "7",
-        "title": "School Names"
+        "title": "Online Academy Names"
       },
       {
         "type": "paragraph",
-        "text": "School Owners may choose a School name, provided the name does not knowingly:"
+        "text": "Online Academy Owners may choose an Online Academy name, provided the name does not knowingly:"
       },
       {
         "type": "list",
@@ -4484,11 +4484,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A User must not create a School pretending to be an existing university, college, academy, company or other organisation without appropriate authority."
+        "text": "A User must not create an Online Academy pretending to be an existing university, college, academy, company or other organisation without appropriate authority."
       },
       {
         "type": "paragraph",
-        "text": "For example, a User must not create a School called:"
+        "text": "For example, a User must not create an Online Academy called:"
       },
       {
         "type": "paragraph",
@@ -4505,7 +4505,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners must not represent their School as:"
+        "text": "Online Academy Owners must not represent their Online Academy as:"
       },
       {
         "type": "list",
@@ -4523,12 +4523,12 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School may accurately state that it uses JIT Campus or is hosted on JIT Campus, where appropriate."
+        "text": "An Online Academy may accurately state that it uses JIT Campus or is hosted on JIT Campus, where appropriate."
       },
       {
         "type": "part",
         "label": "PART IV",
-        "title": "SCHOOL INFORMATION"
+        "title": "ONLINE ACADEMY INFORMATION"
       },
       {
         "type": "section",
@@ -4537,7 +4537,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for information published about their School."
+        "text": "Online Academy Owners are responsible for information published about their Online Academy."
       },
       {
         "type": "paragraph",
@@ -4566,7 +4566,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners must not deliberately publish false or misleading claims intended to persuade Students to enrol."
+        "text": "Online Academy Owners must not deliberately publish false or misleading claims intended to persuade Students to enrol."
       },
       {
         "type": "paragraph",
@@ -4582,13 +4582,13 @@ export const policies: Policy[] = [
           "professional licensing;",
           "guaranteed income;",
           "guaranteed admission elsewhere; or",
-          "qualifications the School is not authorised to issue."
+          "qualifications the Online Academy is not authorised to issue."
         ]
       },
       {
         "type": "part",
         "label": "PART V",
-        "title": "SCHOOL ACCREDITATION AND REGULATORY STATUS"
+        "title": "ONLINE ACADEMY ACCREDITATION AND REGULATORY STATUS"
       },
       {
         "type": "section",
@@ -4597,7 +4597,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not routinely investigate whether every School is:"
+        "text": "JIT Campus does not routinely investigate whether every Online Academy is:"
       },
       {
         "type": "list",
@@ -4612,7 +4612,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners remain responsible for the claims they make about their status."
+        "text": "Online Academy Owners remain responsible for the claims they make about their status."
       },
       {
         "type": "section",
@@ -4621,7 +4621,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a School claims accreditation, recognition or regulatory approval, that claim must be genuine."
+        "text": "Where an Online Academy claims accreditation, recognition or regulatory approval, that claim must be genuine."
       },
       {
         "type": "paragraph",
@@ -4644,7 +4644,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School does not need to be formally accredited simply because it provides training through JIT Campus, unless applicable law requires such accreditation for the activities it conducts."
+        "text": "An Online Academy does not need to be formally accredited simply because it provides training through JIT Campus, unless applicable law requires such accreditation for the activities it conducts."
       },
       {
         "type": "paragraph",
@@ -4662,11 +4662,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners may create Courses and Programmes using available JIT Campus tools."
+        "text": "Online Academy Owners may create Courses and Programmes using available JIT Campus tools."
       },
       {
         "type": "paragraph",
-        "text": "Schools are responsible for determining:"
+        "text": "Online Academies are responsible for determining:"
       },
       {
         "type": "list",
@@ -4691,7 +4691,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools must not knowingly create Courses whose primary purpose is to facilitate:"
+        "text": "Online Academies must not knowingly create Courses whose primary purpose is to facilitate:"
       },
       {
         "type": "list",
@@ -4713,11 +4713,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a School provides education in an area that is subject to licensing, accreditation or regulatory requirements, the School Owner is responsible for understanding and complying with those requirements."
+        "text": "Where an Online Academy provides education in an area that is subject to licensing, accreditation or regulatory requirements, the Online Academy Owner is responsible for understanding and complying with those requirements."
       },
       {
         "type": "paragraph",
-        "text": "The availability of JIT Campus technology does not itself give the School regulatory approval."
+        "text": "The availability of JIT Campus technology does not itself give the Online Academy regulatory approval."
       },
       {
         "type": "part",
@@ -4731,11 +4731,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners determine who may act as a Lecturer within their School."
+        "text": "Online Academy Owners determine who may act as a Lecturer within their Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "The School may decide what qualifications, experience or knowledge it expects from a Lecturer."
+        "text": "The Online Academy may decide what qualifications, experience or knowledge it expects from a Lecturer."
       },
       {
         "type": "section",
@@ -4744,11 +4744,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not ordinarily verify every Lecturer appointed by every School."
+        "text": "JIT Campus does not ordinarily verify every Lecturer appointed by every Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "If a School wishes to verify:"
+        "text": "If an Online Academy wishes to verify:"
       },
       {
         "type": "list",
@@ -4763,7 +4763,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "the School is responsible for determining the appropriate process."
+        "text": "the Online Academy is responsible for determining the appropriate process."
       },
       {
         "type": "section",
@@ -4772,11 +4772,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for managing Lecturer permissions within their School."
+        "text": "Online Academy Owners are responsible for managing Lecturer permissions within their Online Academy."
       },
       {
         "type": "paragraph",
-        "text": "Where a School becomes aware that a Lecturer is seriously violating Platform rules, it should take appropriate action."
+        "text": "Where an Online Academy becomes aware that a Lecturer is seriously violating Platform rules, it should take appropriate action."
       },
       {
         "type": "paragraph",
@@ -4788,7 +4788,7 @@ export const policies: Policy[] = [
           "warning the Lecturer;",
           "restricting permissions;",
           "removing the Lecturer from a Course; or",
-          "removing them from the School."
+          "removing them from the Online Academy."
         ]
       },
       {
@@ -4798,7 +4798,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART VIII",
-        "title": "ADMISSION SPECIALISTS"
+        "title": "ADMISSION MARKETERS"
       },
       {
         "type": "section",
@@ -4807,16 +4807,16 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may appoint Admission Specialists where the functionality is available."
+        "text": "Online Academies may appoint Admission Marketers where the functionality is available."
       },
       {
         "type": "paragraph",
-        "text": "School Owners determine:"
+        "text": "Online Academy Owners determine:"
       },
       {
         "type": "list",
         "items": [
-          "who may act as an Admission Specialist;",
+          "who may act as an Admission Marketer;",
           "what Courses they may promote;",
           "what Students they may access;",
           "what admissions functions they may perform; and",
@@ -4826,11 +4826,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "22",
-        "title": "Responsibility for Admission Specialists"
+        "title": "Responsibility for Admission Marketers"
       },
       {
         "type": "paragraph",
-        "text": "Schools should take reasonable steps to ensure that their Admission Specialists do not:"
+        "text": "Online Academies should take reasonable steps to ensure that their Admission Marketers do not:"
       },
       {
         "type": "list",
@@ -4856,7 +4856,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners may manage Students enrolled in their School using available Platform tools."
+        "text": "Online Academy Owners may manage Students enrolled in their Online Academy using available Platform tools."
       },
       {
         "type": "paragraph",
@@ -4872,7 +4872,7 @@ export const policies: Policy[] = [
           "assessments;",
           "communications;",
           "certificates; and",
-          "School-level disciplinary action."
+          "Online Academy-level disciplinary action."
         ]
       },
       {
@@ -4882,7 +4882,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners should treat Students reasonably and must not use JIT Campus to facilitate:"
+        "text": "Online Academy Owners should treat Students reasonably and must not use JIT Campus to facilitate:"
       },
       {
         "type": "list",
@@ -4899,7 +4899,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART X",
-        "title": "SCHOOL ADMINISTRATORS"
+        "title": "ONLINE ACADEMY ADMINISTRATORS"
       },
       {
         "type": "section",
@@ -4908,11 +4908,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where JIT Campus allows School Owners to appoint administrators, those Users may receive significant access to School information and functionality."
+        "text": "Where JIT Campus allows Online Academy Owners to appoint administrators, those Users may receive significant access to Online Academy information and functionality."
       },
       {
         "type": "paragraph",
-        "text": "School Owners should only grant administrative access to persons who genuinely require it."
+        "text": "Online Academy Owners should only grant administrative access to persons who genuinely require it."
       },
       {
         "type": "section",
@@ -4921,16 +4921,16 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The School Owner is responsible for managing who has access to privileged School functions."
+        "text": "The Online Academy Owner is responsible for managing who has access to privileged Online Academy functions."
       },
       {
         "type": "paragraph",
-        "text": "A School Owner should remove or change permissions where:"
+        "text": "An Online Academy Owner should remove or change permissions where:"
       },
       {
         "type": "list",
         "items": [
-          "a User leaves the School;",
+          "a User leaves the Online Academy;",
           "access is no longer required;",
           "an Account is compromised;",
           "a User changes responsibilities; or",
@@ -4949,7 +4949,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners may receive access to personal information relating to Students."
+        "text": "Online Academy Owners may receive access to personal information relating to Students."
       },
       {
         "type": "paragraph",
@@ -4957,7 +4957,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners must not knowingly:"
+        "text": "Online Academy Owners must not knowingly:"
       },
       {
         "type": "list",
@@ -4976,7 +4976,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners should only provide Lecturers, Admission Specialists and administrators with access appropriate to their responsibilities."
+        "text": "Online Academy Owners should only provide Lecturers, Admission Marketers and administrators with access appropriate to their responsibilities."
       },
       {
         "type": "section",
@@ -4985,7 +4985,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where JIT Campus enables School Owners to export Student information, the School Owner becomes responsible for protecting copies downloaded outside the JIT Campus environment."
+        "text": "Where JIT Campus enables Online Academy Owners to export Student information, the Online Academy Owner becomes responsible for protecting copies downloaded outside the JIT Campus environment."
       },
       {
         "type": "section",
@@ -4994,11 +4994,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Depending on how a School operates and applicable law, the School itself may have separate responsibilities concerning personal information."
+        "text": "Depending on how an Online Academy operates and applicable law, the Online Academy itself may have separate responsibilities concerning personal information."
       },
       {
         "type": "paragraph",
-        "text": "Nothing in the JIT Campus Privacy Policy removes a School’s own legal obligations."
+        "text": "Nothing in the JIT Campus Privacy Policy removes an Online Academy’s own legal obligations."
       },
       {
         "type": "part",
@@ -5008,11 +5008,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "31",
-        "title": "School Communications"
+        "title": "Online Academy Communications"
       },
       {
         "type": "paragraph",
-        "text": "Schools may communicate with Students using available JIT Campus functionality."
+        "text": "Online Academies may communicate with Students using available JIT Campus functionality."
       },
       {
         "type": "paragraph",
@@ -5025,15 +5025,15 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may promote their Courses where permitted."
+        "text": "Online Academies may promote their Courses where permitted."
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for ensuring that promotional activity complies with applicable Platform rules and legal requirements."
+        "text": "Online Academy Owners are responsible for ensuring that promotional activity complies with applicable Platform rules and legal requirements."
       },
       {
         "type": "paragraph",
-        "text": "Schools must not use JIT Campus to conduct deceptive or fraudulent marketing."
+        "text": "Online Academies must not use JIT Campus to conduct deceptive or fraudulent marketing."
       },
       {
         "type": "part",
@@ -5047,11 +5047,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may set prices for Courses and Programmes where permitted."
+        "text": "Online Academies may set prices for Courses and Programmes where permitted."
       },
       {
         "type": "paragraph",
-        "text": "The School Owner is responsible for ensuring that pricing displayed to Students is accurate."
+        "text": "The Online Academy Owner is responsible for ensuring that pricing displayed to Students is accurate."
       },
       {
         "type": "section",
@@ -5060,7 +5060,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools must not deliberately advertise one price and then impose undisclosed mandatory charges after the Student has committed to purchase."
+        "text": "Online Academies must not deliberately advertise one price and then impose undisclosed mandatory charges after the Student has committed to purchase."
       },
       {
         "type": "paragraph",
@@ -5087,7 +5087,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for reviewing applicable JIT Campus pricing before purchasing paid Platform Services."
+        "text": "Online Academy Owners are responsible for reviewing applicable JIT Campus pricing before purchasing paid Platform Services."
       },
       {
         "type": "part",
@@ -5097,11 +5097,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "36",
-        "title": "School Refund Rules"
+        "title": "Online Academy Refund Rules"
       },
       {
         "type": "paragraph",
-        "text": "Schools may establish their own refund and cancellation rules subject to:"
+        "text": "Online Academies may establish their own refund and cancellation rules subject to:"
       },
       {
         "type": "list",
@@ -5122,7 +5122,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School should not knowingly collect payment for Courses it has no intention or reasonable ability to deliver."
+        "text": "An Online Academy should not knowingly collect payment for Courses it has no intention or reasonable ability to deliver."
       },
       {
         "type": "paragraph",
@@ -5136,15 +5136,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "38",
-        "title": "School Certificates"
+        "title": "Online Academy Certificates"
       },
       {
         "type": "paragraph",
-        "text": "Schools may issue certificates using available JIT Campus functionality."
+        "text": "Online Academies may issue certificates using available JIT Campus functionality."
       },
       {
         "type": "paragraph",
-        "text": "Unless expressly stated otherwise, such certificates are issued by the School, not Jorsas Tech."
+        "text": "Unless expressly stated otherwise, such certificates are issued by the Online Academy, not Jorsas Tech."
       },
       {
         "type": "section",
@@ -5153,7 +5153,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School must not knowingly issue a certificate:"
+        "text": "An Online Academy must not knowingly issue a certificate:"
       },
       {
         "type": "list",
@@ -5176,12 +5176,12 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "It does not automatically confirm accreditation of the School or qualification."
+        "text": "It does not automatically confirm accreditation of the Online Academy or qualification."
       },
       {
         "type": "part",
         "label": "PART XVI",
-        "title": "SCHOOL BRANDING"
+        "title": "ONLINE ACADEMY BRANDING"
       },
       {
         "type": "section",
@@ -5190,7 +5190,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may be permitted to customise their digital campus with:"
+        "text": "Online Academies may be permitted to customise their digital campus with:"
       },
       {
         "type": "list",
@@ -5211,7 +5211,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners must have appropriate rights to logos, images, Course content and other material uploaded through their School."
+        "text": "Online Academy Owners must have appropriate rights to logos, images, Course content and other material uploaded through their Online Academy."
       },
       {
         "type": "paragraph",
@@ -5220,7 +5220,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XVII",
-        "title": "SCHOOL CONTENT"
+        "title": "ONLINE ACADEMY CONTENT"
       },
       {
         "type": "section",
@@ -5229,7 +5229,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools are responsible for educational and promotional content they upload."
+        "text": "Online Academies are responsible for educational and promotional content they upload."
       },
       {
         "type": "paragraph",
@@ -5244,7 +5244,7 @@ export const policies: Policy[] = [
           "presentation;",
           "assessment;",
           "Course description; or",
-          "School announcement."
+          "Online Academy announcement."
         ]
       },
       {
@@ -5254,7 +5254,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools must not knowingly use JIT Campus to distribute content involving:"
+        "text": "Online Academies must not knowingly use JIT Campus to distribute content involving:"
       },
       {
         "type": "list",
@@ -5281,7 +5281,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools remain responsible for their:"
+        "text": "Online Academies remain responsible for their:"
       },
       {
         "type": "list",
@@ -5304,11 +5304,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "46",
-        "title": "School Academic Rules"
+        "title": "Online Academy Academic Rules"
       },
       {
         "type": "paragraph",
-        "text": "Schools may create additional academic rules appropriate to their programmes."
+        "text": "Online Academies may create additional academic rules appropriate to their programmes."
       },
       {
         "type": "paragraph",
@@ -5322,11 +5322,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "47",
-        "title": "Schools Working With Children"
+        "title": "Online Academies Working With Children"
       },
       {
         "type": "paragraph",
-        "text": "A School that provides services to children or vulnerable persons is responsible for determining what additional safeguarding controls are legally or operationally required."
+        "text": "An Online Academy that provides services to children or vulnerable persons is responsible for determining what additional safeguarding controls are legally or operationally required."
       },
       {
         "type": "paragraph",
@@ -5363,7 +5363,7 @@ export const policies: Policy[] = [
           "restricting Accounts;",
           "removing content;",
           "preserving relevant records;",
-          "suspending a School; or",
+          "suspending an Online Academy; or",
           "referring serious matters to competent authorities where appropriate."
         ]
       },
@@ -5375,22 +5375,22 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "49",
-        "title": "School Complaint Handling"
+        "title": "Online Academy Complaint Handling"
       },
       {
         "type": "paragraph",
-        "text": "Schools should provide a reasonable way for Students to raise concerns about:"
+        "text": "Online Academies should provide a reasonable way for Students to raise concerns about:"
       },
       {
         "type": "list",
         "items": [
           "Courses;",
           "Lecturers;",
-          "Admission Specialists;",
+          "Admission Marketers;",
           "assessments;",
           "grades;",
           "Course delivery; and",
-          "other School-controlled matters."
+          "other Online Academy-controlled matters."
         ]
       },
       {
@@ -5418,7 +5418,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXI",
-        "title": "SCHOOL OWNER ACCOUNT SECURITY"
+        "title": "ONLINE ACADEMY OWNER ACCOUNT SECURITY"
       },
       {
         "type": "section",
@@ -5427,11 +5427,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owner Accounts may have significant administrative privileges."
+        "text": "Online Academy Owner Accounts may have significant administrative privileges."
       },
       {
         "type": "paragraph",
-        "text": "School Owners must take reasonable steps to protect their:"
+        "text": "Online Academy Owners must take reasonable steps to protect their:"
       },
       {
         "type": "list",
@@ -5449,7 +5449,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners should not share ownership credentials."
+        "text": "Online Academy Owners should not share ownership credentials."
       },
       {
         "type": "paragraph",
@@ -5476,15 +5476,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "54",
-        "title": "Transferring a School"
+        "title": "Transferring an Online Academy"
       },
       {
         "type": "paragraph",
-        "text": "Where supported, a School Owner may request or authorise transfer of ownership to another eligible User."
+        "text": "Where supported, an Online Academy Owner may request or authorise transfer of ownership to another eligible User."
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may require reasonable confirmation before transferring School-level ownership permissions."
+        "text": "JIT Campus may require reasonable confirmation before transferring Online Academy-level ownership permissions."
       },
       {
         "type": "section",
@@ -5493,7 +5493,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is not automatically responsible for resolving internal company or partnership disputes concerning ownership of a School."
+        "text": "JIT Campus is not automatically responsible for resolving internal company or partnership disputes concerning ownership of an Online Academy."
       },
       {
         "type": "paragraph",
@@ -5502,20 +5502,20 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXIII",
-        "title": "CLOSING A SCHOOL"
+        "title": "CLOSING AN ONLINE ACADEMY"
       },
       {
         "type": "section",
         "num": "56",
-        "title": "School Closure"
+        "title": "Online Academy Closure"
       },
       {
         "type": "paragraph",
-        "text": "A School Owner may close or deactivate their School where Platform functionality permits."
+        "text": "An Online Academy Owner may close or deactivate their Online Academy where Platform functionality permits."
       },
       {
         "type": "paragraph",
-        "text": "Before closure, the School Owner should consider:"
+        "text": "Before closure, the Online Academy Owner should consider:"
       },
       {
         "type": "list",
@@ -5537,7 +5537,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools should not deliberately close immediately after receiving substantial Student payments merely to avoid providing purchased Courses or refunds."
+        "text": "Online Academies should not deliberately close immediately after receiving substantial Student payments merely to avoid providing purchased Courses or refunds."
       },
       {
         "type": "paragraph",
@@ -5546,7 +5546,7 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXIV",
-        "title": "JIT CAMPUS SUSPENSION OF A SCHOOL"
+        "title": "JIT CAMPUS SUSPENSION OF AN ONLINE ACADEMY"
       },
       {
         "type": "section",
@@ -5555,7 +5555,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may restrict or suspend a School where there is a reasonable basis to believe that the School is involved in:"
+        "text": "JIT Campus may restrict or suspend an Online Academy where there is a reasonable basis to believe that the Online Academy is involved in:"
       },
       {
         "type": "list",
@@ -5579,7 +5579,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where urgent action is necessary, JIT Campus may temporarily restrict a School while concerns are investigated."
+        "text": "Where urgent action is necessary, JIT Campus may temporarily restrict an Online Academy while concerns are investigated."
       },
       {
         "type": "paragraph",
@@ -5592,21 +5592,21 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may terminate a School’s access where serious or repeated violations are established or where continued operation creates an unacceptable legal, safety or Platform risk."
+        "text": "JIT Campus may terminate an Online Academy’s access where serious or repeated violations are established or where continued operation creates an unacceptable legal, safety or Platform risk."
       },
       {
         "type": "part",
         "label": "PART XXV",
-        "title": "SCHOOL OWNER RESPONSIBILITY"
+        "title": "ONLINE ACADEMY OWNER RESPONSIBILITY"
       },
       {
         "type": "section",
         "num": "61",
-        "title": "Responsibility for the School"
+        "title": "Responsibility for the Online Academy"
       },
       {
         "type": "paragraph",
-        "text": "The School Owner remains responsible for the School they operate."
+        "text": "The Online Academy Owner remains responsible for the Online Academy they operate."
       },
       {
         "type": "paragraph",
@@ -5615,16 +5615,16 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School information;",
+          "Online Academy information;",
           "Courses;",
           "Users appointed to privileged roles;",
           "Course pricing;",
           "teaching arrangements;",
           "academic rules;",
           "Students;",
-          "School-specific certificates;",
-          "compliance obligations applying specifically to the School; and",
-          "representations made by the School."
+          "Online Academy-specific certificates;",
+          "compliance obligations applying specifically to the Online Academy; and",
+          "representations made by the Online Academy."
         ]
       },
       {
@@ -5634,7 +5634,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides tools enabling School Owners to operate their Schools."
+        "text": "JIT Campus provides tools enabling Online Academy Owners to operate their Online Academies."
       },
       {
         "type": "paragraph",
@@ -5643,21 +5643,21 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "own every School;",
+          "own every Online Academy;",
           "employ every Lecturer;",
-          "employ every Admission Specialist;",
+          "employ every Admission Marketer;",
           "approve every Course;",
-          "verify every School;",
-          "accredit every School;",
+          "verify every Online Academy;",
+          "accredit every Online Academy;",
           "determine every Student’s grade;",
-          "set every School’s curriculum; or",
-          "guarantee every School’s educational outcomes."
+          "set every Online Academy’s curriculum; or",
+          "guarantee every Online Academy’s educational outcomes."
         ]
       },
       {
         "type": "part",
         "label": "PART XXVI",
-        "title": "SCHOOL OWNER INDEMNITY AND RESPONSIBILITY"
+        "title": "ONLINE ACADEMY OWNER INDEMNITY AND RESPONSIBILITY"
       },
       {
         "type": "section",
@@ -5666,7 +5666,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School Owner may be responsible for losses, complaints or claims arising from unlawful or unauthorised activities carried out through their School where responsibility properly rests with the School Owner."
+        "text": "An Online Academy Owner may be responsible for losses, complaints or claims arising from unlawful or unauthorised activities carried out through their Online Academy where responsibility properly rests with the Online Academy Owner."
       },
       {
         "type": "paragraph",
@@ -5689,7 +5689,7 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "changes to School functionality;",
+          "changes to Online Academy functionality;",
           "new administrative roles;",
           "changes to payment features;",
           "changes to Course functionality;",
@@ -5722,7 +5722,7 @@ export const policies: Policy[] = [
           "Academic Integrity Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct;",
+          "Admission Marketer Code of Conduct;",
           "Safeguarding, Equality and Anti-Harassment Policy; and",
           "Complaints, Appeals and Dispute Resolution Policy."
         ]
@@ -5739,7 +5739,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners requiring assistance with the operation of their JIT Campus School may contact JIT Campus through the designated support channel."
+        "text": "Online Academy Owners requiring assistance with the operation of their JIT Campus Online Academy may contact JIT Campus through the designated support channel."
       },
       {
         "type": "paragraph",
@@ -5789,7 +5789,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Schools, deliver Courses and Programmes, appoint Lecturers and Admission Specialists, enrol Students and administer educational activities."
+        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Online Academies, deliver Courses and Programmes, appoint Lecturers and Admission Marketers, enrol Students and administer educational activities."
       },
       {
         "type": "paragraph",
@@ -5802,11 +5802,11 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School Owners;",
-          "Schools;",
+          "Online Academy Owners;",
+          "Online Academies;",
           "Students;",
           "Lecturers;",
-          "Admission Specialists;",
+          "Admission Marketers;",
           "administrators;",
           "website visitors;",
           "other registered Users; and",
@@ -5819,7 +5819,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides the technology and infrastructure. Users and Schools remain responsible for the activities they conduct through the Platform."
+        "text": "JIT Campus provides the technology and infrastructure. Users and Online Academies remain responsible for the activities they conduct through the Platform."
       },
       {
         "type": "part",
@@ -5838,7 +5838,7 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "creating and managing Schools;",
+          "creating and managing Online Academies;",
           "delivering Courses;",
           "providing training;",
           "managing admissions;",
@@ -5846,11 +5846,11 @@ export const policies: Policy[] = [
           "teaching;",
           "communicating with Students;",
           "administering assessments;",
-          "issuing School certificates;",
+          "issuing Online Academy certificates;",
           "managing educational content;",
           "collecting legitimate Course fees;",
           "managing Lecturers;",
-          "managing Admission Specialists;",
+          "managing Admission Marketers;",
           "providing academic support;",
           "operating educational communities; and",
           "other legitimate purposes supported by JIT Campus."
@@ -5890,7 +5890,7 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "creating fake Schools for fraudulent purposes;",
+          "creating fake Online Academies for fraudulent purposes;",
           "collecting money for Courses that do not exist;",
           "creating fake Students;",
           "creating fraudulent enrolments;",
@@ -5951,8 +5951,8 @@ export const policies: Policy[] = [
         "items": [
           "Students;",
           "Lecturers;",
-          "Admission Specialists;",
-          "School Owners;",
+          "Admission Marketers;",
+          "Online Academy Owners;",
           "public figures;",
           "employees;",
           "professionals; or",
@@ -5966,7 +5966,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Users must not falsely create or operate a School claiming to represent:"
+        "text": "Users must not falsely create or operate an Online Academy claiming to represent:"
       },
       {
         "type": "list",
@@ -6184,7 +6184,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "School Owners, Lecturers and Admission Specialists must not condition:"
+        "text": "Online Academy Owners, Lecturers and Admission Marketers must not condition:"
       },
       {
         "type": "list",
@@ -6229,7 +6229,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "another Account;",
-          "another School;",
+          "another Online Academy;",
           "administrative functionality;",
           "Student records;",
           "payment systems;",
@@ -6412,11 +6412,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "27",
-        "title": "Admission Specialist Communications"
+        "title": "Admission Marketer Communications"
       },
       {
         "type": "paragraph",
-        "text": "Admission Specialists may legitimately contact prospective Students where authorised."
+        "text": "Admission Marketers may legitimately contact prospective Students where authorised."
       },
       {
         "type": "paragraph",
@@ -6429,7 +6429,7 @@ export const policies: Policy[] = [
           "use deceptive identities;",
           "send malicious links;",
           "conduct fraudulent marketing; or",
-          "misrepresent the School they represent."
+          "misrepresent the Online Academy they represent."
         ]
       },
       {
@@ -6482,21 +6482,21 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XIV",
-        "title": "MISLEADING SCHOOL CONTENT"
+        "title": "MISLEADING ONLINE ACADEMY CONTENT"
       },
       {
         "type": "section",
         "num": "31",
-        "title": "Fake School Information"
+        "title": "Fake Online Academy Information"
       },
       {
         "type": "paragraph",
-        "text": "School Owners must not knowingly create misleading:"
+        "text": "Online Academy Owners must not knowingly create misleading:"
       },
       {
         "type": "list",
         "items": [
-          "School descriptions;",
+          "Online Academy descriptions;",
           "Lecturer profiles;",
           "Student testimonials;",
           "rankings;",
@@ -6528,7 +6528,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools and Admission Specialists must not use JIT Campus to advertise Courses using materially false or deceptive claims."
+        "text": "Online Academies and Admission Marketers must not use JIT Campus to advertise Courses using materially false or deceptive claims."
       },
       {
         "type": "section",
@@ -6568,7 +6568,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Legitimate referral or Admission Specialist commission arrangements are not automatically prohibited merely because commissions are paid."
+        "text": "Legitimate referral or Admission Marketer commission arrangements are not automatically prohibited merely because commissions are paid."
       },
       {
         "type": "paragraph",
@@ -6586,11 +6586,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may provide Courses relating to professional or regulated areas where lawful."
+        "text": "Online Academies may provide Courses relating to professional or regulated areas where lawful."
       },
       {
         "type": "paragraph",
-        "text": "However, Schools must not falsely represent educational content as professional licensing or regulated advice where that claim is inaccurate."
+        "text": "However, Online Academies must not falsely represent educational content as professional licensing or regulated advice where that claim is inaccurate."
       },
       {
         "type": "section",
@@ -6616,7 +6616,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools are responsible for accurately describing the status of their Courses."
+        "text": "Online Academies are responsible for accurately describing the status of their Courses."
       },
       {
         "type": "part",
@@ -6664,11 +6664,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "40",
-        "title": "School Data Access"
+        "title": "Online Academy Data Access"
       },
       {
         "type": "paragraph",
-        "text": "School Owners, Lecturers and Admission Specialists may have greater access to Student information because of their roles."
+        "text": "Online Academy Owners, Lecturers and Admission Marketers may have greater access to Student information because of their roles."
       },
       {
         "type": "paragraph",
@@ -6725,7 +6725,7 @@ export const policies: Policy[] = [
           "circumvent suspension;",
           "conduct fraud;",
           "obtain repeated introductory benefits improperly;",
-          "manipulate School statistics;",
+          "manipulate Online Academy statistics;",
           "generate false activity; or",
           "evade enforcement."
         ]
@@ -6767,11 +6767,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "45",
-        "title": "School Branding"
+        "title": "Online Academy Branding"
       },
       {
         "type": "paragraph",
-        "text": "Schools may use their own branding where they have appropriate rights to do so."
+        "text": "Online Academies may use their own branding where they have appropriate rights to do so."
       },
       {
         "type": "part",
@@ -6785,7 +6785,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Users may report suspected prohibited activity through the appropriate School or JIT Campus reporting channel."
+        "text": "Users may report suspected prohibited activity through the appropriate Online Academy or JIT Campus reporting channel."
       },
       {
         "type": "paragraph",
@@ -6838,7 +6838,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Account activity;",
-          "School information;",
+          "Online Academy information;",
           "communications;",
           "transaction records;",
           "access logs;",
@@ -6858,7 +6858,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "This does not mean that JIT Campus routinely verifies every User or School."
+        "text": "This does not mean that JIT Campus routinely verifies every User or Online Academy."
       },
       {
         "type": "part",
@@ -6884,7 +6884,7 @@ export const policies: Policy[] = [
           "restrict payments or payouts;",
           "restrict communication;",
           "temporarily suspend an Account;",
-          "suspend a School; or",
+          "suspend an Online Academy; or",
           "terminate access."
         ]
       },
@@ -6972,7 +6972,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus may host substantial amounts of User and School-generated content."
+        "text": "JIT Campus may host substantial amounts of User and Online Academy-generated content."
       },
       {
         "type": "paragraph",
@@ -6981,7 +6981,7 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School;",
+          "Online Academy;",
           "Course;",
           "message;",
           "assignment;",
@@ -6989,7 +6989,7 @@ export const policies: Policy[] = [
           "document;",
           "Lecturer;",
           "Student; or",
-          "Admission Specialist before Platform use."
+          "Admission Marketer before Platform use."
         ]
       },
       {
@@ -6999,20 +6999,20 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XXVIII",
-        "title": "SCHOOL RESPONSIBILITY"
+        "title": "ONLINE ACADEMY RESPONSIBILITY"
       },
       {
         "type": "section",
         "num": "55",
-        "title": "Managing School Activity"
+        "title": "Managing Online Academy Activity"
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for managing Users and activities within their Schools."
+        "text": "Online Academy Owners are responsible for managing Users and activities within their Online Academies."
       },
       {
         "type": "paragraph",
-        "text": "Schools should take reasonable action where they become aware that Users they appointed are seriously violating applicable rules."
+        "text": "Online Academies should take reasonable action where they become aware that Users they appointed are seriously violating applicable rules."
       },
       {
         "type": "section",
@@ -7021,11 +7021,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A School cannot authorise conduct prohibited by mandatory JIT Campus rules."
+        "text": "An Online Academy cannot authorise conduct prohibited by mandatory JIT Campus rules."
       },
       {
         "type": "paragraph",
-        "text": "For example, a School cannot give permission for:"
+        "text": "For example, an Online Academy cannot give permission for:"
       },
       {
         "type": "list",
@@ -7081,10 +7081,10 @@ export const policies: Policy[] = [
         "items": [
           "JIT Campus Terms and Conditions;",
           "Privacy Policy;",
-          "School Owner and School Management Policy;",
+          "Online Academy Owner and Online Academy Management Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct;",
+          "Admission Marketer Code of Conduct;",
           "Academic Integrity Policy;",
           "Safeguarding, Equality and Anti-Harassment Policy; and",
           "Complaints, Appeals and Dispute Resolution Policy."
@@ -7160,7 +7160,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Schools, deliver Courses and Programmes, appoint Lecturers and Admission Specialists, enrol Students and administer educational activities."
+        "text": "JIT Campus is a product of Jorsas Tech, developed to provide a digital Software-as-a-Service (SaaS) platform through which individuals and organisations can create and operate Online Academies, deliver Courses and Programmes, appoint Lecturers and Admission Marketers, enrol Students and administer educational activities."
       },
       {
         "type": "paragraph",
@@ -7172,7 +7172,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides the technology and infrastructure. Individual Schools remain responsible for managing their own educational communities and for meeting any safeguarding, equality, employment, educational or regulatory obligations that apply specifically to their activities."
+        "text": "JIT Campus provides the technology and infrastructure. Individual Online Academies remain responsible for managing their own educational communities and for meeting any safeguarding, equality, employment, educational or regulatory obligations that apply specifically to their activities."
       },
       {
         "type": "paragraph",
@@ -7185,11 +7185,11 @@ export const policies: Policy[] = [
       {
         "type": "list",
         "items": [
-          "School Owners;",
-          "Schools;",
+          "Online Academy Owners;",
+          "Online Academies;",
           "Students;",
           "Lecturers;",
-          "Admission Specialists;",
+          "Admission Marketers;",
           "administrators;",
           "other authorised Users; and",
           "interactions occurring through JIT Campus."
@@ -7246,15 +7246,15 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools are responsible for managing their own educational environments."
+        "text": "Online Academies are responsible for managing their own educational environments."
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for Users they appoint to privileged roles."
+        "text": "Online Academy Owners are responsible for Users they appoint to privileged roles."
       },
       {
         "type": "paragraph",
-        "text": "Lecturers and Admission Specialists must maintain appropriate professional boundaries."
+        "text": "Lecturers and Admission Marketers must maintain appropriate professional boundaries."
       },
       {
         "type": "paragraph",
@@ -7276,11 +7276,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Some Schools using JIT Campus may provide educational services to children or younger Students."
+        "text": "Some Online Academies using JIT Campus may provide educational services to children or younger Students."
       },
       {
         "type": "paragraph",
-        "text": "Where a School chooses to provide services to children, that School is responsible for understanding and complying with safeguarding requirements applicable to its activities."
+        "text": "Where an Online Academy chooses to provide services to children, that Online Academy is responsible for understanding and complying with safeguarding requirements applicable to its activities."
       },
       {
         "type": "paragraph",
@@ -7303,15 +7303,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "5",
-        "title": "JIT Campus Does Not Replace School Safeguarding Procedures"
+        "title": "JIT Campus Does Not Replace Online Academy Safeguarding Procedures"
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus provides Platform-level safeguards but does not replace safeguarding systems that a School may be legally or professionally required to maintain."
+        "text": "JIT Campus provides Platform-level safeguards but does not replace safeguarding systems that an Online Academy may be legally or professionally required to maintain."
       },
       {
         "type": "paragraph",
-        "text": "A School working with children should determine whether it requires:"
+        "text": "An Online Academy working with children should determine whether it requires:"
       },
       {
         "type": "list",
@@ -7332,11 +7332,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus does not ordinarily conduct criminal-record checks, background checks, professional checks or identification-document verification on every School Owner, Lecturer, Admission Specialist or other User."
+        "text": "JIT Campus does not ordinarily conduct criminal-record checks, background checks, professional checks or identification-document verification on every Online Academy Owner, Lecturer, Admission Marketer or other User."
       },
       {
         "type": "paragraph",
-        "text": "Schools remain responsible for deciding what checks are appropriate or legally required before giving a person responsibility for children or vulnerable Students."
+        "text": "Online Academies remain responsible for deciding what checks are appropriate or legally required before giving a person responsibility for children or vulnerable Students."
       },
       {
         "type": "part",
@@ -7425,11 +7425,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Lecturers, Admission Specialists and School personnel interacting with children should maintain appropriate professional boundaries."
+        "text": "Lecturers, Admission Marketers and Online Academy personnel interacting with children should maintain appropriate professional boundaries."
       },
       {
         "type": "paragraph",
-        "text": "Where possible, communications concerning educational matters should take place through approved School or JIT Campus channels."
+        "text": "Where possible, communications concerning educational matters should take place through approved Online Academy or JIT Campus channels."
       },
       {
         "type": "part",
@@ -7468,7 +7468,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Lecturers, Admission Specialists and School Owners must not use their position to improperly pressure vulnerable Students into:"
+        "text": "Lecturers, Admission Marketers and Online Academy Owners must not use their position to improperly pressure vulnerable Students into:"
       },
       {
         "type": "list",
@@ -7497,7 +7497,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools and Users should comply with applicable equality and anti-discrimination requirements."
+        "text": "Online Academies and Users should comply with applicable equality and anti-discrimination requirements."
       },
       {
         "type": "section",
@@ -7536,7 +7536,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools may establish legitimate academic or professional requirements."
+        "text": "Online Academies may establish legitimate academic or professional requirements."
       },
       {
         "type": "paragraph",
@@ -7573,7 +7573,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Schools should also consider reasonable accessibility needs when delivering educational activities."
+        "text": "Online Academies should also consider reasonable accessibility needs when delivering educational activities."
       },
       {
         "type": "section",
@@ -7582,7 +7582,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where applicable, Schools should consider reasonable requests from Students requiring adjustments to participate in learning activities."
+        "text": "Where applicable, Online Academies should consider reasonable requests from Students requiring adjustments to participate in learning activities."
       },
       {
         "type": "paragraph",
@@ -7601,7 +7601,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "The relevant School remains responsible for determining Course-specific adjustments."
+        "text": "The relevant Online Academy remains responsible for determining Course-specific adjustments."
       },
       {
         "type": "part",
@@ -7711,7 +7711,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A Lecturer, School Owner or other authorised User must not condition:"
+        "text": "A Lecturer, Online Academy Owner or other authorised User must not condition:"
       },
       {
         "type": "list",
@@ -7815,16 +7815,16 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XII",
-        "title": "SCHOOL RESPONSIBILITIES"
+        "title": "ONLINE ACADEMY RESPONSIBILITIES"
       },
       {
         "type": "section",
         "num": "27",
-        "title": "Schools Serving Adults"
+        "title": "Online Academies Serving Adults"
       },
       {
         "type": "paragraph",
-        "text": "Schools serving adult Students should maintain appropriate standards concerning:"
+        "text": "Online Academies serving adult Students should maintain appropriate standards concerning:"
       },
       {
         "type": "list",
@@ -7840,11 +7840,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "28",
-        "title": "Schools Serving Children"
+        "title": "Online Academies Serving Children"
       },
       {
         "type": "paragraph",
-        "text": "Schools choosing to provide services to children have additional responsibility."
+        "text": "Online Academies choosing to provide services to children have additional responsibility."
       },
       {
         "type": "paragraph",
@@ -7870,11 +7870,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "29",
-        "title": "School Owner Responsibility"
+        "title": "Online Academy Owner Responsibility"
       },
       {
         "type": "paragraph",
-        "text": "School Owners are responsible for deciding who receives privileged roles within their School."
+        "text": "Online Academy Owners are responsible for deciding who receives privileged roles within their Online Academy."
       },
       {
         "type": "paragraph",
@@ -7927,12 +7927,12 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Where a relationship creates a significant conflict of interest, the Lecturer should disclose it to the relevant School where appropriate."
+        "text": "Where a relationship creates a significant conflict of interest, the Lecturer should disclose it to the relevant Online Academy where appropriate."
       },
       {
         "type": "part",
         "label": "PART XIV",
-        "title": "ADMISSION SPECIALIST RESPONSIBILITIES"
+        "title": "ADMISSION MARKETER RESPONSIBILITIES"
       },
       {
         "type": "section",
@@ -7941,7 +7941,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Admission Specialists must not exploit the admissions process to:"
+        "text": "Admission Marketers must not exploit the admissions process to:"
       },
       {
         "type": "list",
@@ -8007,7 +8007,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "an in-Platform reporting function;",
-          "a School reporting process;",
+          "an Online Academy reporting process;",
           "JIT Campus support;",
           "a designated safeguarding contact; or",
           "another authorised reporting mechanism."
@@ -8028,7 +8028,7 @@ export const policies: Policy[] = [
           "what happened;",
           "who was involved;",
           "when it occurred;",
-          "relevant School;",
+          "relevant Online Academy;",
           "relevant Course;",
           "screenshots or other evidence where available; and",
           "whether there is an immediate safety concern."
@@ -8054,16 +8054,16 @@ export const policies: Policy[] = [
       {
         "type": "part",
         "label": "PART XVII",
-        "title": "SCHOOL OR JIT CAMPUS?"
+        "title": "ONLINE ACADEMY OR JIT CAMPUS?"
       },
       {
         "type": "section",
         "num": "37",
-        "title": "Issues Normally Managed by Schools"
+        "title": "Issues Normally Managed by Online Academies"
       },
       {
         "type": "paragraph",
-        "text": "Schools should ordinarily manage matters such as:"
+        "text": "Online Academies should ordinarily manage matters such as:"
       },
       {
         "type": "list",
@@ -8097,7 +8097,7 @@ export const policies: Policy[] = [
           "fraud;",
           "Platform-wide harassment;",
           "serious Account misuse; or",
-          "situations where a School is itself allegedly involved in serious misconduct."
+          "situations where an Online Academy is itself allegedly involved in serious misconduct."
         ]
       },
       {
@@ -8324,11 +8324,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "48",
-        "title": "School-Level Outcomes"
+        "title": "Online Academy-Level Outcomes"
       },
       {
         "type": "paragraph",
-        "text": "Where the matter is appropriately handled by a School, possible outcomes may include:"
+        "text": "Where the matter is appropriately handled by an Online Academy, possible outcomes may include:"
       },
       {
         "type": "list",
@@ -8338,8 +8338,8 @@ export const policies: Policy[] = [
           "change of Lecturer;",
           "communication restrictions;",
           "removal from a class;",
-          "suspension from the School; or",
-          "removal from the School."
+          "suspension from the Online Academy; or",
+          "removal from the Online Academy."
         ]
       },
       {
@@ -8359,7 +8359,7 @@ export const policies: Policy[] = [
           "restrict communication;",
           "remove privileges;",
           "temporarily suspend an Account;",
-          "suspend a School;",
+          "suspend an Online Academy;",
           "terminate an Account; or",
           "take another proportionate safety measure."
         ]
@@ -8392,7 +8392,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Users are entitled to disagree with Schools, Lecturers, Students and JIT Campus provided their conduct does not otherwise violate applicable rules."
+        "text": "Users are entitled to disagree with Online Academies, Lecturers, Students and JIT Campus provided their conduct does not otherwise violate applicable rules."
       },
       {
         "type": "part",
@@ -8422,15 +8422,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "52",
-        "title": "Relationship With School Policies"
+        "title": "Relationship With Online Academy Policies"
       },
       {
         "type": "paragraph",
-        "text": "Schools may establish their own safeguarding, equality and anti-harassment policies."
+        "text": "Online Academies may establish their own safeguarding, equality and anti-harassment policies."
       },
       {
         "type": "paragraph",
-        "text": "Where a School serves children or operates in a regulated educational environment, it may be required to maintain significantly more detailed safeguarding procedures than those contained in this Platform Policy."
+        "text": "Where an Online Academy serves children or operates in a regulated educational environment, it may be required to maintain significantly more detailed safeguarding procedures than those contained in this Platform Policy."
       },
       {
         "type": "paragraph",
@@ -8452,7 +8452,7 @@ export const policies: Policy[] = [
           "Privacy Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct;",
+          "Admission Marketer Code of Conduct;",
           "Academic Integrity Policy; and",
           "Complaints, Appeals and Dispute Resolution Policy."
         ]
@@ -8464,7 +8464,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Ordinary School-related concerns should normally be raised with the relevant School."
+        "text": "Ordinary Online Academy-related concerns should normally be raised with the relevant Online Academy."
       },
       {
         "type": "paragraph",
@@ -8518,7 +8518,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "JIT Campus brings together Students, Lecturers and Admission Specialists within one digital environment, enabling Students to discover and apply for programmes, receive admission support, enrol, learn, communicate with Lecturers, complete assessments and manage their academic journey."
+        "text": "JIT Campus brings together Students, Lecturers and Admission Marketers within one digital environment, enabling Students to discover and apply for programmes, receive admission support, enrol, learn, communicate with Lecturers, complete assessments and manage their academic journey."
       },
       {
         "type": "paragraph",
@@ -8530,7 +8530,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "By creating an Account, submitting an application, enrolling on a Course or Programme, registering or operating as a Lecturer or Admission Specialist, purchasing or accessing a Service, or otherwise using JIT Campus, you agree to these Terms and all policies incorporated into them."
+        "text": "By creating an Account, submitting an application, enrolling on a Course or Programme, registering or operating as a Lecturer or Admission Marketer, purchasing or accessing a Service, or otherwise using JIT Campus, you agree to these Terms and all policies incorporated into them."
       },
       {
         "type": "paragraph",
@@ -8551,7 +8551,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Admission Specialist means an authorised individual who uses JIT Campus to provide admission-related assistance to prospective or existing Students."
+        "text": "Admission Marketer means an authorised individual who uses JIT Campus to provide admission-related assistance to prospective or existing Students."
       },
       {
         "type": "paragraph",
@@ -8579,7 +8579,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "User means anyone who accesses or uses JIT Campus, including a Student, Lecturer or Admission Specialist."
+        "text": "User means anyone who accesses or uses JIT Campus, including a Student, Lecturer or Admission Marketer."
       },
       {
         "type": "paragraph",
@@ -8650,7 +8650,7 @@ export const policies: Policy[] = [
           "Academic Integrity Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct;",
+          "Admission Marketer Code of Conduct;",
           "Safeguarding, Equality and Anti-Harassment Policy; and",
           "Complaints, Appeals and Dispute Resolution Policy."
         ]
@@ -8790,15 +8790,15 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "8",
-        "title": "Admission Specialists"
+        "title": "Admission Marketers"
       },
       {
         "type": "paragraph",
-        "text": "Admission Specialists provide admission-related support through JIT Campus."
+        "text": "Admission Marketers provide admission-related support through JIT Campus."
       },
       {
         "type": "paragraph",
-        "text": "Depending on their authorised functions, an Admission Specialist may assist Students with:"
+        "text": "Depending on their authorised functions, an Admission Marketer may assist Students with:"
       },
       {
         "type": "list",
@@ -8814,11 +8814,11 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Admission Specialists must act professionally, honestly and transparently."
+        "text": "Admission Marketers must act professionally, honestly and transparently."
       },
       {
         "type": "paragraph",
-        "text": "An Admission Specialist must never:"
+        "text": "An Admission Marketer must never:"
       },
       {
         "type": "list",
@@ -8835,7 +8835,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Admission Specialists are subject to the Admission Specialist Code of Conduct."
+        "text": "Admission Marketers are subject to the Admission Marketer Code of Conduct."
       },
       {
         "type": "section",
@@ -8848,7 +8848,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "A recommendation or statement made by an Admission Specialist does not constitute an official admission decision unless expressly confirmed through an authorised JIT Campus process."
+        "text": "A recommendation or statement made by an Admission Marketer does not constitute an official admission decision unless expressly confirmed through an authorised JIT Campus process."
       },
       {
         "type": "paragraph",
@@ -9462,7 +9462,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Students, Lecturers and Admission Specialists may raise complaints regarding JIT Campus Services or conduct through the designated complaints process."
+        "text": "Students, Lecturers and Admission Marketers may raise complaints regarding JIT Campus Services or conduct through the designated complaints process."
       },
       {
         "type": "paragraph",
@@ -9711,7 +9711,7 @@ export const policies: Policy[] = [
         "items": [
           "Students and prospective Students;",
           "Lecturers and prospective Lecturers;",
-          "Admission Specialists and prospective Admission Specialists;",
+          "Admission Marketers and prospective Admission Marketers;",
           "website visitors;",
           "individuals who contact JIT Campus;",
           "authorised representatives of Users; and",
@@ -9773,7 +9773,7 @@ export const policies: Policy[] = [
           "submit assignments or assessments;",
           "communicate through JIT Campus;",
           "interact with a Lecturer;",
-          "receive support from an Admission Specialist;",
+          "receive support from an Admission Marketer;",
           "make or receive payments where applicable;",
           "provide teaching or admission services;",
           "contact JIT Campus;",
@@ -9890,11 +9890,11 @@ export const policies: Policy[] = [
       {
         "type": "section",
         "num": "7",
-        "title": "Admission Specialist Information"
+        "title": "Admission Marketer Information"
       },
       {
         "type": "paragraph",
-        "text": "Where a person applies to become or operates as an Admission Specialist, we may process:"
+        "text": "Where a person applies to become or operates as an Admission Marketer, we may process:"
       },
       {
         "type": "list",
@@ -9990,7 +9990,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Students and Lecturers;",
-          "Students and Admission Specialists;",
+          "Students and Admission Marketers;",
           "Users and JIT Campus support;",
           "Users and academic administrators;",
           "Users and safeguarding personnel; and",
@@ -10139,7 +10139,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "a Lecturer may record assessment information;",
-          "an Admission Specialist may update an application;",
+          "an Admission Marketer may update an application;",
           "authorised staff may create academic or administrative records; or",
           "another User may identify you in a legitimate complaint or safeguarding report."
         ]
@@ -10198,7 +10198,7 @@ export const policies: Policy[] = [
           "provide admission assistance;",
           "support Students;",
           "manage Lecturer activities;",
-          "manage Admission Specialist activities; and",
+          "manage Admission Marketer activities; and",
           "otherwise operate JIT Campus."
         ]
       },
@@ -10381,7 +10381,7 @@ export const policies: Policy[] = [
         "type": "list",
         "items": [
           "Lecturers may access information about Students they teach;",
-          "Admission Specialists may access information necessary to support assigned applicants;",
+          "Admission Marketers may access information necessary to support assigned applicants;",
           "academic administrators may access academic records;",
           "finance personnel may access relevant payment records; and",
           "authorised safeguarding personnel may access safeguarding information."
@@ -10768,7 +10768,7 @@ export const policies: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Lecturers and Admission Specialists have particular responsibilities because their roles may provide access to Student information."
+        "text": "Lecturers and Admission Marketers have particular responsibilities because their roles may provide access to Student information."
       },
       {
         "type": "part",
@@ -10906,7 +10906,7 @@ export const policies: Policy[] = [
           "Academic Regulations and Assessment Policy;",
           "Student Code of Conduct;",
           "Lecturer Code of Conduct and Teaching Standards;",
-          "Admission Specialist Code of Conduct;",
+          "Admission Marketer Code of Conduct;",
           "Safeguarding, Equality and Anti-Harassment Policy; and",
           "Complaints, Appeals and Dispute Resolution Policy."
         ]
@@ -10954,3 +10954,17 @@ export const policies: Policy[] = [
     ]
   }
 ];
+
+// Display order: Terms & Conditions first, then Privacy, then Acceptable Use, then
+// every other policy in its original order. Reordered HERE — rather than by
+// physically moving the large verbatim blocks above — so the source text stays a
+// faithful 1:1 copy of the supplied legal wording. Array.prototype.sort is stable,
+// so policies not named in POLICY_ORDER keep their existing relative order.
+const POLICY_ORDER = ["terms-and-conditions", "privacy-policy", "acceptable-use"];
+const orderRank = (id: string): number => {
+  const i = POLICY_ORDER.indexOf(id);
+  return i === -1 ? POLICY_ORDER.length : i;
+};
+export const policies: Policy[] = [...policiesRaw].sort(
+  (a, b) => orderRank(a.id) - orderRank(b.id),
+);

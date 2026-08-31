@@ -7,7 +7,7 @@ export default function BecomeAnAgentPage() {
     <div className="min-h-screen site-shell">
       <div className="mx-auto max-w-4xl px-4 py-20 text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Become a <span className="text-site-text">Jorsas Agent</span>
+          Become a <span className="text-site-text">Jorsas Admission Marketer</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-site-text/60">
           Earn commissions by referring students to our courses. Help students find the right program and earn 10% on every enrollment.

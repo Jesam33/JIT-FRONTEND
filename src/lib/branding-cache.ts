@@ -22,6 +22,11 @@ export type CachedBranding = {
   secondary_color: string | null;
   font_stack: string | null;
   logo_url: string | null;
+  // The academy's entity label, cached so a portal shell can render it on the
+  // first frame (no "Online Academy" → custom-label text flash). Presentational
+  // text only — no identifier, no token.
+  entity_label: string | null;
+  entity_label_plural: string | null;
 };
 
 export function brandingCacheKey(slug: string): string {
@@ -38,6 +43,8 @@ export function writeCachedBranding(slug: string | null | undefined, b: OwnerBra
       // site font untouched rather than pinning the default stack redundantly.
       font_stack: b.font_family && b.font_family !== "default" ? fontStackFor(b.font_family) : null,
       logo_url: b.logo_url ?? null,
+      entity_label: b.entity_label ?? null,
+      entity_label_plural: b.entity_label_plural ?? null,
     };
     localStorage.setItem(brandingCacheKey(slug), JSON.stringify(payload));
   } catch {

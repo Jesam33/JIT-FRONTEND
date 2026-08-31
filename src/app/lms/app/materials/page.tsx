@@ -16,8 +16,13 @@ function isVideoUrl(url: string): boolean {
     || u.includes("s3.amazonaws.com");
 }
 
-function MaterialCard({ item, onPlay }: { item: MaterialItem; onPlay: (url: string) => void }) {
-  const resolvedType = item.type === "video" || isVideoUrl(item.file_url) ? "video" : item.type ?? "file";
+function MaterialCard({ item }: { item: MaterialItem }) {
+  const [playing, setPlaying] = useState(false);
+  // Bunny videos stream HLS behind a player iframe (NOT an mp4 <video>). file_url
+  // is the player embed URL; thumbnail_url is the poster.
+  const isBunny = item.provider === "bunny_stream" || /mediadelivery\.net/.test(item.file_url);
+  const resolvedType = item.type === "video" || isBunny || isVideoUrl(item.file_url) ? "video" : item.type ?? "file";
+  const processing = isBunny && item.status === "processing";
 
   return (
     <li className="rounded-lg border border-white/15 bg-black/30 px-3 py-3">
@@ -25,7 +30,47 @@ function MaterialCard({ item, onPlay }: { item: MaterialItem; onPlay: (url: stri
         <div className="min-w-0 flex-1">
           <p className="font-medium text-white">{item.title}</p>
           <p className="mt-1 text-xs text-white/55">Type: {resolvedType.toUpperCase()}</p>
-          {resolvedType === "video" ? (
+          {resolvedType === "video" && isBunny ? (
+            // Only mount the iframe on click so a page of videos doesn't spin up
+            // N players at once — until then we show the thumbnail as a poster.
+            <div className="mt-2">
+              {playing ? (
+                <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
+                  <iframe
+                    src={`${item.file_url}${item.file_url.includes("?") ? "&" : "?"}autoplay=true&preload=true`}
+                    className="h-full w-full"
+                    loading="lazy"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    title={item.title}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPlaying(true)}
+                  className="group relative block aspect-video w-full overflow-hidden rounded-lg bg-black"
+                  aria-label={`Play ${item.title}`}
+                >
+                  {item.thumbnail_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.thumbnail_url} alt="" className="h-full w-full object-cover opacity-90 transition group-hover:opacity-100" loading="lazy" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm text-white/40">Video lesson</div>
+                  )}
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/60 ring-1 ring-white/40 backdrop-blur-sm transition group-hover:scale-105">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                    </span>
+                  </span>
+                </button>
+              )}
+              {processing ? (
+                <p className="mt-1 text-[11px] text-amber-300/80">Still processing — if it doesn&apos;t play yet, check back in a few minutes.</p>
+              ) : null}
+            </div>
+          ) : resolvedType === "video" ? (
+            // Legacy direct video (Zoom recording / hosted mp4).
             <div className="mt-2">
               <video
                 controls
@@ -46,6 +91,7 @@ function MaterialCard({ item, onPlay }: { item: MaterialItem; onPlay: (url: stri
             </div>
           ) : resolvedType === "image" ? (
             <div className="mt-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.file_url} alt={item.title} className="max-h-64 rounded-lg object-contain bg-black" loading="lazy" />
               <a href={item.file_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-blue-400 underline">
                 Open full size
@@ -80,7 +126,8 @@ export default function StudentMaterialsPage() {
 
   const inferredMaterials = useMemo(() => {
     return materials.map((item) => {
-      if (item.type === "video" || isVideoUrl(item.file_url)) {
+      const isBunny = item.provider === "bunny_stream" || /mediadelivery\.net/.test(item.file_url);
+      if (item.type === "video" || isBunny || isVideoUrl(item.file_url)) {
         return { ...item, type: "video" as const };
       }
       if (item.type === "image" || item.file_url.toLowerCase().match(/\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/)) {
@@ -118,7 +165,7 @@ export default function StudentMaterialsPage() {
         ) : (
           <ul className="space-y-2">
             {filteredMaterials.map((item) => (
-              <MaterialCard key={item.id} item={item} onPlay={(url) => window.open(url, "_blank")} />
+              <MaterialCard key={item.id} item={item} />
             ))}
           </ul>
         )}

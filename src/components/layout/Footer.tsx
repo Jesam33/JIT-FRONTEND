@@ -14,7 +14,7 @@ export default function Footer() {
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-site-text/60">Email</p>
-            <p className="mt-2 font-semibold">contactus@jorsas.com</p>
+            <p className="mt-2 font-semibold">contactus@jorsastech.com</p>
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-site-text/60">WhatsApp Chat</p>

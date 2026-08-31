@@ -38,7 +38,7 @@ export default function AgentLoginPage() {
     <div className="site-shell min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <InactivityNotice />
-        <h1 className="text-2xl font-bold text-center">Agent Login</h1>
+        <h1 className="text-2xl font-bold text-center">Admission Marketer Login</h1>
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required className="w-full rounded-xl border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text outline-none focus:border-site-text/30" />
           <div className="relative">

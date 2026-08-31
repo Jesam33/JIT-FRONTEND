@@ -10,6 +10,12 @@ export type OwnerBranding = {
   // Ambient glow behind the institute's public storefront. Null = standard theme.
   background_color?: string | null;
   font_family?: string | null;
+  // What this academy calls itself — the customer-facing entity noun (e.g.
+  // "Institute", "Academy", "School"). Resolved server-side (brandingArray):
+  // "Institute" for the primary tenant, "Online Academy" for everyone else,
+  // or the owner's own override. Text-only — never a code identifier.
+  entity_label?: string | null;
+  entity_label_plural?: string | null;
 };
 
 // Concrete defaults (the current red/blue theme). Typed with plain-string
@@ -57,6 +63,8 @@ export function serializeBranding(b: OwnerBranding | null | undefined): string {
     secondary_color: b.secondary_color ?? null,
     background_color: b.background_color ?? null,
     font_family: b.font_family ?? null,
+    entity_label: b.entity_label ?? null,
+    entity_label_plural: b.entity_label_plural ?? null,
   });
 }
 
@@ -78,10 +86,48 @@ export function parseBrandingCookie(raw?: string | null): OwnerBranding | null {
       secondary_color: pick("secondary_color"),
       background_color: pick("background_color"),
       font_family: pick("font_family"),
+      entity_label: pick("entity_label"),
+      entity_label_plural: pick("entity_label_plural"),
     };
   } catch {
     return null;
   }
+}
+
+// A tiny companion cookie holding ONLY the academy's display name, so the owner
+// server layout can render the correct browser-tab <title> in the first HTML —
+// the same first-paint reasoning as the branding cookie, but the name is not a
+// branding field (OwnerBranding has no `name`), so it rides in its own cookie.
+// Written client-side once the authenticated overview resolves; read server-side
+// in generateMetadata. Text-only, no secrets; length-capped so even a tampered
+// cookie can't produce a runaway title. (Next escapes the title as text content,
+// so there is no injection surface — the cap is just hygiene.)
+export const OWNER_NAME_COOKIE = "lms_owner_name";
+
+export function parseOwnerNameCookie(raw?: string | null): string | null {
+  if (!raw) return null;
+  let text = raw;
+  try {
+    text = decodeURIComponent(raw);
+  } catch {
+    /* value wasn't percent-encoded — use it as-is */
+  }
+  text = text.trim();
+  if (!text) return null;
+  return text.length > 120 ? text.slice(0, 120) : text;
+}
+
+// The customer-facing entity noun for this academy, with a safe fallback for the
+// loading/failure window (branding is null). Backend always resolves a concrete
+// label once loaded ("Institute" for Jorsas, "Online Academy" otherwise, or the
+// owner's override), so this fallback only shows for a frame before branding
+// arrives — "Online Academy" is the product-wide default noun.
+export function academyLabel(b?: OwnerBranding | null): { singular: string; plural: string } {
+  const singular = (b?.entity_label && b.entity_label.trim()) || "Online Academy";
+  const plural =
+    (b?.entity_label_plural && b.entity_label_plural.trim()) ||
+    (singular === "Online Academy" ? "Online Academies" : `${singular}s`);
+  return { singular, plural };
 }
 
 const HEX = /^#[0-9a-fA-F]{6}$/;

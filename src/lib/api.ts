@@ -73,6 +73,12 @@ export const OWNER_API = {
   // Confirm the account holder's name (Paystack /bank/resolve) before linking —
   // confirmatory only, never blocks linking if the gateway is down.
   resolveAccount: api("/api/frontend/lms/owner/resolve-account"),
+  // AI training materials (Gamma, Pro+). generate → poll aiStatus(id) → aiSave the
+  // finished Gamma link into a course. A non-Pro academy gets 402 on generate/save,
+  // which maybeUpgrade() turns into the UpgradeModal.
+  aiGenerate: api("/api/frontend/lms/owner/ai/materials/generate"),
+  aiStatus: (id: string) => api(`/api/frontend/lms/owner/ai/materials/${encodeURIComponent(id)}`),
+  aiSave: api("/api/frontend/lms/owner/ai/materials/save"),
   signup: api("/api/signup"),
   signupVerify: (ref: string) => api(`/api/signup/verify?reference=${encodeURIComponent(ref)}`),
   plans: api("/api/plans"),
@@ -158,6 +164,11 @@ export const STAFF_API = {
   scheduleClass: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/schedule`),
   scheduledClasses: api("/api/frontend/lms/staff/scheduled-classes"),
   scheduledClass: (classId: string | number) => api(`/api/frontend/lms/staff/scheduled-classes/${classId}`),
+  // Pre-recorded video (Bunny Stream): mint a signed direct-upload envelope, then
+  // the browser uploads the file straight to Bunny (bytes never touch our server);
+  // poll videoStatus until it's ready before saving the material/module content.
+  videoUpload: api("/api/frontend/lms/staff/videos/upload"),
+  videoStatus: (videoId: string) => api(`/api/frontend/lms/staff/videos/${encodeURIComponent(videoId)}/status`),
   notifications: api("/api/frontend/lms/staff/notifications"),
   notificationUnread: api("/api/frontend/lms/staff/notifications/unread"),
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/staff/notifications/${id}/read`),

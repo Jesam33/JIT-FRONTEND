@@ -4,8 +4,9 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import StarRating from "@/components/ui/StarRating";
 import AgentBanner from "@/components/landing/AgentBanner";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
+import PoweredByJorsas from "@/components/institute/PoweredByJorsas";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
-import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
+import { brandingStyle, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { formatPrice } from "@/lib/currency";
 import type { InstituteProfile } from "@/lib/institute-profile";
 
@@ -47,7 +48,10 @@ export type StorefrontCourse = {
 
 // The shape returned by /api/frontend/i/{slug} and /api/frontend/institute/primary.
 export type StorefrontData = {
-  institute: { name: string; slug: string };
+  // `show_powered_by` is true while the institute's plan keeps the Jorsas badge
+  // (free tier); a paid plan with `remove_branding` sends false. See backend
+  // PublicInstituteController.
+  institute: { name: string; slug: string; show_powered_by?: boolean };
   branding: OwnerBranding;
   // Optional: the apex fallback view renders with no profile at all.
   profile?: InstituteProfile;
@@ -55,14 +59,14 @@ export type StorefrontData = {
 };
 
 // Render a course's price in the visitor's display currency. Free courses (base
-// NGN price ≤ 0 are free everywhere) always read "Free"; a converted price is
-// prefixed "≈" to signal it's an FX estimate (the real charge is NGN/USD).
+// NGN price ≤ 0 are free everywhere) always read "Free". A converted price is
+// shown plainly — no "≈" estimate prefix — since the course detail page carries
+// the "Approx. shown in {currency} · you'll be charged {NGN/USD}" disclosure.
 function coursePrice(course: StorefrontCourse): string {
   if (course.price <= 0) return "Free";
   const amount = course.price_display ?? course.price;
   const currency = course.display_currency ?? "NGN";
-  const prefix = course.is_base_currency === false ? "≈ " : "";
-  return `${prefix}${formatPrice(amount, currency)}`;
+  return formatPrice(amount, currency);
 }
 
 // The struck-through "was" price — rendered ONLY when a real original price was
@@ -97,10 +101,16 @@ const HERO_IMAGE_MASK = "radial-gradient(ellipse 92% 82% at 50% 22%, #000 42%, t
 // and the hero blends into the dark theme instead of becoming a flat colour panel.
 function heroOverlayStyle(branding: OwnerBranding): CSSProperties {
   const bg = branding.background_color;
-  const scrim = "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.12) 38%, transparent 100%)";
+  // A dark scrim across the FULL hero height (it does NOT fade to transparent at
+  // the foot) so the white heading AND the body copy stay legible over any cover
+  // photo — in BOTH light and dark mode. In light mode this reads as a deliberate
+  // dark hero band, which is exactly the fix for the "white text on a light page"
+  // bug the owner reported; the page below the hero stays on the light theme.
+  const scrim = "linear-gradient(180deg, rgba(0,0,0,0.66) 0%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.46) 100%)";
   if (bg && HEX6.test(bg)) {
-    // brand pill glow on top of the legibility scrim (alpha: 5c≈36%, 24≈14%).
-    return { background: `radial-gradient(110% 72% at 50% 0%, ${bg}5c 0%, ${bg}24 40%, transparent 72%), ${scrim}` };
+    // A subtle brand-colour glow from the top rides OVER the scrim for identity,
+    // kept light enough (≈25%) that it never lifts the scrim's legibility floor.
+    return { background: `radial-gradient(120% 78% at 50% 0%, ${bg}40 0%, transparent 60%), ${scrim}` };
   }
   return { background: scrim };
 }
@@ -119,6 +129,10 @@ export default function InstituteStorefront({
   showAgentBanner = false,
   showHeroLogo = true,
 }: StorefrontData & { hrefBase: string; showAgentBanner?: boolean; showHeroLogo?: boolean }) {
+  // When a cover photo backs the hero, its text sits on the dark scrim (see
+  // heroOverlayStyle) and must be forced white in BOTH themes — otherwise light
+  // mode paints the heading/body dark over the photo (the reported bug).
+  const hasCover = !!profile?.cover_url;
   return (
     <section style={brandingStyle(branding)}>
       <section className="section-pad relative overflow-hidden border-b border-site-border/30">
@@ -142,14 +156,23 @@ export default function InstituteStorefront({
         <div className="container-wide relative z-10 space-y-6">
           {showHeroLogo && branding.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={branding.logo_url} alt={institute.name} className="h-14 w-auto object-contain" />
+            <img
+              src={branding.logo_url}
+              alt={institute.name}
+              className="h-16 w-16 rounded-full object-contain p-2 ring-1 ring-white/25 [html.light_&]:ring-black/10"
+              style={hasCover ? { backgroundColor: "rgba(255,255,255,0.1)" } : undefined}
+            />
           ) : null}
-          <SectionHeading title={institute.name} subtitle={profile?.tagline || "Training Institute"} />
-          <div className="max-w-3xl text-site-text/75">
+          <SectionHeading
+            title={institute.name}
+            subtitle={profile?.tagline || academyLabel(branding).singular}
+            onImage={hasCover}
+          />
+          <div className="max-w-3xl" style={hasCover ? { color: "rgba(255,255,255,0.92)" } : undefined}>
             {profile?.about ? (
-              <p className="whitespace-pre-line">{profile.about}</p>
+              <p className={`whitespace-pre-line ${hasCover ? "" : "text-site-text/75"}`}>{profile.about}</p>
             ) : (
-              <p>
+              <p className={hasCover ? "" : "text-site-text/75"}>
                 Join practical, career-focused programs taught by experienced instructors.
                 Learn with structured classes, guided materials, and mentorship.
               </p>
@@ -261,6 +284,8 @@ export default function InstituteStorefront({
       <InstituteContactFooter profile={profile} instituteName={institute.name} />
 
       {showAgentBanner ? <AgentBanner /> : null}
+
+      {institute.show_powered_by ? <PoweredByJorsas /> : null}
     </section>
   );
 }

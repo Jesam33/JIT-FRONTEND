@@ -7,6 +7,7 @@ type ButtonProps = {
   href: string;
   children: ReactNode;
   variant?: ButtonVariant;
+  className?: string;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -19,11 +20,11 @@ const variantClasses: Record<ButtonVariant, string> = {
   light: "bg-white text-black! hover:brightness-95 border-transparent",
 };
 
-export default function Button({ href, children, variant = "primary" }: ButtonProps) {
+export default function Button({ href, children, variant = "primary", className = "" }: ButtonProps) {
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-3 rounded-[var(--radius-pill)] border px-5 py-2.5 text-sm font-semibold tracking-wide transition md:px-6 md:py-3 ${variantClasses[variant]}`}
+      className={`inline-flex items-center gap-3 rounded-[var(--radius-pill)] border px-5 py-2.5 text-sm font-semibold tracking-wide transition md:px-6 md:py-3 ${variantClasses[variant]} ${className}`}
     >
       <span>{children}</span>
       <span aria-hidden="true">↗</span>

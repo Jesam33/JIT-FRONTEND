@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, clearOwnerToken } from "@/lib/owner-client";
-import { DEFAULT_BRANDING, type OwnerBranding } from "@/lib/owner-branding";
+import { DEFAULT_BRANDING, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { tenantLoginPath } from "@/lib/tenant-client";
 
 type OwnerNotification = {
@@ -44,7 +44,7 @@ export default function OwnerTopbar({
 }) {
   const router = useRouter();
   const b = branding ?? DEFAULT_BRANDING;
-  const instituteName = name || "Your institute";
+  const instituteName = name || `Your ${academyLabel(branding).singular}`;
   const initials = instituteName
     .split(" ")
     .map((s) => s[0])
@@ -138,7 +138,7 @@ export default function OwnerTopbar({
             <img
               src={b.logo_url}
               alt={instituteName}
-              className="h-9 max-w-[160px] object-contain"
+              className="h-9 w-9 shrink-0 rounded-full object-contain ring-1 ring-white/20"
             />
           ) : (
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-sm font-bold text-white ring-1 ring-white/20">
@@ -147,7 +147,7 @@ export default function OwnerTopbar({
           )}
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45 [html.light_&]:text-black/45">
-              Institute Admin
+              {academyLabel(branding).singular} Admin
             </p>
             <p className="truncate text-sm font-semibold text-white [html.light_&]:text-black">
               {instituteName}

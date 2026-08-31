@@ -65,7 +65,7 @@ function AccountDropdown({
             {agent ? agent.name : "Loading\u2026"}
           </p>
           <p className="truncate text-[11px] text-white/55">
-            {agent ? agent.email : "Agent"}
+            {agent ? agent.email : "Admission Marketer"}
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export default function AgentSidebar() {
 
   const initials = agent
     ? agent.name.split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase()
-    : "AG";
+    : "AM";
 
   const handleLogout = () => {
     localStorage.removeItem("lms_agent_token");
@@ -188,7 +188,7 @@ export default function AgentSidebar() {
             )}
             <div>
               <p className="text-sm font-semibold text-white/90">{agent ? agent.name : "Loading\u2026"}</p>
-              <p className="text-[10px] text-white/45">{agent ? agent.email : "Agent"}</p>
+              <p className="text-[10px] text-white/45">{agent ? agent.email : "Admission Marketer"}</p>
             </div>
           </div>
 

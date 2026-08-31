@@ -153,6 +153,18 @@ html.light .hero-grid::before {
   padding-block: clamp(4rem, 4vw, 8rem);
 }
 
+/* Storefront live-preview: the owner's Customization / Public-page preview renders
+   the REAL /i/{slug} tree inside a narrow in-editor box. `container-wide` there is
+   viewport-relative (92vw), so it overflows the box and runs flush to the edges
+   ("gum to the screen"). Scope it down to the box: full width WITH real side
+   padding, and no auto-centering. Only applies inside .storefront-preview-scope. */
+.storefront-preview-scope .container-wide {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  padding-inline: clamp(1rem, 4%, 2rem);
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

@@ -7,6 +7,7 @@ import { getOwnerToken, ownerAuthHeaders } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import StorefrontPreview from "@/components/institute/StorefrontPreview";
 import {
+  academyLabel,
   DEFAULT_BRANDING,
   FONT_OPTIONS,
   fontStackFor,
@@ -39,6 +40,13 @@ export default function BrandingPage() {
   const [savingName, setSavingName] = useState(false);
   // Slug of this institute, for the live public-page preview (link + storefront).
   const [slug, setSlug] = useState<string | null>(null);
+  // The customer-facing entity noun this academy calls itself ("Online Academy",
+  // "Academy", "School", …). `entityLabel` is the editable field; `loadedLabel`
+  // is the last-saved value used in THIS page's own copy — kept stable so the
+  // surrounding wording doesn't shift under the owner while they type a new one.
+  const [entityLabel, setEntityLabel] = useState("");
+  const [loadedLabel, setLoadedLabel] = useState("Online Academy");
+  const [savingLabel, setSavingLabel] = useState(false);
 
   // The branding exactly as the public page will apply it, assembled live from
   // the form state so the preview updates on every color/font/logo/bg change.
@@ -49,8 +57,11 @@ export default function BrandingPage() {
       secondary_color: secondary,
       background_color: background,
       font_family: font,
+      // Preview the entity noun live too — once the storefront reads it, the
+      // public-page preview names the entity exactly as the owner is typing it.
+      entity_label: entityLabel.trim() || null,
     }),
-    [logoUrl, primary, secondary, background, font],
+    [logoUrl, primary, secondary, background, font, entityLabel],
   );
 
   const applyBranding = (b: OwnerBranding) => {
@@ -77,6 +88,11 @@ export default function BrandingPage() {
       .then((j) => {
         if (j?.branding) applyBranding(j.branding);
         if (typeof j?.name === "string") setInstName(j.name);
+        const label = j?.branding?.entity_label;
+        if (typeof label === "string" && label.trim()) {
+          setEntityLabel(label);
+          setLoadedLabel(label);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -140,7 +156,7 @@ export default function BrandingPage() {
   const saveName = async () => {
     const name = instName.trim();
     if (name.length < 2) {
-      setMsg({ kind: "err", text: "Institute name must be at least 2 characters." });
+      setMsg({ kind: "err", text: `${loadedLabel} name must be at least 2 characters.` });
       return;
     }
     setSavingName(true);
@@ -157,7 +173,7 @@ export default function BrandingPage() {
       }
       const j = await res.json().catch(() => null);
       if (!res.ok) {
-        setMsg({ kind: "err", text: j?.message ?? "Could not save your institute name." });
+        setMsg({ kind: "err", text: j?.message ?? `Could not save your ${loadedLabel} name.` });
         return;
       }
       if (typeof j?.name === "string") {
@@ -165,11 +181,55 @@ export default function BrandingPage() {
         // Update the name shown in the sidebar/topbar without a reload.
         window.dispatchEvent(new CustomEvent("owner-identity-updated", { detail: { name: j.name } }));
       }
-      setMsg({ kind: "ok", text: "Institute name updated." });
+      setMsg({ kind: "ok", text: `${loadedLabel} name updated.` });
     } catch {
       setMsg({ kind: "err", text: "Network error. Please try again." });
     } finally {
       setSavingName(false);
+    }
+  };
+
+  // Persist the entity noun (what this academy calls itself). The backend derives
+  // the plural (Str::plural) unless an override is stored, and re-resolves the
+  // label for the primary institute — so we just send the singular the owner typed.
+  const saveLabel = async () => {
+    const label = entityLabel.trim();
+    if (label.length < 2) {
+      setMsg({ kind: "err", text: "Please enter what you call your organisation (at least 2 characters)." });
+      return;
+    }
+    if (label.length > 40) {
+      setMsg({ kind: "err", text: "Keep it short — 40 characters or fewer." });
+      return;
+    }
+    setSavingLabel(true);
+    setMsg(null);
+    try {
+      const res = await fetch(OWNER_API.brandingUpdate, {
+        method: "POST",
+        headers: { ...ownerAuthHeaders(), "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ entity_label: label }),
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace(tenantLoginPath("owner"));
+        return;
+      }
+      const j = await res.json().catch(() => null);
+      if (!res.ok) {
+        setMsg({ kind: "err", text: j?.message ?? "Could not save. Please try again." });
+        return;
+      }
+      const saved = j?.branding?.entity_label;
+      if (typeof saved === "string" && saved.trim()) {
+        setEntityLabel(saved);
+        setLoadedLabel(saved);
+      }
+      if (j?.branding) emitBranding(j.branding);
+      setMsg({ kind: "ok", text: "Saved what you call your organisation." });
+    } catch {
+      setMsg({ kind: "err", text: "Network error. Please try again." });
+    } finally {
+      setSavingLabel(false);
     }
   };
 
@@ -249,7 +309,7 @@ export default function BrandingPage() {
         <h1 className="text-2xl font-bold text-white">Customization</h1>
         <p className="mt-1 text-sm text-site-muted">
           Make the portal yours — set your logo, brand colors, and font. Changes apply across your
-          institute&apos;s admin area.
+          {" "}{loadedLabel}&apos;s admin area.
         </p>
       </div>
 
@@ -268,9 +328,47 @@ export default function BrandingPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Controls */}
         <div className="space-y-6">
-          {/* Institute name */}
+          {/* What you call your organisation — the customer-facing entity noun */}
           <section className={cardClass}>
-            <h2 className="text-lg font-semibold text-white">Institute name</h2>
+            <h2 className="text-lg font-semibold text-white">What you call your organisation</h2>
+            <p className="mt-1 text-sm text-site-muted">
+              The word used for your organisation across your public page, portals, and emails — for
+              example “Academy”, “School”, “Institute”, or “Training Centre”. This is a label only; your
+              web address and links never change.
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <input
+                type="text"
+                value={entityLabel}
+                onChange={(e) => setEntityLabel(e.target.value)}
+                placeholder="Online Academy"
+                className={inputClass}
+                maxLength={40}
+              />
+              <button
+                type="button"
+                onClick={saveLabel}
+                disabled={savingLabel}
+                className="shrink-0 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              >
+                {savingLabel ? "Saving..." : "Save label"}
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-site-muted">
+              Preview:{" "}
+              <span className="text-white/80">
+                “About this {academyLabel({ entity_label: entityLabel.trim() || null }).singular}”
+              </span>{" "}
+              ·{" "}
+              <span className="text-white/80">
+                “Browse {academyLabel({ entity_label: entityLabel.trim() || null }).plural.toLowerCase()}”
+              </span>
+            </p>
+          </section>
+
+          {/* Organisation name */}
+          <section className={cardClass}>
+            <h2 className="text-lg font-semibold text-white">{loadedLabel} name</h2>
             <p className="mt-1 text-sm text-site-muted">
               The name shown across your portal and on your public page. Your web address (subdomain) stays the same.
             </p>
@@ -279,7 +377,7 @@ export default function BrandingPage() {
                 type="text"
                 value={instName}
                 onChange={(e) => setInstName(e.target.value)}
-                placeholder="Your institute name"
+                placeholder={`Your ${loadedLabel.toLowerCase()} name`}
                 className={inputClass}
                 maxLength={255}
               />
@@ -299,13 +397,13 @@ export default function BrandingPage() {
             <h2 className="text-lg font-semibold text-white">Logo</h2>
             <p className="mt-1 text-sm text-site-muted">
               Shown in your admin topbar and sidebar, and used as your site&apos;s browser-tab icon
-              (favicon) across your portal and public page. PNG or JPG, up to 2MB — a square image works best.
+              (favicon) across your portal and public page. PNG or JPG, up to 2MB — a square image works best and is shown as a circle.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/5">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5">
                 {logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt="Institute logo" className="h-full w-full object-contain" />
+                  <img src={logoUrl} alt={`${loadedLabel} logo`} className="h-full w-full object-contain" />
                 ) : (
                   <span className="text-xs text-white/40">No logo</span>
                 )}
@@ -348,7 +446,7 @@ export default function BrandingPage() {
           <section className={cardClass}>
             <h2 className="text-lg font-semibold text-white">Public page background</h2>
             <p className="mt-1 text-sm text-site-muted">
-              The ambient glow behind your institute&apos;s public storefront. Leave it on the standard theme,
+              The ambient glow behind your {loadedLabel}&apos;s public storefront. Leave it on the standard theme,
               or tint it to your brand.
             </p>
             {background === null ? (
@@ -431,7 +529,7 @@ export default function BrandingPage() {
               </span>
             )}
             <div>
-              <p className="text-sm font-semibold text-white">{instName || "Your institute"}</p>
+              <p className="text-sm font-semibold text-white">{instName || `Your ${loadedLabel}`}</p>
               <p className="text-xs text-white/55">Sample heading</p>
             </div>
           </div>
@@ -463,7 +561,7 @@ export default function BrandingPage() {
         <div>
           <h2 className="text-lg font-semibold text-white">Your public page</h2>
           <p className="mt-1 text-sm text-site-muted">
-            A live preview of your institute&apos;s public page. Your logo, colors, font, and background update as
+            A live preview of your {loadedLabel}&apos;s public page. Your logo, colors, font, and background update as
             you edit above — tap Save changes to publish them.
           </p>
         </div>

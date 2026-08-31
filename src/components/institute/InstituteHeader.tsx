@@ -62,7 +62,7 @@ export default function InstituteHeader({ institute, branding, hrefBase, showCon
           <Link href={hrefBase} className="inline-flex items-center gap-3" aria-label={`${institute.name} home`}>
             {branding.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={branding.logo_url} alt={institute.name} className="h-8 w-auto object-contain sm:h-10" />
+              <img src={branding.logo_url} alt={institute.name} className="h-10 w-10 rounded-full object-contain ring-1 ring-white/25 sm:h-11 sm:w-11 [html.light_&]:ring-black/10" />
             ) : (
               <span
                 className="text-lg font-bold text-white [html.light_&]:text-site-text sm:text-xl"

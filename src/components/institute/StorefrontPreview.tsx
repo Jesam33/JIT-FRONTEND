@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import InstituteHeader from "@/components/institute/InstituteHeader";
 import InstituteSiteFooter from "@/components/institute/InstituteSiteFooter";
 import InstituteStorefront, { type StorefrontCourse, type StorefrontData } from "@/components/institute/InstituteStorefront";
-import { brandingStyle, storefrontBackgroundStyle, DEFAULT_BRANDING, type OwnerBranding } from "@/lib/owner-branding";
+import { brandingStyle, storefrontBackgroundStyle, DEFAULT_BRANDING, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { hasContactInfo, type InstituteProfile } from "@/lib/institute-profile";
 import { PUBLIC_API } from "@/lib/api";
 
@@ -122,7 +122,7 @@ export default function StorefrontPreview({
   // storefront (or a sensible default when it can't be fetched).
   const branding: OwnerBranding = brandingOverride ?? base?.branding ?? DEFAULT_BRANDING;
   const profile: InstituteProfile | undefined = profileOverride ?? base?.profile ?? undefined;
-  const name = (instituteName || base?.institute?.name || "Your institute").trim();
+  const name = (instituteName || base?.institute?.name || `Your ${academyLabel(branding).singular}`).trim();
   const previewSlug = slug || base?.institute?.slug || "preview";
 
   const realCourses = base?.courses ?? [];
@@ -161,7 +161,10 @@ export default function StorefrontPreview({
           the institute's ambient glow behind it, exactly like the live layout. */}
       <div className="max-h-[600px] overflow-y-auto overflow-x-hidden">
         <div style={wrapperStyle}>
-          <div className="pointer-events-none select-none">
+          {/* `storefront-preview-scope` neutralises the viewport-relative
+              `container-wide` (92vw) inside this narrow preview box, so the page
+              content gets real side padding instead of running to the edges. */}
+          <div className="pointer-events-none select-none storefront-preview-scope">
             <InstituteHeader
               institute={institute}
               branding={branding}

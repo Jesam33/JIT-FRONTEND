@@ -258,14 +258,14 @@ export default function OwnerStaffPage() {
       <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
         <h2 className="text-lg font-semibold text-white">Invite staff</h2>
         <p className="mt-1 text-sm text-site-muted">
-          Add a teacher or admin. They receive an email with a link to set their password and sign in.
+          Add a lecturer or admin. They receive an email with a link to set their password and sign in.
         </p>
         <form onSubmit={invite} className="mt-4 flex flex-wrap items-center gap-3">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="teacher@example.com"
+            placeholder="lecturer@example.com"
             className="min-w-[240px] flex-1 rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white"
           />
           <button
@@ -352,7 +352,7 @@ export default function OwnerStaffPage() {
               {!loading && !staff.length && (
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-sm text-site-muted">
-                    No staff yet. Invite your first teacher above.
+                    No staff yet. Invite your first lecturer above.
                   </td>
                 </tr>
               )}

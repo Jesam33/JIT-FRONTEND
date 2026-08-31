@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
-import { getOwnerToken, ownerAuthHeaders } from "@/lib/owner-client";
+import { getOwnerToken, ownerAuthHeaders, readOwnerBranding } from "@/lib/owner-client";
+import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { type InstituteProfile } from "@/lib/institute-profile";
 import StorefrontPreview from "@/components/institute/StorefrontPreview";
 
@@ -34,6 +35,7 @@ export default function PublicProfilePage() {
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const [slug, setSlug] = useState<string | null>(null);
+  const [branding, setBranding] = useState<OwnerBranding | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [tagline, setTagline] = useState("");
   const [about, setAbout] = useState("");
@@ -89,10 +91,16 @@ export default function PublicProfilePage() {
         .then((r) => (r.ok ? r.json() : null))
         .then((j) => {
           if (j?.tenant?.slug) setSlug(j.tenant.slug);
+          if (j?.branding) setBranding(j.branding);
         })
         .catch(() => {}),
     ]).finally(() => setLoading(false));
   }, [router]);
+
+  // This academy's configurable noun (Jorsas → "Institute", others → their own
+  // label). From the loaded overview branding, with the shell cookie as a
+  // synchronous fallback so copy reads correctly before the fetch resolves.
+  const label = academyLabel(branding ?? readOwnerBranding()).singular;
 
   const save = async () => {
     setSaving(true);
@@ -331,7 +339,7 @@ export default function PublicProfilePage() {
               maxLength={5000}
               onChange={(e) => setAbout(e.target.value)}
               rows={5}
-              placeholder="Tell prospective students who you are, what you teach, and what makes your institute different."
+              placeholder={`Tell prospective students who you are, what you teach, and what makes your ${label} different.`}
               className={`${inputClass} resize-y`}
             />
           </div>
@@ -343,7 +351,7 @@ export default function PublicProfilePage() {
         <h2 className="text-lg font-semibold text-white">Contact details</h2>
         <p className="mt-1 text-sm text-site-muted">Ways for prospective students to reach you. Each appears only if filled.</p>
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
-          <Field label="Email" inputClass={inputClass} type="email" value={contact.email} placeholder="hello@institute.com" onChange={(v) => setContact({ ...contact, email: v })} />
+          <Field label="Email" inputClass={inputClass} type="email" value={contact.email} placeholder="hello@yourdomain.com" onChange={(v) => setContact({ ...contact, email: v })} />
           <Field label="Phone" inputClass={inputClass} value={contact.phone} placeholder="+234 800 000 0000" onChange={(v) => setContact({ ...contact, phone: v })} />
           <Field label="WhatsApp" inputClass={inputClass} value={contact.whatsapp} placeholder="+234 800 000 0000" onChange={(v) => setContact({ ...contact, whatsapp: v })} />
           <Field label="Address" inputClass={inputClass} value={contact.address} placeholder="Street, city, state" onChange={(v) => setContact({ ...contact, address: v })} />
@@ -353,9 +361,9 @@ export default function PublicProfilePage() {
       {/* Socials */}
       <section className={cardClass}>
         <h2 className="text-lg font-semibold text-white">Social links</h2>
-        <p className="mt-1 text-sm text-site-muted">Full links, e.g. https://facebook.com/yourinstitute. We&apos;ll add https:// if you forget.</p>
+        <p className="mt-1 text-sm text-site-muted">Full links, e.g. https://facebook.com/yourpage. We&apos;ll add https:// if you forget.</p>
         <div className="mt-4 grid gap-5 sm:grid-cols-2">
-          <Field label="Website" inputClass={inputClass} value={socials.website} placeholder="https://institute.com" onChange={(v) => setSocials({ ...socials, website: v })} />
+          <Field label="Website" inputClass={inputClass} value={socials.website} placeholder="https://yourwebsite.com" onChange={(v) => setSocials({ ...socials, website: v })} />
           <Field label="Facebook" inputClass={inputClass} value={socials.facebook} placeholder="https://facebook.com/..." onChange={(v) => setSocials({ ...socials, facebook: v })} />
           <Field label="Instagram" inputClass={inputClass} value={socials.instagram} placeholder="https://instagram.com/..." onChange={(v) => setSocials({ ...socials, instagram: v })} />
           <Field label="X (Twitter)" inputClass={inputClass} value={socials.twitter} placeholder="https://x.com/..." onChange={(v) => setSocials({ ...socials, twitter: v })} />

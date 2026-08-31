@@ -43,8 +43,13 @@ export type PricingPlan = {
   slug: string;
   name: string;
   price: string;
+  // Price period / qualifier shown under the amount ("/month", "forever", "contact sales").
+  note?: string;
   features: string[];
   popular?: boolean;
+  // Enterprise is a contact-sales tier: the CTA becomes "Contact sales" (mailto),
+  // never a self-serve checkout. TenantSignupController only provisions free/basic/pro.
+  contactSales?: boolean;
 };
 
 export type PortfolioItem = {
@@ -85,7 +90,7 @@ export const heroContent = {
   title: "Mobile Apps & Web Development",
   subtitle:
     "We design and develop powerful websites, mobile apps and digital solutions that help businesses grow, innovate and succeed. ",
-  ctaPrimary: "Start a Project",
+  ctaPrimary: "Let's build for you.",
   ctaSecondary: "Train With Us",
 };
 
@@ -232,7 +237,7 @@ export const routeIntros: Record<string, RouteIntro> = {
   contact: {
     title: "We Are Connected To Help Your Business!",
     subtitle: "Get In Touch",
-    body: "Ever Find Yourself Staring At Your Computer Screen A Good Consulting Slogan To Come To Mind? Oftentimes.",
+    body: "Have a project in mind or a question about our training? Send us a message below, or reach us directly on WhatsApp — we'll get back to you shortly.",
   },
 };
 
@@ -305,30 +310,59 @@ export const faqGroups: FaqGroup[] = [
 
 export const pricingPlans: PricingPlan[] = [
   {
+    slug: "free",
+    name: "Free",
+    price: "₦0",
+    note: "forever",
+    features: [
+      "Up to 3 courses, 10 students, 1 staff",
+      "Live classes on every plan",
+      "Full LMS — modules, tasks & grading",
+      "Student & staff portals",
+      "Your own branded storefront",
+      "5% platform fee on course sales",
+    ],
+  },
+  {
     slug: "basic",
     name: "Basic",
-    price: "₦5,000/mo",
+    price: "₦5,000",
+    note: "/month",
     popular: true,
     features: [
-      "Full LMS access",
-      "Unlimited courses & modules",
-      "Student & staff portals",
-      "Attendance & grading",
-      "Group & direct chat",
-      "Priority email support",
-      "Custom branding",
-      "Certificates",
+      "Up to 10 courses, 100 students, 5 staff",
+      "In-app group chat & certificates",
+      "Pre-recorded video lessons",
+      "Admission-Marketer network",
+      "Remove “Powered by Jorsas” branding",
+      "3% platform fee on course sales",
     ],
   },
   {
     slug: "pro",
     name: "Pro",
-    price: "₦15,000/mo",
+    price: "₦15,000",
+    note: "/month",
     features: [
-      "Everything in Basic",
-      "Dedicated onboarding",
-      "Advanced reporting",
-      "Early access to new features",
+      "Up to 50 courses, 1,000 students, 25 staff",
+      "0% platform fee on course sales",
+      "Advanced analytics & reporting",
+      "AI materials with Gamma",
+      "Custom domain & priority support",
+    ],
+  },
+  {
+    slug: "enterprise",
+    name: "Enterprise",
+    price: "Custom",
+    note: "contact sales",
+    contactSales: true,
+    features: [
+      "Unlimited courses, students & staff",
+      "0% platform fee on course sales",
+      "Everything in Pro, plus:",
+      "API access & white-label",
+      "Dedicated onboarding & support",
     ],
   },
 ];

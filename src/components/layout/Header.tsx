@@ -77,7 +77,7 @@ export default function Header() {
                 href="/signup"
                 className="inline-flex items-center rounded-full border border-white/35 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
               >
-                Create your institute
+                Create your Online Academy
               </Link>
 
               <Link
@@ -176,7 +176,7 @@ export default function Header() {
                 onClick={() => setMobileNavOpen(false)}
                 className="flex w-full items-center justify-center rounded-full border border-white/35 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
               >
-                Create your institute
+                Create your Online Academy
               </Link>
               <Link
                 href="/qoute"
@@ -218,8 +218,8 @@ export default function Header() {
 
             <div className="space-y-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/65 [html.light_&]:text-site-text/65">Email Address</p>
-              <a href="mailto:contactus@jorsas.com" className="block text-base font-medium text-white [html.light_&]:text-site-text">
-                contactus@jorsas.com
+              <a href="mailto:contactus@jorsastech.com" className="block text-base font-medium text-white [html.light_&]:text-site-text">
+                contactus@jorsastech.com
               </a>
             </div>
 
