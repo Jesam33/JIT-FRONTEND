@@ -89,17 +89,6 @@ export default function Header() {
 
               <button
                 type="button"
-                aria-label="Search"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/35 text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-                  <path d="M20 20L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-
-              <button
-                type="button"
                 aria-label="Open contact drawer"
                 onClick={() => setDrawerOpen(true)}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/35 text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
