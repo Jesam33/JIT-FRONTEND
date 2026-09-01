@@ -28,15 +28,24 @@ export const metadata: Metadata = {
   // per-tenant page could never override them — that's why institute storefronts kept
   // showing the Jorsas favicon. As metadata, a deeper segment (e.g. /i/[slug])
   // REPLACES this icons key, so each institute's own logo becomes the sole favicon on
-  // its page. Theme-aware: the WHITE mark shows on dark browser tabs / OS themes,
-  // the dark mark on light ones — so the favicon never disappears into a dark tab
-  // (the black mark used to vanish there). The colored mark stays the OpenGraph +
+  // its page.
+  //
+  // /favicon.ico is an OPAQUE badge (white mark on the brand-black square) and is
+  // listed first so it's what Google Search uses: Google renders the SERP favicon on
+  // a white chip, where the old TRANSPARENT white mark vanished and left only the red
+  // accent square. An opaque badge stays visible on any chip. The two theme-aware
+  // transparent marks below refine browser TABS only (white on dark tabs, dark on
+  // light) via prefers-color-scheme — which Google's crawler doesn't match, so the
+  // white mark can't leak back into search. The colored mark stays the OpenGraph +
   // Organization logo below, which render on light social/search cards.
   icons: {
     icon: [
+      { url: "/favicon.ico?v=2", sizes: "192x192" },
       { url: "/images/jorsas-logo-white.png", media: "(prefers-color-scheme: dark)" },
       { url: "/images/jorsas-logo-light-mode.png", media: "(prefers-color-scheme: light)" },
     ],
+    shortcut: "/favicon.ico?v=2",
+    apple: "/favicon.ico?v=2",
   },
   openGraph: {
     type: "website",
