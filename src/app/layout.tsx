@@ -30,20 +30,25 @@ export const metadata: Metadata = {
   // REPLACES this icons key, so each institute's own logo becomes the sole favicon on
   // its page.
   //
-  // All three marks are TRANSPARENT (no square plate) — the old opaque black square
-  // is gone. Google's favicon crawler ignores `media`, so the first entry is the one
-  // it uses: the light-mode (dark J) mark, which stays visible on Google's white SERP
-  // chip. The two theme-aware entries below refine browser TABS via prefers-color-scheme
-  // — white J on dark tabs, dark J on light. /favicon.ico is the same dark-J transparent
-  // square, kept as the universal fallback for clients that fetch it by convention.
+  // Theme handling WITHOUT feeding Google the white mark:
+  //   • icon.svg is theme-adaptive on its own (dark J on light, WHITE J on dark, via an
+  //     internal prefers-color-scheme media query). Modern browser TABS use it, so tabs
+  //     get the right mark in both themes with no plate.
+  //   • Google/Bing and older clients ignore SVG and take a raster. EVERY raster we now
+  //     expose is the dark-J mark (favicon.ico + the PNG fallback), so search can only
+  //     ever show the dark J — which stays visible on Google's light circular SERP chip.
+  //     The white PNG is NO LONGER a crawlable <link rel=icon>; it lives only inside
+  //     icon.svg, where Google can't grab it. This kills the washed-out "white circle"
+  //     that appeared when Google served the white mark on its own light chip.
+  // All marks are transparent — no square plate. favicon.ico is a crisp multi-size
+  // (16/32/48/64) dark-J, regenerated from jorsas-logo-light-mode.png.
   icons: {
     icon: [
-      { url: "/images/jorsas-logo-light-mode.png", type: "image/png" },
-      { url: "/images/jorsas-logo-white.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
-      { url: "/images/jorsas-logo-light-mode.png", type: "image/png", media: "(prefers-color-scheme: light)" },
-      { url: "/favicon.ico?v=3" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=4", sizes: "any" },
+      { url: "/images/jorsas-logo-light-mode.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: "/favicon.ico?v=3",
+    shortcut: "/favicon.ico?v=4",
     apple: "/images/jorsas-logo-light-mode.png",
   },
   openGraph: {
