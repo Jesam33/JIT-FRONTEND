@@ -20,6 +20,8 @@ type PaymentSettings = {
     // The split actually recorded on the linked subaccount, if known.
     subaccount_commission_percent: number | null;
     business_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
     bank_code: string | null;
     bank_name: string | null;
     account_number_masked: string | null;
@@ -41,8 +43,11 @@ export default function PaymentsPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
-  // Link-a-subaccount form (bank-details path).
-  const [businessName, setBusinessName] = useState("");
+  // Link-a-subaccount form (bank-details path). We send the owner's legal first +
+  // last name (not a free-text business name) as the subaccount name so it matches
+  // the settlement bank account and Paystack can auto-verify it.
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
 
@@ -63,7 +68,8 @@ export default function PaymentsPage() {
       if (res.ok) {
         const json: PaymentSettings = await res.json();
         setData(json);
-        setBusinessName(json.payment.business_name ?? "");
+        setFirstName(json.payment.first_name ?? "");
+        setLastName(json.payment.last_name ?? "");
         setBankCode(json.payment.bank_code ?? "");
       } else {
         setMsg({ kind: "err", text: `Could not load payment settings (HTTP ${res.status}).` });
@@ -107,6 +113,16 @@ export default function PaymentsPage() {
         if (cancelled) return;
         if (res.ok && json?.account_name) {
           setAccountName(json.account_name);
+          // Auto-fill the legal name from the resolved bank record so the name we
+          // send to Paystack matches the account holder exactly (first token →
+          // first name, the rest → last name, so recombining round-trips the whole
+          // name). Only runs on a fresh resolve — i.e. when the bank/number changed —
+          // so a hand-edit the owner makes afterwards is never clobbered.
+          const parts = String(json.account_name).trim().split(/\s+/);
+          if (parts.length) {
+            setFirstName(parts[0]);
+            setLastName(parts.slice(1).join(" "));
+          }
         } else {
           setResolveError(json?.message || "Couldn’t verify this account — you can still link it.");
         }
@@ -124,8 +140,8 @@ export default function PaymentsPage() {
 
   const link = async () => {
     setMsg(null);
-    if (!businessName.trim() || !bankCode || !accountNumber.trim()) {
-      setMsg({ kind: "err", text: "Enter your business name, bank, and account number." });
+    if (!firstName.trim() || !lastName.trim() || !bankCode || !accountNumber.trim()) {
+      setMsg({ kind: "err", text: "Enter your legal first and last name, bank, and account number." });
       return;
     }
     setSaving(true);
@@ -135,7 +151,8 @@ export default function PaymentsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
         body: JSON.stringify({
-          business_name: businessName.trim(),
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
           bank_code: bankCode,
           bank_name: bank?.name ?? null,
           account_number: accountNumber.trim(),
@@ -323,15 +340,6 @@ export default function PaymentsPage() {
           </p>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm text-white/80">Business / {label} name</label>
-              <input
-                className={inputClass}
-                value={businessName}
-                placeholder="e.g. Bright Future Academy"
-                onChange={(e) => setBusinessName(e.target.value)}
-              />
-            </div>
             <div>
               <label className="mb-1.5 block text-sm text-white/80">Bank</label>
               <select
@@ -372,7 +380,31 @@ export default function PaymentsPage() {
                 </p>
               ) : null}
             </div>
+            <div>
+              <label className="mb-1.5 block text-sm text-white/80">Legal first name</label>
+              <input
+                className={inputClass}
+                value={firstName}
+                placeholder="As it appears on the bank account"
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm text-white/80">Legal last name</label>
+              <input
+                className={inputClass}
+                value={lastName}
+                placeholder="As it appears on the bank account"
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
           </div>
+
+          <p className="mt-3 text-xs text-site-muted">
+            Use the exact name on your settlement bank account — it auto-fills once we verify the
+            account above. This is the name we register with the payment provider, so a match lets your
+            payout account activate without a manual review.
+          </p>
 
           <button
             onClick={link}

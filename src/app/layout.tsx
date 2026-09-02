@@ -30,22 +30,21 @@ export const metadata: Metadata = {
   // REPLACES this icons key, so each institute's own logo becomes the sole favicon on
   // its page.
   //
-  // /favicon.ico is an OPAQUE badge (white mark on the brand-black square) and is
-  // listed first so it's what Google Search uses: Google renders the SERP favicon on
-  // a white chip, where the old TRANSPARENT white mark vanished and left only the red
-  // accent square. An opaque badge stays visible on any chip. The two theme-aware
-  // transparent marks below refine browser TABS only (white on dark tabs, dark on
-  // light) via prefers-color-scheme — which Google's crawler doesn't match, so the
-  // white mark can't leak back into search. The colored mark stays the OpenGraph +
-  // Organization logo below, which render on light social/search cards.
+  // All three marks are TRANSPARENT (no square plate) — the old opaque black square
+  // is gone. Google's favicon crawler ignores `media`, so the first entry is the one
+  // it uses: the light-mode (dark J) mark, which stays visible on Google's white SERP
+  // chip. The two theme-aware entries below refine browser TABS via prefers-color-scheme
+  // — white J on dark tabs, dark J on light. /favicon.ico is the same dark-J transparent
+  // square, kept as the universal fallback for clients that fetch it by convention.
   icons: {
     icon: [
-      { url: "/favicon.ico?v=2", sizes: "192x192" },
-      { url: "/images/jorsas-logo-white.png", media: "(prefers-color-scheme: dark)" },
-      { url: "/images/jorsas-logo-light-mode.png", media: "(prefers-color-scheme: light)" },
+      { url: "/images/jorsas-logo-light-mode.png", type: "image/png" },
+      { url: "/images/jorsas-logo-white.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
+      { url: "/images/jorsas-logo-light-mode.png", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon.ico?v=3" },
     ],
-    shortcut: "/favicon.ico?v=2",
-    apple: "/favicon.ico?v=2",
+    shortcut: "/favicon.ico?v=3",
+    apple: "/images/jorsas-logo-light-mode.png",
   },
   openGraph: {
     type: "website",
