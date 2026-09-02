@@ -80,7 +80,7 @@ export default async function ProjectDetailPage({ params }: Props) {
               href={item.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-5 inline-flex text-xs font-semibold uppercase tracking-[0.16em] text-white/80 underline-offset-4 hover:underline"
+              className="mt-5 inline-flex text-xs font-semibold uppercase tracking-[0.16em] text-white/80 underline underline-offset-4"
             >
               View Live Project
             </a>

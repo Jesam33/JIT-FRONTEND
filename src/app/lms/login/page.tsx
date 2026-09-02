@@ -47,7 +47,7 @@ function LoginForm() {
         <AuthField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required />
         <AuthPasswordField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" autoComplete="current-password" required />
         <div className="flex justify-end">
-          <Link href="/lms/forgot-password" className="text-sm text-site-muted transition hover:text-site-text">Forgot password?</Link>
+          <Link href="/lms/forgot-password" className="text-sm text-site-muted underline underline-offset-4 transition hover:text-site-text">Forgot password?</Link>
         </div>
         <AuthSubmitButton loading={submitting}>{submitting ? "Signing in…" : "Sign in"}</AuthSubmitButton>
       </form>

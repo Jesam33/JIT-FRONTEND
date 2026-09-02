@@ -87,7 +87,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-site-text/85">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="transition hover:text-site-primary">
+                  <Link href={link.href} className="underline underline-offset-4 transition hover:text-site-primary">
                     {link.label}
                   </Link>
                 </li>
@@ -97,8 +97,8 @@ export default function Footer() {
           <div>
             <h4 className="mb-3 text-sm uppercase tracking-[0.2em] text-site-text/70">Company</h4>
             <ul className="space-y-2 text-sm text-site-text/85">
-              <li><Link href="/testimonials">Privacy Policy</Link></li>
-              <li><Link href="/portfolio">Trademarks</Link></li>
+              <li><Link href="/testimonials" className="underline underline-offset-4 transition hover:text-site-primary">Privacy Policy</Link></li>
+              <li><Link href="/portfolio" className="underline underline-offset-4 transition hover:text-site-primary">Trademarks</Link></li>
               {/* <li><Link href="/portfolio">Cookies Policies</Link></li> */}
             </ul>
           </div>

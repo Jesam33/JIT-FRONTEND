@@ -16,7 +16,7 @@ export default function BlogPage() {
                 {post.title}
               </h3>
               <p className="mb-6 text-sm text-white/75">{post.description}</p>
-              <Link href={`/${post.slug}`} className="text-sm font-semibold text-white underline-offset-4 hover:underline">
+              <Link href={`/${post.slug}`} className="text-sm font-semibold text-white underline underline-offset-4">
                 Read More
               </Link>
             </article>
