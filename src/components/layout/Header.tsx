@@ -74,13 +74,6 @@ export default function Header() {
 
             <div className="hidden items-center gap-3 md:flex">
               <Link
-                href="/signup"
-                className="inline-flex items-center rounded-full border border-white/35 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
-              >
-                Create your Online Academy
-              </Link>
-
-              <Link
                 href="/qoute"
                 className="inline-flex items-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
               >
@@ -207,8 +200,8 @@ export default function Header() {
 
             <div className="space-y-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/65 [html.light_&]:text-site-text/65">Email Address</p>
-              <a href="mailto:contactus@jorsastech.com" className="block text-base font-medium text-white [html.light_&]:text-site-text">
-                contactus@jorsastech.com
+              <a href="mailto:contact@jorsastech.com" className="block text-base font-medium text-white [html.light_&]:text-site-text">
+                contact@jorsastech.com
               </a>
             </div>
 

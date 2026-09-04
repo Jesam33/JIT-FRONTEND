@@ -22,9 +22,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, courseSlug } = await params;
   const data = await getCourse(slug, courseSlug);
   if (!data) return { title: "Course Not Found" };
+  const title = `${data.course.title} | ${data.institute.name}`;
+  const description = data.course.description ?? `Enrol in ${data.course.title} at ${data.institute.name}.`;
+  // The academy's own logo is the browser-tab icon, and the course cover (or the
+  // logo) is the social-share image, so a shared course link wears the academy's
+  // brand, not Jorsas'. Both fall through to the app defaults when absent.
+  const logo = data.branding?.logo_url;
+  const shareImage = data.course.cover_image_url || logo;
   return {
-    title: `${data.course.title} | ${data.institute.name}`,
-    description: data.course.description ?? undefined,
+    title,
+    description,
+    ...(logo ? { icons: { icon: logo } } : {}),
+    openGraph: {
+      title,
+      description,
+      ...(shareImage ? { images: [{ url: shareImage }] } : {}),
+    },
+    twitter: {
+      card: shareImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(shareImage ? { images: [shareImage] } : {}),
+    },
   };
 }
 

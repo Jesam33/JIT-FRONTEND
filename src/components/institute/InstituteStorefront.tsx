@@ -4,7 +4,6 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import StarRating from "@/components/ui/StarRating";
 import AgentBanner from "@/components/landing/AgentBanner";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
-import PoweredByJorsas from "@/components/institute/PoweredByJorsas";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
 import { brandingStyle, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { formatPrice } from "@/lib/currency";
@@ -285,7 +284,6 @@ export default function InstituteStorefront({
 
       {showAgentBanner ? <AgentBanner /> : null}
 
-      {institute.show_powered_by ? <PoweredByJorsas /> : null}
     </section>
   );
 }

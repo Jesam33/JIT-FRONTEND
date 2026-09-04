@@ -34,7 +34,7 @@ const SAMPLE_COURSES: StorefrontCourse[] = [
     id: -1,
     slug: "sample-live",
     title: "Full-Stack Web Development",
-    description: "A hands-on program covering frontend and backend — from fundamentals to deploying a real app.",
+    description: "A hands-on program covering frontend and backend, from fundamentals to deploying a real app.",
     price: 150000,
     max_students: 30,
     registered_count: 12,
@@ -186,7 +186,7 @@ export default function StorefrontPreview({
 
       {usingSample ? (
         <p className="border-t border-white/10 bg-white/[0.02] px-4 py-2 text-[11px] text-white/40">
-          Showing sample courses — your own courses appear here once you publish them.
+          Showing sample courses. Your own courses appear here once you publish them.
         </p>
       ) : null}
     </div>

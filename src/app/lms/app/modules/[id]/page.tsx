@@ -63,7 +63,7 @@ function renderContent(c: ModuleContent) {
             />
           </div>
           {c.provider === "bunny_stream" && c.status === "processing" ? (
-            <p className="mt-1 text-[11px] text-amber-300/80">Still processing — if it doesn&apos;t play yet, check back in a few minutes.</p>
+            <p className="mt-1 text-[11px] text-amber-300/80">Still processing. If it doesn&apos;t play yet, check back in a few minutes.</p>
           ) : null}
         </div>
       ) : null;

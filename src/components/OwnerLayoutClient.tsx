@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import OwnerSidebar, { type OwnerIdentity } from "./OwnerSidebar";
 import OwnerTopbar from "./OwnerTopbar";
@@ -76,54 +76,65 @@ export default function OwnerLayoutClient({
   // Auth guard + institute identity for the chrome. Each page also fetches its
   // own data and handles 401s, but resolving identity here keeps the sidebar and
   // top bar populated across every owner page from one place.
-  useEffect(() => {
-    if (isPublic) return;
+  const loadIdentity = useCallback(async () => {
     if (!getOwnerToken()) {
       router.replace(tenantLoginPath("owner"));
       return;
     }
-    let cancelled = false;
-    fetch(OWNER_API.overview, { headers: ownerAuthHeaders() })
-      .then(async (r) => {
-        if (r.status === 401 || r.status === 403) {
-          clearOwnerToken();
-          router.replace(tenantLoginPath("owner"));
-          return;
-        }
-        if (r.ok) {
-          const j = await r.json();
-          if (!cancelled) {
-            setIdentity({
-              name: j?.tenant?.name ?? null,
-              slug: j?.tenant?.slug ?? null,
-              email: j?.owner?.email ?? null,
-              plan: j?.plan ?? null,
-              branding: j?.branding ?? null,
-            });
-            // Refresh the cookie so the next server render matches the latest
-            // branding (kicks in from the very next refresh onward).
-            writeBrandingCookie(j?.branding ?? null);
-            // Same for the tab title: persist the academy name so the server
-            // layout's generateMetadata renders <title>{name}</title> on the next
-            // render instead of inheriting the root's "Jorsas Tech".
-            writeOwnerNameCookie(j?.tenant?.name ?? null);
-            // Pin the tenant cookie + per-institute localStorage cache so the
-            // global pre-paint script (app/layout.tsx) keys off this institute
-            // — self-heals owners logged in before the cookie fix shipped.
-            if (j?.tenant?.slug) {
-              setTenantCookie(j.tenant.slug);
-              writeCachedBranding(j.tenant.slug, j?.branding ?? null);
-            }
-          }
-        }
-      })
-      .catch(() => {
-        /* leave identity null — the sidebar shows sensible placeholders */
+    try {
+      const r = await fetch(OWNER_API.overview, { headers: ownerAuthHeaders() });
+      if (r.status === 401 || r.status === 403) {
+        clearOwnerToken();
+        router.replace(tenantLoginPath("owner"));
+        return;
+      }
+      if (!r.ok) return;
+      const j = await r.json();
+      setIdentity({
+        name: j?.tenant?.name ?? null,
+        slug: j?.tenant?.slug ?? null,
+        email: j?.owner?.email ?? null,
+        plan: j?.plan ?? null,
+        // Live feature flags so the sidebar can drop a paid-tier badge once the
+        // plan already includes that feature (e.g. "Create with AI" on Pro).
+        features: j?.plan_summary?.features ?? null,
+        branding: j?.branding ?? null,
       });
-    return () => {
-      cancelled = true;
+      // Refresh the cookie so the next server render matches the latest
+      // branding (kicks in from the very next refresh onward).
+      writeBrandingCookie(j?.branding ?? null);
+      // Same for the tab title: persist the academy name so the server
+      // layout's generateMetadata renders <title>{name}</title> on the next
+      // render instead of inheriting the root's "Jorsas Tech".
+      writeOwnerNameCookie(j?.tenant?.name ?? null);
+      // Pin the tenant cookie + per-institute localStorage cache so the
+      // global pre-paint script (app/layout.tsx) keys off this institute
+      // — self-heals owners logged in before the cookie fix shipped.
+      if (j?.tenant?.slug) {
+        setTenantCookie(j.tenant.slug);
+        writeCachedBranding(j.tenant.slug, j?.branding ?? null);
+      }
+    } catch {
+      /* leave identity as-is — the sidebar shows sensible placeholders */
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (isPublic) return;
+    loadIdentity();
+  }, [isPublic, loadIdentity]);
+
+  // Refetch identity when a page signals the plan/identity changed. The
+  // billing/verify page renders INSIDE this shell, so a client-side "Back to
+  // dashboard" after an upgrade wouldn't otherwise re-run the fetch — the plan
+  // tag + paid-feature badges would stay stale until a hard refresh.
+  useEffect(() => {
+    const handler = () => {
+      if (!isPublic) loadIdentity();
     };
-  }, [isPublic, router]);
+    window.addEventListener("owner-identity-refresh", handler);
+    return () => window.removeEventListener("owner-identity-refresh", handler);
+  }, [isPublic, loadIdentity]);
 
   // Login / setup render full-page with no chrome.
   if (isPublic) return <>{children}</>;

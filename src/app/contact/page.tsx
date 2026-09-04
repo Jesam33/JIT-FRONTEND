@@ -6,7 +6,7 @@ import { routeIntros } from "@/lib/content";
 const WA_TEXT = "?text=Hello%20Jorsas%20Tech%2C%20I%27d%20like%20to%20make%20an%20enquiry.";
 
 const CONTACT = {
-  email: "contactus@jorsastech.com",
+  email: "contact@jorsastech.com",
   whatsapp: [
     { label: "+234 803 458 5459", href: `https://wa.me/2348034585459${WA_TEXT}` },
     { label: "+44 7882 144063", href: `https://wa.me/447882144063${WA_TEXT}` },
@@ -37,7 +37,7 @@ export default function ContactPage() {
             <div className="rounded-2xl border border-white/20 bg-white/5 p-6 sm:p-8">
               <h2 className="text-xl font-semibold text-white">Reach us directly</h2>
               <p className="mt-2 text-sm text-white/70">
-                Prefer to chat? Message us on WhatsApp or send an email — we usually reply within a
+                Prefer to chat? Message us on WhatsApp or send an email, we usually reply within a
                 few hours.
               </p>
 

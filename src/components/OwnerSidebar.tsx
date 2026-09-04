@@ -12,13 +12,18 @@ export type OwnerIdentity = {
   slug?: string | null;
   email?: string | null;
   plan?: string | null;
+  // Live plan feature flags (from plan_summary.features). Used to hide a paid-tier
+  // badge once the current plan already includes that feature.
+  features?: Record<string, boolean> | null;
   branding?: OwnerBranding | null;
 };
 
 // A per-item `badge` (e.g. "Pro") is a small pill after the label — used to mark a
 // paid-tier entry that stays VISIBLE to every plan (clicking it on a lower plan hits
-// the backend gate → 402 → UpgradeModal), rather than being hidden.
-type SidebarItem = { href: string; label: string; badge?: string };
+// the backend gate → 402 → UpgradeModal), rather than being hidden. When the item
+// names a `gatedFeature`, the badge is dropped once the current plan includes it —
+// so an owner already on Pro doesn't see a "Pro" tag on a feature they now own.
+type SidebarItem = { href: string; label: string; badge?: string; gatedFeature?: string };
 
 type SidebarGroup = {
   label: string;
@@ -44,8 +49,9 @@ const groups: SidebarGroup[] = [
   {
     label: "Content tools",
     // Visible to every plan; the Gamma generator itself is Pro+ (the page shows the
-    // upgrade prompt when a lower-plan owner tries to generate).
-    items: [{ href: "/lms/admin/ai-materials", label: "Create with AI", badge: "Pro" }],
+    // upgrade prompt when a lower-plan owner tries to generate). The "Pro" badge is
+    // hidden once the current plan already includes ai_materials (see gatedFeature).
+    items: [{ href: "/lms/admin/ai-materials", label: "Create with AI", badge: "Pro", gatedFeature: "ai_materials" }],
   },
   {
     label: "Staff operations",
@@ -54,8 +60,7 @@ const groups: SidebarGroup[] = [
   {
     label: "Settings",
     items: [
-      { href: "/lms/admin/branding", label: "Customization" },
-      { href: "/lms/admin/profile", label: "Public page" },
+      { href: "/lms/admin/branding", label: "Customisation" },
       { href: "/lms/admin/payments", label: "Course payments" },
       { href: "/lms/admin/billing", label: "Billing & Plan" },
     ],
@@ -143,7 +148,7 @@ export default function OwnerSidebar({
                 }`}
               >
                 <span className="flex-1">{item.label}</span>
-                {item.badge ? (
+                {item.badge && !(item.gatedFeature && identity?.features?.[item.gatedFeature]) ? (
                   <span className="ml-2 shrink-0 rounded-full border border-amber-300/40 bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-200">
                     {item.badge}
                   </span>

@@ -124,10 +124,10 @@ export default function PaymentsPage() {
             setLastName(parts.slice(1).join(" "));
           }
         } else {
-          setResolveError(json?.message || "Couldn’t verify this account — you can still link it.");
+          setResolveError(json?.message || "Couldn’t verify this account. You can still link it.");
         }
       } catch {
-        if (!cancelled) setResolveError("Couldn’t verify this account — you can still link it.");
+        if (!cancelled) setResolveError("Couldn’t verify this account. You can still link it.");
       } finally {
         if (!cancelled) setResolving(false);
       }
@@ -226,8 +226,8 @@ export default function PaymentsPage() {
 
       <p className="max-w-2xl text-sm text-site-muted">
         Link your {label}&apos;s own bank so course fees paid by students settle to{" "}
-        <span className="text-white">your account</span> — not the platform. The applicable platform
-        fee is deducted from each eligible successful course sale —{" "}
+        <span className="text-white">your account</span>, not the platform. The applicable platform
+        fee is deducted from each eligible successful course sale:{" "}
         <span className="text-white">{commission}%</span> on your current plan.
       </p>
 
@@ -300,7 +300,7 @@ export default function PaymentsPage() {
               <span className="text-lg font-semibold text-white">{commission}%</span>
             </div>
             <p className="mt-1 text-xs text-site-muted">
-              Deducted from each successful course sale on your current plan — the rest settles to your
+              Deducted from each successful course sale on your current plan. The rest settles to your
               bank.
             </p>
             {splitDrifted && (
@@ -401,7 +401,7 @@ export default function PaymentsPage() {
           </div>
 
           <p className="mt-3 text-xs text-site-muted">
-            Use the exact name on your settlement bank account — it auto-fills once we verify the
+            Use the exact name on your settlement bank account. It auto-fills once we verify the
             account above. This is the name we register with the payment provider, so a match lets your
             payout account activate without a manual review.
           </p>

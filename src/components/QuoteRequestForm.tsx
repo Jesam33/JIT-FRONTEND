@@ -128,7 +128,7 @@ export default function QuoteRequestForm() {
           rows={6}
           value={form.content}
           onChange={update("content")}
-          placeholder="Tell us about your project — goals, features, timeline, budget..."
+          placeholder="Tell us about your project: goals, features, timeline, budget..."
           className={`${inputClasses} resize-y`}
         />
       </div>

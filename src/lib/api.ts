@@ -223,6 +223,9 @@ export const PUBLIC_API = {
   institutePrimaryCourse: (courseSlug: string) => api(`/api/frontend/institute/primary/courses/${courseSlug}`),
   storefront: (slug: string) => api(`/api/frontend/i/${slug}`),
   storefrontCourse: (slug: string, courseSlug: string) => api(`/api/frontend/i/${slug}/courses/${courseSlug}`),
+  // "Campuses" directory — every Pro-and-above academy on the platform, shown
+  // as avatar cards on jorsastech's own /campuses page.
+  campuses: api("/api/frontend/campuses"),
   trainingRegister: api("/api/frontend/training/register"),
   paystackInitialize: api("/api/frontend/paystack/initialize"),
   paystackVerify: (ref: string) => api(`/api/frontend/paystack/verify?reference=${encodeURIComponent(ref)}`),

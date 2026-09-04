@@ -2,8 +2,8 @@ import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
 import type { InstituteProfile } from "@/lib/institute-profile";
 import CourseRegisterClient from "@/components/institute/CourseRegisterClient";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
-import PoweredByJorsas from "@/components/institute/PoweredByJorsas";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
+import CourseDescription from "@/components/institute/CourseDescription";
 import StarRating from "@/components/ui/StarRating";
 import { formatPrice } from "@/lib/currency";
 
@@ -129,12 +129,7 @@ export default function InstituteCourseDetail({
               ) : null}
             </div>
 
-            {course.description ? (
-              <div className="mt-6 text-sm leading-7 text-white/85">
-                <h2 className="mb-2 text-lg font-semibold text-white">About This Course</h2>
-                <p>{course.description}</p>
-              </div>
-            ) : null}
+            {course.description ? <CourseDescription text={course.description} /> : null}
 
             {course.requirements ? (
               <div className="mt-6 text-sm leading-7 text-white/85">
@@ -212,7 +207,6 @@ export default function InstituteCourseDetail({
 
       <InstituteContactFooter profile={profile} instituteName={institute.name} />
 
-      {institute.show_powered_by ? <PoweredByJorsas /> : null}
     </div>
   );
 }

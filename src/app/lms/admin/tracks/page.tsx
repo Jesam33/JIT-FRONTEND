@@ -178,7 +178,7 @@ export default function OwnerTracksPage() {
 
         {noCourses ? (
           <div className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
-            Create a course first — cohorts belong to a course. Add one on the{" "}
+            Create a course first: cohorts belong to a course. Add one on the{" "}
             <button type="button" onClick={() => router.push("/lms/admin/courses")} className="font-semibold underline">
               Courses
             </button>{" "}
@@ -220,7 +220,7 @@ export default function OwnerTracksPage() {
                   className={`${selectClass} disabled:opacity-50`}
                 >
                   <option value="" className={optionClass}>
-                    {noStaff ? "No staff yet — assign later" : "Unassigned"}
+                    {noStaff ? "No staff yet, assign later" : "Unassigned"}
                   </option>
                   {staff.map((s) => (
                     <option key={s.id} value={s.id} className={optionClass}>

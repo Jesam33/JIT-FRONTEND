@@ -188,7 +188,7 @@ export default function CalendarTimetable({ classes, renderActions, studentJoinP
                           <p className="text-sm font-medium text-white truncate">{c.title}</p>
                           <p className="mt-0.5 text-xs text-white/50">
                             {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
-                            {end ? ` – ${end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}` : ""}
+                            {end ? ` - ${end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}` : ""}
                           </p>
                           {c.module && (
                             <p className="mt-0.5 text-[11px] text-white/40 truncate">

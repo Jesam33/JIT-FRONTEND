@@ -217,7 +217,7 @@ export default function StaffModulesPage() {
           headers: jsonHeaders,
           body: JSON.stringify({ title: newContentTitle.trim() }),
         });
-        if (upRes.status === 402) { showToast("Video lessons need the Basic plan or higher — ask your academy admin to upgrade.", "error"); return; }
+        if (upRes.status === 402) { showToast("Video lessons need the Basic plan or higher. Ask your academy admin to upgrade.", "error"); return; }
         if (upRes.status === 503) { showToast("Video uploads aren't available right now. Please try again later.", "error"); return; }
         if (!upRes.ok) { showToast(`Could not start the upload (HTTP ${upRes.status}).`, "error"); return; }
         const session = (await upRes.json()) as BunnyUploadSession;
@@ -567,7 +567,7 @@ export default function StaffModulesPage() {
                           onChange={(e) => setContentVideoFile(e.target.files?.[0] ?? null)}
                           className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white focus:outline-none focus:ring-1 focus:ring-white/30"
                         />
-                        <p className="mt-1 text-[11px] text-white/40">Upload a video file — it&apos;s hosted externally and streamed to students, so it never loads down your server. MP4, WebM or MOV.</p>
+                        <p className="mt-1 text-[11px] text-white/40">Upload a video file. It&apos;s hosted externally and streamed to students, so it never loads down your server. MP4, WebM or MOV.</p>
                         {contentUploadPct !== null ? (
                           <div className="mt-2">
                             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
@@ -580,7 +580,7 @@ export default function StaffModulesPage() {
                     ) : (
                       <div>
                         <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
-                        <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link — no file uploads. Leave blank for text/code content.</p>
+                        <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link, no file uploads. Leave blank for text/code content.</p>
                       </div>
                     )}
                     <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={4} />

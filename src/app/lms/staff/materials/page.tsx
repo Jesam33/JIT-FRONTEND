@@ -105,7 +105,7 @@ export default function StaffMaterialsPage() {
       setError(`The video uploaded but couldn't be saved (HTTP ${saveRes.status}).`);
       return;
     }
-    setNotice("Video uploaded — it will be ready to watch in a few minutes while it finishes processing.");
+    setNotice("Video uploaded. It will be ready to watch in a few minutes while it finishes processing.");
   }
 
   async function createMaterial() {
@@ -181,7 +181,7 @@ export default function StaffMaterialsPage() {
                   className="rounded border border-white/20 bg-black/30 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white"
                 />
                 <p className="text-xs text-white/50">
-                  The video is hosted externally and streamed to students — it never loads down your server. MP4, WebM or MOV.
+                  The video is hosted externally and streamed to students. It never loads down your server. MP4, WebM or MOV.
                 </p>
                 {uploadPct !== null && (
                   <div>

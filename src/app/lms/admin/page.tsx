@@ -49,6 +49,29 @@ function money(n: number, currency: string): string {
   return `${currency}${Math.round(n).toLocaleString()}`;
 }
 
+// Standalone copy button (the storefront banner up top). CopyRow below pairs a
+// label + URL for the share-links grid; this is just the action.
+function CopyButton({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — the URL is shown above for manual copy */
+    }
+  };
+  return (
+    <button
+      onClick={copy}
+      className="rounded-full bg-site-primary px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+    >
+      {copied ? "Copied" : "Copy link"}
+    </button>
+  );
+}
+
 function CopyRow({ label, url }: { label: string; url: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -250,6 +273,42 @@ export default function OwnerDashboardPage() {
 
       {data && (
         <>
+          {/* Public page banner — the first thing an owner sees on landing, so
+              they know their public page URL immediately (where new students
+              browse courses and register). Full share links live further down. */}
+          <div className="rounded-[20px] border border-site-primary/40 bg-site-primary/[0.08] p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
+                  <h2 className="text-base font-semibold text-white">Your public page is live</h2>
+                </div>
+                <p className="mt-1 text-sm text-site-muted">
+                  Share this link so new students can browse your courses and register.
+                </p>
+                <a
+                  href={tenantStorefrontUrl(data.tenant.slug)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block truncate text-sm font-medium text-white underline decoration-white/30 underline-offset-4 hover:decoration-white"
+                >
+                  {tenantStorefrontUrl(data.tenant.slug)}
+                </a>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <a
+                  href={tenantStorefrontUrl(data.tenant.slug)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-white/25 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Visit
+                </a>
+                <CopyButton url={tenantStorefrontUrl(data.tenant.slug)} />
+              </div>
+            </div>
+          </div>
+
           {/* Stat cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STAT_CARDS.map((card) => (
@@ -428,7 +487,7 @@ export default function OwnerDashboardPage() {
                 The sign-in links below are for people already in your {label}.
               </p>
               <div className="mb-3">
-                <CopyRow label="Public page — for new students" url={tenantStorefrontUrl(data.tenant.slug)} />
+                <CopyRow label="Public page for new students" url={tenantStorefrontUrl(data.tenant.slug)} />
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 <CopyRow label="Students" url={links.student} />

@@ -29,7 +29,7 @@ const FORMATS: { value: string; label: string }[] = [
 ];
 
 const EXPORTS: { value: string; label: string }[] = [
-  { value: "", label: "None — just the editable Gamma doc" },
+  { value: "", label: "None, just the editable Gamma doc" },
   { value: "pdf", label: "PDF" },
   { value: "pptx", label: "PowerPoint (.pptx)" },
 ];
@@ -157,7 +157,7 @@ export default function OwnerAiMaterialsPage() {
     e.preventDefault();
     const prompt = form.prompt.trim();
     if (prompt.length < 3) {
-      setGenError("Describe what you'd like the AI to create — a sentence or two is enough.");
+      setGenError("Describe what you'd like the AI to create. A sentence or two is enough.");
       return;
     }
 
@@ -259,7 +259,7 @@ export default function OwnerAiMaterialsPage() {
       }
       const courseTitle = courses.find((c) => String(c.id) === String(saveCourseId))?.title || "your course";
       toast(`Saved “${title}” to ${courseTitle}.`, "success");
-      setSaveMsg({ kind: "ok", text: `Saved to ${courseTitle} — students will find it under the course's materials.` });
+      setSaveMsg({ kind: "ok", text: `Saved to ${courseTitle}. Students will find it under the course's materials.` });
     } catch (err) {
       setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -278,7 +278,7 @@ export default function OwnerAiMaterialsPage() {
         <h1 className="text-2xl font-semibold text-white sm:text-3xl">Create with AI</h1>
         <p className="mt-1 max-w-2xl text-sm text-site-muted">
           Describe a topic and generate a polished presentation or document with AI, then save it straight into one of
-          your courses as a material. Powered by Gamma — available on the Pro plan and above.
+          your courses as a material. Powered by Gamma, available on the Pro plan and above.
         </p>
       </div>
 
@@ -290,7 +290,7 @@ export default function OwnerAiMaterialsPage() {
             value={form.prompt}
             onChange={(e) => setField("prompt", e.target.value)}
             rows={4}
-            placeholder="e.g. A beginner-friendly lesson on the fundamentals of HTML — elements, tags, attributes, and page structure — with examples."
+            placeholder="e.g. A beginner-friendly lesson on the fundamentals of HTML (elements, tags, attributes, and page structure) with examples."
             className={inputClass}
           />
         </div>
@@ -346,7 +346,7 @@ export default function OwnerAiMaterialsPage() {
             value={form.instructions}
             onChange={(e) => setField("instructions", e.target.value)}
             rows={2}
-            placeholder="Anything specific — e.g. include a short quiz at the end, or use real-world examples."
+            placeholder="Anything specific, e.g. include a short quiz at the end, or use real-world examples."
             className={inputClass}
           />
         </div>
@@ -388,7 +388,7 @@ export default function OwnerAiMaterialsPage() {
               <div>
                 <p className="text-sm font-semibold text-white">Generating your material…</p>
                 <p className="mt-0.5 text-sm text-site-muted">
-                  This usually takes one to three minutes. You can leave this page open — it&apos;ll update on its own.
+                  This usually takes one to three minutes. You can leave this page open, it&apos;ll update on its own.
                 </p>
               </div>
             </div>
@@ -464,7 +464,7 @@ export default function OwnerAiMaterialsPage() {
                       type="text"
                       value={saveTitle}
                       onChange={(e) => setSaveTitle(e.target.value)}
-                      placeholder="e.g. HTML Fundamentals — Slides"
+                      placeholder="e.g. HTML Fundamentals: Slides"
                       className={inputClass}
                     />
                   </div>
@@ -486,7 +486,7 @@ export default function OwnerAiMaterialsPage() {
                         ))
                       ) : (
                         <option value="" className="bg-[#0b0b0b]">
-                          No courses yet — create one first
+                          No courses yet, create one first
                         </option>
                       )}
                     </select>

@@ -79,6 +79,7 @@ export type FaqGroup = {
 export const navLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/institute", label: "Our Institute" },
+  { href: "/campuses", label: "Campuses" },
   // { href: "/real-estate", label: "Real Estate" },
   { href: "/policies", label: "Policies" },
   { href: "/about", label: "About Us" },
@@ -124,19 +125,19 @@ export const capabilities: Capability[] = [
 export const showcase: ShowcaseItem[] = [
   {
     title: "Client Base",
-    text: "120+ satisfied clients across real estate and tech sectors — from early-stage startups to established enterprises. Our clients trust us to deliver mission-critical software, websites, and digital platforms that power their daily operations. Many of them come through referrals, a testament to the quality and reliability we bring to every engagement. Our portfolio spans fintech, education, real estate, health tech, and professional services, giving us a broad perspective on what it takes to build products that users actually love.",
+    text: "120+ satisfied clients across real estate and tech sectors, from early-stage startups to established enterprises. Our clients trust us to deliver mission-critical software, websites, and digital platforms that power their daily operations. Many of them come through referrals, a testament to the quality and reliability we bring to every engagement. Our portfolio spans fintech, education, real estate, health tech, and professional services, giving us a broad perspective on what it takes to build products that users actually love.",
     accent: "blue",
     image: "/images/sections/work.png",
   },
   {
     title: "Customer Retention",
-    text: "80% repeat business rate — our clients keep coming back because we treat every project as a long-term partnership, not a one-off transaction. We invest time in understanding your business goals, your industry challenges, and your users so that the first deliverable is never a guess. After launch, we remain available for maintenance, feature updates, and scaling support. This commitment to post-delivery care is why more than four out of five clients return for additional work, refer us within their networks, and trust us with increasingly ambitious projects over time.",
+    text: "80% repeat business rate. Our clients keep coming back because we treat every project as a long-term partnership, not a one-off transaction. We invest time in understanding your business goals, your industry challenges, and your users so that the first deliverable is never a guess. After launch, we remain available for maintenance, feature updates, and scaling support. This commitment to post-delivery care is why more than four out of five clients return for additional work, refer us within their networks, and trust us with increasingly ambitious projects over time.",
     accent: "green",
     image: "/images/sections/showcase-customer-retention.jpg",
   },
   {
     title: "Business Experience",
-    text: "With over 25 years of combined experience, our team has worked across multiple continents and industries, navigating different regulatory environments, user cultures, and technical constraints. This depth of experience means we can anticipate challenges before they arise, recommend pragmatic solutions instead of theoretical ones, and deliver projects on time and within budget. Our discovery process alone — spanning stakeholder interviews, user journey mapping, feasibility analysis, and technical architecture — has saved clients countless hours of rework and misaligned effort.",
+    text: "With over 25 years of combined experience, our team has worked across multiple continents and industries, navigating different regulatory environments, user cultures, and technical constraints. This depth of experience means we can anticipate challenges before they arise, recommend pragmatic solutions instead of theoretical ones, and deliver projects on time and within budget. Our discovery process alone, spanning stakeholder interviews, user journey mapping, feasibility analysis, and technical architecture, has saved clients countless hours of rework and misaligned effort.",
     accent: "pink",
     image: "/images/sections/discusssions.png",
   },
@@ -227,7 +228,7 @@ export const routeIntros: Record<string, RouteIntro> = {
   about: {
     title: "Turning Bold Ideas Into Quality Technology",
     subtitle: "WHO WE ARE",
-    body: "A Born in Africa. Built to global standards. Designed for the world.Jorsas Tech is a technology company founded in Nigeria with a global outlook. We build high-quality, human-centred technology designed to solve real-world problems and create opportunities at scale. We believe technology should do more than demonstrate what is possible. It should be useful, reliable, accessible and worth what people pay for it. That belief shapes everything we build. Our approach is simple: understand real human needs, challenge conventional thinking, and turn ambitious ideas into practical digital products that people and businesses can genuinely benefit from. We pursue innovation with purpose—not technology for technology’s sake. At Jorsas Tech, quality and value for money are non-negotiable. We believe exceptional technology does not need unnecessary complexity or excessive cost. Every product bearing the Jorsas Tech name should be thoughtfully designed, reliably delivered and built to create meaningful value.Our culture is driven by excellence, creativity, ownership, integrity and continuous improvement. We encourage our people to think boldly, collaborate openly and take responsibility for building products we are proud to put our name on.From Africa to the world, our ambition is to build a globally recognised technology company known not simply for creating products, but for creating technology that matters. Our Promise Quality you can trust. Technology that delivers. Value that makes sense. Our Philosophy Think boldly. Build properly. Deliver value.",
+    body: "A Born in Africa. Built to global standards. Designed for the world.Jorsas Tech is a technology company founded in Nigeria with a global outlook. We build high-quality, human-centred technology designed to solve real-world problems and create opportunities at scale. We believe technology should do more than demonstrate what is possible. It should be useful, reliable, accessible and worth what people pay for it. That belief shapes everything we build. Our approach is simple: understand real human needs, challenge conventional thinking, and turn ambitious ideas into practical digital products that people and businesses can genuinely benefit from. We pursue innovation with purpose, not technology for technology’s sake. At Jorsas Tech, quality and value for money are non-negotiable. We believe exceptional technology does not need unnecessary complexity or excessive cost. Every product bearing the Jorsas Tech name should be thoughtfully designed, reliably delivered and built to create meaningful value.Our culture is driven by excellence, creativity, ownership, integrity and continuous improvement. We encourage our people to think boldly, collaborate openly and take responsibility for building products we are proud to put our name on.From Africa to the world, our ambition is to build a globally recognised technology company known not simply for creating products, but for creating technology that matters. Our Promise Quality you can trust. Technology that delivers. Value that makes sense. Our Philosophy Think boldly. Build properly. Deliver value.",
   },
   services: {
     title: "Spotlight some most important features We have",
@@ -237,7 +238,7 @@ export const routeIntros: Record<string, RouteIntro> = {
   contact: {
     title: "We Are Connected To Help Your Business!",
     subtitle: "Get In Touch",
-    body: "Have a project in mind or a question about our training? Send us a message below, or reach us directly on WhatsApp — we'll get back to you shortly.",
+    body: "Have a project in mind or a question about our training? Send us a message below, or reach us directly on WhatsApp, we'll get back to you shortly.",
   },
 };
 
@@ -315,11 +316,11 @@ export const pricingPlans: PricingPlan[] = [
     price: "₦0",
     note: "forever",
     features: [
-      "Up to 3 courses, 10 students, 1 staff",
+      "Up to 3 courses, 1 student, 1 staff",
       "Live classes on every plan",
-      "Full LMS — modules, tasks & grading",
+      "Full LMS: modules, tasks & grading",
       "Student & staff portals",
-      "Your own branded storefront",
+      "Your own branded academy page",
       "5% platform fee on course sales",
     ],
   },
@@ -334,7 +335,7 @@ export const pricingPlans: PricingPlan[] = [
       "In-app group chat & certificates",
       "Pre-recorded video lessons",
       "Admission-Marketer network",
-      "Remove “Powered by Jorsas” branding",
+      "Remove “Powered by Jorsastech” branding",
       "3% platform fee on course sales",
     ],
   },
@@ -477,7 +478,7 @@ export const realEstateContent = {
     "At Jorsas, we help you build wealth through strategic real estate insights and partnerships that last. Your journey to smart investments starts here.",
   whyTitle: "Why Choose Jorsas Real Estate?",
   whyBody:
-    "We don't just deal in properties — we build long-term value. At Jorsas, we simplify real estate for our clients by offering personalized guidance, tech-enabled solutions, and a commitment to helping you grow.",
+    "We don't just deal in properties. We build long-term value. At Jorsas, we simplify real estate for our clients by offering personalized guidance, tech-enabled solutions, and a commitment to helping you grow.",
   contactTitle: "Get in Touch with Us",
   contactBody: "Let's help you take the next step in your real estate journey.",
 };

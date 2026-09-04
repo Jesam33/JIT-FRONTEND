@@ -23,13 +23,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getStorefront(slug);
   if (!data) return { title: "Online Academy Not Found" };
   const logo = data.branding?.logo_url;
+  const title = `${data.institute.name} | Courses`;
+  const description = data.profile?.tagline || `Browse and enrol in courses at ${data.institute.name}.`;
+  // The share image prefers the academy's cover photo, then its logo, so a shared
+  // storefront link wears the academy's brand — not Jorsas' default OG image.
+  const shareImage = data.profile?.cover_url || logo;
   return {
-    title: `${data.institute.name} | Courses`,
-    description: `Browse and enrol in courses at ${data.institute.name}.`,
+    title,
+    description,
     // Use the institute's own logo as the browser-tab icon (fix #7) so the public
     // storefront wears the tenant's brand, not Jorsas'. Falls through to the
     // default favicon when the institute hasn't uploaded a logo.
     ...(logo ? { icons: { icon: logo } } : {}),
+    openGraph: {
+      title,
+      description,
+      ...(shareImage ? { images: [{ url: shareImage }] } : {}),
+    },
+    twitter: {
+      card: shareImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(shareImage ? { images: [shareImage] } : {}),
+    },
   };
 }
 

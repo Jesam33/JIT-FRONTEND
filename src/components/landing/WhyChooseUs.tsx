@@ -6,7 +6,7 @@ import work from "../../../public/images/sections/work.png";
 const reasons = [
   {
     title: "End-to-End Delivery",
-    body: "From discovery and design to development and deployment — we handle every phase with precision and care.",
+    body: "From discovery and design to development and deployment, we handle every phase with precision and care.",
     image: "/images/sections/web-development.jpg",
   },
   {
@@ -16,7 +16,7 @@ const reasons = [
   },
   {
     title: "Transparent Process",
-    body: "Regular updates, clear timelines, and open communication — you always know where your project stands.",
+    body: "Regular updates, clear timelines, and open communication, so you always know where your project stands.",
     image: "/images/sections/ui-ux.jpg",
   },
 ];

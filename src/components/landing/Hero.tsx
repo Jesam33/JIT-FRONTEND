@@ -53,10 +53,11 @@ export default function Hero({ content = heroContent }: HeroProps) {
           <div className="flex flex-wrap justify-center gap-4">
             <Button href="/qoute" variant="primary">{content.ctaPrimary}</Button>
             <Button href="/institute" variant="light">{content.ctaSecondary}</Button>
-            {/* The header's "Create your institute" CTA is hidden below md, so we
-                surface it right here on small screens — where institute owners
-                land first — keeping the signup one tap away on mobile. */}
-            <Button href="/signup" variant="outline" className="md:hidden">Create your Online Academy</Button>
+            {/* The header no longer carries a "Create your Online Academy" CTA
+                (removed so the desktop nav links have room to breathe), so the
+                hero is now its single home — one tap to signup on every screen,
+                right where academy owners land first. */}
+            <Button href="/signup" variant="outline">Create your Online Academy</Button>
           </div>
         </div>
 

@@ -62,6 +62,23 @@ a {
   text-decoration: none;
 }
 
+/* Embedded text links — links that sit INSIDE running prose (a paragraph or a
+   list item) are almost always inline references ("Already have one? Sign in",
+   "Browse courses to register", policy links, etc.), and those should read as
+   clickable, so we underline them project-wide. Navbars, sidebars, footers and
+   card CTAs don't wrap their links in <p>/<li>, so they're untouched. A link can
+   opt out by setting `no-underline`, or by carrying its own `underline`/button
+   styling (both win on specificity where needed). */
+p a,
+li a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+p a.no-underline,
+li a.no-underline {
+  text-decoration: none;
+}
+
 .site-shell {
   min-height: 100dvh;
   background:

@@ -197,7 +197,7 @@ export default function OwnerCertificatesPage() {
           <h2 className="text-lg font-semibold text-white">Issue a certificate</h2>
           <p className="mt-1 text-sm text-site-muted">
             Award a certificate to a student. Paste a link to the certificate PDF (Google Drive,
-            Canva, etc.) if you have one — the student sees it on their Certificates page.
+            Canva, etc.) if you have one. The student sees it on their Certificates page.
           </p>
         </div>
 
@@ -256,7 +256,7 @@ export default function OwnerCertificatesPage() {
               className={inputClass}
             />
             <p className="mt-1.5 text-xs text-white/45">
-              Paste a Google Drive, Canva, or any public link to the certificate — no file uploads.
+              Paste a Google Drive, Canva, or any public link to the certificate. No file uploads.
             </p>
           </div>
           {!loading && students.length === 0 ? (

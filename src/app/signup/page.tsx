@@ -16,12 +16,12 @@ const PLANS = [
     price: "₦0",
     note: "forever",
     popular: false,
-    tagline: "Everything you need to launch your Online Academy — free.",
+    tagline: "Everything you need to launch your Online Academy, free.",
     features: [
-      "Up to 3 courses, 10 students, 1 staff",
+      "Up to 3 courses, 1 student, 1 staff",
       "Live classes on every plan",
-      "Full LMS — modules, tasks & grading",
-      "Branded storefront + student & staff portals",
+      "Full LMS: modules, tasks & grading",
+      "Branded academy page + student & staff portals",
       "5% platform fee on course sales",
     ],
   },
@@ -31,7 +31,7 @@ const PLANS = [
     price: "₦5,000",
     note: "/month",
     popular: true,
-    tagline: "For growing academies — chat, certificates & marketers.",
+    tagline: "For growing academies: chat, certificates & marketers.",
     features: [
       "Up to 10 courses, 100 students, 5 staff",
       "In-app group chat & certificates",
@@ -117,7 +117,7 @@ function SignupInner() {
       // redirecting to a payment page.
       if (json?.free === true) {
         setDone({
-          message: json?.message || "Your Online Academy is ready — check your email for your setup link.",
+          message: json?.message || "Your Online Academy is ready. Check your email for your setup link.",
           email: payload.admin_email,
         });
         setLoading(false);
@@ -174,9 +174,9 @@ function SignupInner() {
       <div className="container-wide max-w-3xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
         <h1 className="mb-2 text-3xl font-bold text-white">Create your Online Academy</h1>
         <p className="mb-6 text-sm text-site-muted">
-          Register your school or training organisation to get a dedicated LMS. Start free in minutes — or choose a
-          paid plan for chat, certificates and more. Free Online Academies are ready right away; paid plans are set
-          up the moment your payment confirms.
+          Register your school or training organisation to get a dedicated LMS. Start free in minutes, or choose a
+          paid plan for more features. Free Online Academies are ready right away; paid plans are set up the moment
+          your payment is confirmed.
         </p>
 
         {error && (
@@ -267,7 +267,7 @@ function SignupInner() {
             <input type="hidden" name="plan" value={plan} />
             <p className="mt-3 text-xs text-site-muted">
               {isFreePlan
-                ? "Free forever — no card required. Upgrade any time from your dashboard."
+                ? "Free forever, no card required. Upgrade any time from your dashboard."
                 : "Billed monthly. You can change plans any time from your dashboard."}{" "}
               The applicable platform fee is deducted from each eligible successful course sale.
             </p>
@@ -289,7 +289,7 @@ function SignupInner() {
                   </p>
                 </div>
                 <a
-                  href="mailto:contactus@jorsastech.com?subject=Enterprise%20plan%20enquiry"
+                  href="mailto:contact@jorsastech.com?subject=Enterprise%20plan%20enquiry"
                   className="shrink-0 rounded-full border border-white/40 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   Contact sales
@@ -318,7 +318,7 @@ function SignupInner() {
             <div className="mt-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-xs text-site-muted">
               <p className="text-white/80">This becomes your Online Academy&apos;s own web address.</p>
               <p className="mt-1">
-                It&apos;s the link you share with students and staff — they visit it to browse your courses and sign in,
+                It&apos;s the link you share with students and staff, so they can browse your courses and sign in,
                 instead of the main Jorsas site. Your page will live at{" "}
                 <span className="font-semibold text-white">
                   {subdomain || "youracademy"}.{APP_DOMAIN}
@@ -355,7 +355,7 @@ function SignupInner() {
 
           {isFreePlan ? (
             <p className="md:col-span-2 text-xs text-site-muted">
-              No payment needed — your free Online Academy is ready instantly. We&apos;ll email a setup link so you can
+              No payment needed. Your free Online Academy is ready instantly. We&apos;ll email a setup link so you can
               choose your password and sign in. Upgrade any time from your dashboard.
             </p>
           ) : (

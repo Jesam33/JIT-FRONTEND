@@ -531,7 +531,7 @@ export default function ChatLayout(props: AnyObj) {
 
     const messages = chatTab === "track" ? groupMessages : dmMessages;
     const channelName = chatTab === "track"
-      ? `#track${chatBootstrap?.track?.name ? ` — ${chatBootstrap.track.name}` : ""}`
+      ? `#track${chatBootstrap?.track?.name ? `: ${chatBootstrap.track.name}` : ""}`
       : `@${chatBootstrap?.dm_thread?.instructor_name ?? "Instructor"}`;
 
     function showAvatar(item: AnyObj, idx: number, arr: AnyObj[]) {

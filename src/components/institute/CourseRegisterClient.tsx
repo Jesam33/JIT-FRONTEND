@@ -18,6 +18,10 @@ type CourseDetail = {
   is_base_currency?: boolean;
   charge_currency?: string;
   purchasable?: boolean;
+  // Delivery modes the academy's plan actually offers. Pre-recorded is a paid
+  // feature, so a Free academy sends false and the radio below is disabled.
+  is_live_available?: boolean;
+  is_prerecorded_available?: boolean;
 };
 
 const qualifications = [
@@ -74,6 +78,10 @@ export default function CourseRegisterClient({
   branding?: OwnerBranding | null;
 }) {
   const label = academyLabel(branding).singular;
+  // Pre-recorded is a paid feature; the backend only sets this true when the
+  // academy's plan unlocks it. Defaults true when absent so the apex/NGN flow
+  // (which doesn't send the flag) keeps both modes.
+  const preRecordedAvailable = course.is_prerecorded_available !== false;
   const [form, setForm] = useState<FormData>(initialForm);
   const [step, setStep] = useState<"form" | "paying" | "done">("form");
   const [loading, setLoading] = useState(false);
@@ -163,7 +171,7 @@ export default function CourseRegisterClient({
   if (course.purchasable === false) {
     return (
       <div className="mt-6 rounded-lg border border-white/15 bg-white/5 p-4 text-sm text-white/70">
-        Registration for this course isn&apos;t open yet — the {label} is finishing its payment
+        Registration for this course isn&apos;t open yet. The {label} is finishing its payment
         setup. Please check back soon.
       </div>
     );
@@ -195,9 +203,25 @@ export default function CourseRegisterClient({
             <input type="radio" name="mode" value="live" checked={form.learning_mode === "live"} onChange={() => updateField("learning_mode", "live")} />
             Live
           </label>
-          <label className="flex items-center gap-2 rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white">
-            <input type="radio" name="mode" value="pre_recorded" checked={form.learning_mode === "pre_recorded"} onChange={() => updateField("learning_mode", "pre_recorded")} />
-            Pre-recorded
+          {/* Pre-recorded is a paid-plan feature. When this academy's plan doesn't
+              offer it the radio is disabled (not clickable) and reads "not
+              available" so a Free academy's visitors can't pick a mode it can't
+              deliver. */}
+          <label
+            className={`flex items-center gap-2 rounded-lg border border-white/20 bg-black/30 px-3 py-2 ${
+              preRecordedAvailable ? "text-white" : "cursor-not-allowed text-white/40"
+            }`}
+            title={preRecordedAvailable ? undefined : "Pre-recorded classes are not available for this course"}
+          >
+            <input
+              type="radio"
+              name="mode"
+              value="pre_recorded"
+              disabled={!preRecordedAvailable}
+              checked={form.learning_mode === "pre_recorded"}
+              onChange={() => updateField("learning_mode", "pre_recorded")}
+            />
+            Pre-recorded{preRecordedAvailable ? "" : " (not available)"}
           </label>
         </div>
         <input value={form.referral_code} onChange={(e) => updateField("referral_code", e.target.value)} placeholder="Referral Code (optional - get 5% discount)" className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
@@ -205,7 +229,7 @@ export default function CourseRegisterClient({
           {loading
             ? "Processing..."
             : course.price <= 0
-              ? "Register — Free"
+              ? "Register Free"
               : `Register & Pay ${formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN")}`}
         </button>
         {message ? <p className="text-xs text-rose-200">{message}</p> : null}

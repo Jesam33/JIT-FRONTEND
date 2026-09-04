@@ -4,14 +4,14 @@ import { pricingPlans } from "@/lib/content";
 
 // Enterprise is a contact-sales tier (never a self-serve checkout) — the CTA
 // opens a pre-addressed enquiry to the same address the site uses elsewhere.
-const ENTERPRISE_CONTACT = "mailto:contactus@jorsastech.com?subject=Enterprise%20plan%20enquiry";
+const ENTERPRISE_CONTACT = "mailto:contact@jorsastech.com?subject=Enterprise%20plan%20enquiry";
 
 export default function PricingPage() {
   return (
     <section>
       <InnerPageHero title="Simple pricing that grows with you" subtitle="FLEXIBLE PRICING PLAN">
         <p>
-          Launch your Online Academy today and upgrade any time — no long-term contracts. Live classes come on
+          Launch your Online Academy today and upgrade any time, no long-term contracts. Live classes come on
           every plan.
         </p>
       </InnerPageHero>
@@ -57,7 +57,7 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-site-text/60">
-          The applicable platform fee is deducted from each eligible successful course sale — never an upfront
+          The applicable platform fee is deducted from each eligible successful course sale, never an upfront
           charge. Prices are in Naira, billed monthly, and you can change plans any time.
         </p>
       </div>

@@ -102,7 +102,7 @@ export default function OwnerStudentsPage() {
           (failedCount
             ? `. ${failedCount} account${failedCount === 1 ? "" : "s"} created but the invite email failed${
                 failedList.length ? ` (${failedList.join(", ")})` : ""
-              } — check mail settings and resend.`
+              }. Check mail settings and resend.`
             : ".")
       );
       setEmails("");

@@ -45,6 +45,10 @@ function VerifyInner() {
 
       setState("active");
       setPlan(json?.plan ?? null);
+      // The owner shell resolved identity (plan tag, paid-feature badges) once on
+      // mount; this page lives inside that shell, so tell it to refetch now that
+      // the plan changed — otherwise "Back to dashboard" would show the old plan.
+      window.dispatchEvent(new CustomEvent("owner-identity-refresh"));
     } catch (err) {
       setState("error");
       setMessage(err instanceof Error ? err.message : String(err));
@@ -84,7 +88,7 @@ function VerifyInner() {
                 You&apos;re on the <span className="capitalize">{plan ?? "new"}</span> plan
               </h1>
               <p className="mb-6 text-sm text-site-muted">
-                Your upgrade is active. Thank you for supporting your {label}.
+                Your upgrade is active. Every feature on this plan is now unlocked for your {label}.
               </p>
               <Link
                 href="/lms/admin"

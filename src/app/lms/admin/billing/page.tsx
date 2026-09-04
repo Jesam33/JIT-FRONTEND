@@ -62,7 +62,7 @@ const FEATURE_LABELS: Record<keyof Features, string> = {
   certificates: "Certificates",
   pre_recorded_video: "Pre-recorded video lessons",
   admission_marketer: "Admission-Marketer network",
-  remove_branding: "Remove “Powered by Jorsas” badge",
+  remove_branding: "Remove “Powered by Jorsastech” badge",
   advanced_analytics: "Advanced analytics",
   advanced_reporting: "Advanced reporting & exports",
   custom_domain: "Custom domain",
@@ -385,7 +385,7 @@ export default function BillingPage() {
 
                     {isContact ? (
                       <a
-                        href="mailto:contactus@jorsastech.com?subject=Enterprise%20plan%20enquiry"
+                        href="mailto:contact@jorsastech.com?subject=Enterprise%20plan%20enquiry"
                         className={`mt-auto block rounded-full px-5 py-2.5 text-center text-sm font-semibold transition ${
                           isCurrent ? "border border-white/20 text-white" : "bg-white text-black hover:brightness-90"
                         }`}
@@ -419,7 +419,7 @@ export default function BillingPage() {
           </div>
 
           <p className="text-xs text-site-muted">
-            The applicable platform fee is deducted from each eligible successful course sale —
+            The applicable platform fee is deducted from each eligible successful course sale,
             never an upfront charge. Prices are in Naira, billed monthly, and you can change plans any time.
           </p>
         </>

@@ -28,32 +28,53 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Center-crop `file` to `aspect` (width / height), scaled so the output is at
- * most `maxWidth` wide, returned as a JPEG File. Transparent areas flatten to
- * white (JPEG has no alpha) — irrelevant for the typical opaque cover photo.
+ * A focal point for a crop, as fractions of the source (0..1). {x:0.5,y:0.5} is
+ * dead-centre; {y:0} pins the crop to the top edge, {x:1} to the right, etc.
+ * Mirrors CSS `object-position` so a drag-to-position preview maps 1:1 onto the
+ * actual crop. Values are clamped into range.
  */
-export async function cropImageToAspect(file: File, aspect: number, maxWidth = 1600): Promise<File> {
+export type CropFocus = { x: number; y: number };
+
+const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+
+/**
+ * Crop `file` to `aspect` (width / height), scaled so the output is at most
+ * `maxWidth` wide, returned as a JPEG File. By default the crop is centred;
+ * pass `focus` (0..1 fractions, like CSS object-position) to let the owner
+ * choose which part of an over-wide / over-tall image the frame keeps.
+ * Transparent areas flatten to white (JPEG has no alpha) — irrelevant for the
+ * typical opaque cover photo.
+ */
+export async function cropImageToAspect(
+  file: File,
+  aspect: number,
+  maxWidth = 1600,
+  focus: CropFocus = { x: 0.5, y: 0.5 },
+): Promise<File> {
   const img = await loadImage(await readAsDataUrl(file));
 
   const srcW = img.naturalWidth;
   const srcH = img.naturalHeight;
   if (!srcW || !srcH) throw new Error("That image has no dimensions.");
 
-  // Largest centered crop of the source matching the target aspect.
+  const fx = clamp01(focus.x);
+  const fy = clamp01(focus.y);
+
+  // Largest crop of the source matching the target aspect, positioned by focus.
   const srcAspect = srcW / srcH;
   let cropW: number;
   let cropH: number;
   if (srcAspect > aspect) {
-    // Source too wide → trim the sides.
+    // Source too wide → trim the sides; the focal X chooses which slice we keep.
     cropH = srcH;
     cropW = Math.round(srcH * aspect);
   } else {
-    // Source too tall (or exact) → trim top/bottom.
+    // Source too tall (or exact) → trim top/bottom; focal Y chooses the slice.
     cropW = srcW;
     cropH = Math.round(srcW / aspect);
   }
-  const sx = Math.round((srcW - cropW) / 2);
-  const sy = Math.round((srcH - cropH) / 2);
+  const sx = Math.round((srcW - cropW) * fx);
+  const sy = Math.round((srcH - cropH) * fy);
 
   const outW = Math.min(cropW, maxWidth);
   const outH = Math.round(outW / aspect);

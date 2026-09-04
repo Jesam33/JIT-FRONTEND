@@ -1433,7 +1433,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -1991,7 +1991,7 @@ const policiesRaw: Policy[] = [
         "type": "list",
         "items": [
           "who created the recording;",
-          "the Online Academy–Lecturer agreement;",
+          "the Online Academy-Lecturer agreement;",
           "applicable copyright law;",
           "Platform terms; and",
           "any separate contractual arrangements."
@@ -2812,7 +2812,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -4254,7 +4254,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -5771,7 +5771,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -7142,7 +7142,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -7919,7 +7919,7 @@ const policiesRaw: Policy[] = [
       {
         "type": "section",
         "num": "31",
-        "title": "Lecturer–Student Relationships"
+        "title": "Lecturer-Student Relationships"
       },
       {
         "type": "paragraph",
@@ -8496,7 +8496,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -9678,7 +9678,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   },
@@ -10949,7 +10949,7 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "copyright",
-        "text": "© 2026 Jorsas Tech — JIT Campus. All rights reserved."
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
       }
     ]
   }
