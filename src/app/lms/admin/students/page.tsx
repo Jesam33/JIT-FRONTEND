@@ -15,6 +15,17 @@ type Student = {
   created_at: string | null;
 };
 
+// Minimal shape for the invite form's course picker (from OWNER_API.courses).
+// price / prerecorded_price arrive as decimal strings.
+type OwnerCourse = {
+  id: number;
+  title: string;
+  price: number | string | null;
+  prerecorded_price: number | string | null;
+  is_prerecorded_available: boolean;
+  is_active: boolean;
+};
+
 export default function OwnerStudentsPage() {
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
@@ -28,6 +39,15 @@ export default function OwnerStudentsPage() {
   // false → some accounts were created but their invite email could not be sent.
   const [inviteOk, setInviteOk] = useState(true);
 
+  // Course-invite controls. Empty courseId keeps the original behaviour (create
+  // course-less accounts via importStudents); picking a course attaches it so
+  // the invitee knows what they're joining, and — when it's paid — the toggle
+  // decides whether they pay (via the academy's Paystack) or are comped in.
+  const [courses, setCourses] = useState<OwnerCourse[]>([]);
+  const [courseId, setCourseId] = useState("");
+  const [learningMode, setLearningMode] = useState<"live" | "pre_recorded">("live");
+  const [requiresPayment, setRequiresPayment] = useState(true);
+
   // Per-row actions: inline two-step confirm before a destructive remove (same
   // pattern as the Courses page), plus a re-send-invite spinner. `actionMsg`
   // surfaces the outcome (esp. whether a resend email actually went out).
@@ -40,7 +60,12 @@ export default function OwnerStudentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(OWNER_API.students, { headers: ownerAuthHeaders() });
+      // Students + courses in parallel; the course list feeds the invite picker
+      // and refreshes after each invite so seat counts stay current.
+      const [res, cRes] = await Promise.all([
+        fetch(OWNER_API.students, { headers: ownerAuthHeaders() }),
+        fetch(OWNER_API.courses, { headers: ownerAuthHeaders() }),
+      ]);
       if (res.status === 401 || res.status === 403) {
         router.replace("/lms/admin/login");
         return;
@@ -52,6 +77,10 @@ export default function OwnerStudentsPage() {
       const json = await res.json();
       setStudents(json.students ?? []);
       setTenantId(json.tenant_id ?? null);
+      if (cRes.ok) {
+        const cj = await cRes.json().catch(() => ({}));
+        setCourses(((cj.courses ?? []) as OwnerCourse[]).filter((c) => c.is_active));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -76,12 +105,52 @@ export default function OwnerStudentsPage() {
       .filter(Boolean);
     if (!list.length) {
       setInviteMsg("Enter at least one email address.");
+      setInviteOk(false);
       return;
     }
     setInviting(true);
     setInviteMsg(null);
     setInviteOk(true);
     try {
+      if (courseId) {
+        // Course invite: attach the course, honour the pay/comp choice. The
+        // "requires payment" flag only bites on a paid course — a free course
+        // always skips payment regardless of the toggle.
+        const selected = courses.find((c) => String(c.id) === courseId);
+        const base = selected
+          ? learningMode === "pre_recorded" && selected.prerecorded_price != null
+            ? Number(selected.prerecorded_price)
+            : Number(selected.price ?? 0)
+          : 0;
+        const res = await fetch(OWNER_API.inviteStudentToCourse, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
+          body: JSON.stringify({
+            emails: list,
+            course_id: Number(courseId),
+            learning_mode: learningMode,
+            requires_payment: base > 0 ? requiresPayment : false,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          // 409 = paid invite but the academy hasn't linked its payout bank yet.
+          setInviteOk(false);
+          setInviteMsg(json?.message || `Could not send invites (HTTP ${res.status}).`);
+          return;
+        }
+        const failedList: string[] = json.failed ?? [];
+        // Held-back invites (plan student cap / course seat cap) aren't failures
+        // but do need the owner's attention, so surface them in the warning tone.
+        const held = (json.limited ?? 0) + (json.course_full ?? 0);
+        setInviteOk(failedList.length === 0 && held === 0);
+        setInviteMsg(json.message || `Invited ${json.invited ?? 0} student(s).`);
+        setEmails("");
+        load();
+        return;
+      }
+
+      // No course selected → original bulk importer (creates course-less accounts).
       const res = await fetch(OWNER_API.importStudents, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
@@ -171,6 +240,16 @@ export default function OwnerStudentsPage() {
     }
   };
 
+  // Fee preview for the currently-selected course + mode. Drives whether the
+  // "requires payment" toggle is shown (a free course can't be paid for).
+  const selectedCourse = courses.find((c) => String(c.id) === courseId) ?? null;
+  const baseFee = selectedCourse
+    ? learningMode === "pre_recorded" && selectedCourse.prerecorded_price != null
+      ? Number(selectedCourse.prerecorded_price)
+      : Number(selectedCourse.price ?? 0)
+    : 0;
+  const isPaidCourse = baseFee > 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -184,7 +263,8 @@ export default function OwnerStudentsPage() {
       <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
         <h2 className="text-lg font-semibold text-white">Invite students</h2>
         <p className="mt-1 text-sm text-site-muted">
-          Paste one or more email addresses. Each student gets an email with a link to set their password and sign in.
+          Paste one or more email addresses, then optionally attach a course. With a course selected, each invite names the
+          course — and if it&apos;s a paid course, the student gets a link to pay and enrol; otherwise they just set a password.
         </p>
         <form onSubmit={invite} className="mt-4 space-y-3">
           <textarea
@@ -194,13 +274,66 @@ export default function OwnerStudentsPage() {
             placeholder="student1@example.com, student2@example.com"
             className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white"
           />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-site-muted">Course</span>
+              <select
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-2.5 text-sm text-white"
+              >
+                <option value="">— No specific course (just create accounts) —</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.title}
+                    {Number(c.price ?? 0) > 0 ? ` — ₦${Number(c.price).toLocaleString()}` : " — Free"}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {selectedCourse?.is_prerecorded_available && (
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-site-muted">Learning mode</span>
+                <select
+                  value={learningMode}
+                  onChange={(e) => setLearningMode(e.target.value as "live" | "pre_recorded")}
+                  className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-2.5 text-sm text-white"
+                >
+                  <option value="live">Live classes</option>
+                  <option value="pre_recorded">Pre-recorded</option>
+                </select>
+              </label>
+            )}
+          </div>
+
+          {courseId && isPaidCourse && (
+            <label className="flex items-start gap-3 rounded-xl border border-white/15 bg-black/20 p-3 text-sm text-white/85">
+              <input
+                type="checkbox"
+                checked={requiresPayment}
+                onChange={(e) => setRequiresPayment(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-site-primary"
+              />
+              <span>
+                Requires payment
+                <span className="mt-0.5 block text-xs text-site-muted">
+                  {requiresPayment
+                    ? `Students pay ₦${baseFee.toLocaleString()} to enrol — the invite email carries a payment link.`
+                    : "Comped — students are enrolled free and just set a password."}
+                </span>
+              </span>
+            </label>
+          )}
+
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="submit"
               disabled={inviting || !tenantId}
               className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
             >
-              {inviting ? "Sending…" : "Send invites"}
+              {inviting ? "Sending…" : courseId ? "Invite to course" : "Send invites"}
             </button>
             {inviteMsg && <p className={`text-sm ${inviteOk ? "text-site-muted" : "text-amber-300"}`}>{inviteMsg}</p>}
           </div>

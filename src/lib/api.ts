@@ -36,6 +36,10 @@ export const OWNER_API = {
   students: api("/api/frontend/lms/owner/students"),
   deleteStudent: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}`),
   resendStudentInvite: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/resend-invite`),
+  // Invite students straight into a specific course — paid via the academy's
+  // own Paystack (pay-first) or comped in. Distinct from importStudents, which
+  // only creates course-less accounts.
+  inviteStudentToCourse: api("/api/frontend/lms/owner/students/invite"),
   staff: api("/api/frontend/lms/owner/staff"),
   // Owner staff management (mirrors the student trio): remove an instructor,
   // re-send their set-password invite, suspend/re-enable portal access.

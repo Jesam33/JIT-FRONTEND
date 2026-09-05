@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AUTH_API } from "@/lib/api";
+import { AUTH_API, PUBLIC_API } from "@/lib/api";
 import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 export default function LmsSignupPage() {
@@ -29,6 +29,14 @@ function PageContent() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Paid owner invite: the invite carries a fee and a pending registration, so
+  // this page collects payment first (via the academy's Paystack) instead of
+  // offering a set-password form.
+  const [requiresPayment, setRequiresPayment] = useState(false);
+  const [registrationId, setRegistrationId] = useState<number | null>(null);
+  const [amount, setAmount] = useState(0);
+  const [currency, setCurrency] = useState("NGN");
+
   useEffect(() => {
     fetch(AUTH_API.invite(token))
       .then((res) => res.json())
@@ -40,6 +48,10 @@ function PageContent() {
           if (data.learning_mode === "pre_recorded") {
             setMode("pre_recorded");
           }
+          setRequiresPayment(Boolean(data.requires_payment));
+          setRegistrationId(data.registration_id ?? null);
+          setAmount(Number(data.amount ?? 0));
+          setCurrency(data.currency ?? "NGN");
         }
       });
   }, [token]);
@@ -70,51 +82,124 @@ function PageContent() {
     router.push("/lms/app");
   }
 
+  // Format the invite fee. Owner invites charge in NGN (₦); currency is carried
+  // through in case that ever changes.
+  const money = (n: number) =>
+    `${currency === "NGN" ? "₦" : ""}${n.toLocaleString()}${currency !== "NGN" ? ` ${currency}` : ""}`;
+
+  // Paid invite: kick off Paystack against the pending registration (the tenant
+  // is bound server-side from the row), then hand off to the academy's checkout.
+  // After payment the student sets their password from the confirmation email —
+  // the same path public paid registrations already use.
+  async function payAndJoin() {
+    if (!registrationId) return;
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const res = await fetch(PUBLIC_API.paystackInitialize, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registration_id: registrationId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.message ?? "Could not start payment. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      if (data?.authorization_url) {
+        window.location.href = data.authorization_url;
+        return;
+      }
+      // No authorization_url ⇒ the backend settled it without a gateway (zero
+      // fallback). Point them at their email to finish setting up.
+      setMessage("Your enrolment is confirmed. Check your email to set your password and sign in.");
+      setSubmitting(false);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+      setSubmitting(false);
+    }
+  }
+
   return (
     <section className="section-pad section-divider">
       <div className="container-wide max-w-3xl rounded-[22px] border border-white/20 bg-white/[0.04] p-8">
         <p className="text-xs uppercase tracking-[0.2em] text-white/65">Student Portal Onboarding</p>
         <h1 className="mt-3 text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-          Welcome to Jorsas Student Portal
+          {requiresPayment ? "Complete your enrolment" : "Welcome to your Student Portal"}
         </h1>
         <p className="mt-3 text-sm text-white/75">Email: {email || "Loading..."}</p>
 
         <div className="mt-6 flex gap-2 text-xs">
-          <span className="rounded-full bg-white px-3 py-1 text-black">Account Setup</span>
+          <span className="rounded-full bg-white px-3 py-1 text-black">{requiresPayment ? "Enrolment & Payment" : "Account Setup"}</span>
         </div>
 
         <div className="mt-6 space-y-4">
           <div className="rounded-xl border border-white/20 bg-black/20 p-4 text-sm text-white/85">
             <p>
-              Course from your registration: <span className="font-semibold text-white">{courseName || "Not provided"}</span>
+              Course: <span className="font-semibold text-white">{courseName || "Not provided"}</span>
             </p>
             <p className="mt-1">
               Learning mode: <span className="font-semibold text-white">{mode === "live" ? "Live Classes" : "Pre-recorded"}</span>
             </p>
+            {requiresPayment && (
+              <p className="mt-1">
+                Fee: <span className="font-semibold text-white">{money(amount)}</span>
+              </p>
+            )}
           </div>
-          <p className="text-sm text-white/80">
-            Hi {firstName || "Student"}, your course selection is already saved. Create your password to continue.
-          </p>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create password"
-              className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 pr-12 text-sm text-white"
-            />
-            <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/75" aria-label="Toggle password visibility">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex gap-3">
-            <button type="button" onClick={completeSignup} disabled={submitting} className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">
-              {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Setting up...</span> : "Finish and Enter Student Portal"}
-            </button>
-          </div>
+
+          {requiresPayment ? (
+            <>
+              <p className="text-sm text-white/80">
+                Hi {firstName || "there"}, you&apos;ve been invited to join{" "}
+                <span className="font-semibold text-white">{courseName || "this course"}</span>. Complete your enrolment to
+                secure your place — you&apos;ll set your password right after payment.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={payAndJoin}
+                  disabled={submitting || !registrationId}
+                  className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Redirecting…
+                    </span>
+                  ) : (
+                    `Complete enrolment & pay ${money(amount)}`
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-white/80">
+                Hi {firstName || "Student"}, your course selection is already saved. Create your password to continue.
+              </p>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create password"
+                  className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 pr-12 text-sm text-white"
+                />
+                <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/75" aria-label="Toggle password visibility">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={completeSignup} disabled={submitting} className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black disabled:opacity-60">
+                  {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Setting up...</span> : "Finish and Enter Student Portal"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {message ? <p className="mt-4 text-sm text-red-300">{message}</p> : null}
