@@ -7,15 +7,20 @@ import { useToast } from "@/components/ToastProvider";
 
 // AI training-material generator (Gamma, Pro+). The owner describes a topic, we
 // kick off an async Gamma generation, poll it to completion, then let them save
-// the finished (editable, durable) Gamma link into one of their courses as a
-// material. Every call sends the owner bearer token; a lower-plan academy hits
-// the backend Pro gate → 402 → maybeUpgrade() raises the shared UpgradeModal.
+// the finished material into one of their courses. Every call sends the owner
+// bearer token; a lower-plan academy hits the backend Pro gate → 402 →
+// maybeUpgrade() raises the shared UpgradeModal.
 //
-// NOTE: we deliberately save the durable `gammaUrl` (the editable doc), never the
-// export URL — Gamma's export links expire in ~1 week, so the PDF/PPTX is offered
-// only as an immediate one-off download here.
+// Two save targets:
+//  • Into a MODULE → we store a real downloadable copy (the PDF/PPTX export) as a
+//    module material AND keep the editable Gamma link, so students can open the
+//    file directly and staff can still edit the source in Gamma.
+//  • Into the whole COURSE → we store the durable, editable Gamma link only.
+// Gamma's export links expire (~1 week), which is exactly why the module path
+// downloads the bytes now and serves our own copy rather than saving that link.
 
 type Course = { id: number; title: string };
+type Module = { id: number; title: string };
 
 // The generation lifecycle. `starting` = the create POST is in flight; `pending`
 // = we're polling Gamma; then it resolves to completed / failed.
@@ -48,8 +53,9 @@ export default function OwnerAiMaterialsPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  // Courses power the "save into" dropdown (module-level saving is backend-ready
-  // but there's no owner modules-listing endpoint yet, so we target courses here).
+  // Courses power the "save into" dropdown; picking a course then loads its
+  // modules, so the owner can target a specific module (which stores the
+  // downloadable file) or the course as a whole (the editable link only).
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
 
@@ -58,10 +64,18 @@ export default function OwnerAiMaterialsPage() {
   const [genError, setGenError] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
+  // The export format actually requested for THIS generation (captured at kick-off,
+  // not read from the live form at save time — the owner may edit the brief after).
+  // The backend defaults an omitted export to PDF, so a downloadable copy always
+  // exists; "pptx" only when they explicitly picked PowerPoint.
+  const [resultFormat, setResultFormat] = useState<"pdf" | "pptx">("pdf");
 
-  // Save-into-course block.
+  // Save-into block: a course (required) and, within it, an optional module.
   const [saveTitle, setSaveTitle] = useState("");
   const [saveCourseId, setSaveCourseId] = useState("");
+  const [saveModuleId, setSaveModuleId] = useState(""); // "" = the course as a whole
+  const [modules, setModules] = useState<Module[]>([]);
+  const [modulesLoading, setModulesLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
@@ -100,6 +114,46 @@ export default function OwnerAiMaterialsPage() {
       setCoursesLoading(false);
     }
   }, [router]);
+
+  // Load the selected course's modules so the owner can save into a specific one.
+  // Called whenever the target course changes; the module selection resets to the
+  // course-level default ("") each time so a stale module id can't leak across.
+  const loadModules = useCallback(
+    async (courseId: string) => {
+      setSaveModuleId("");
+      if (!courseId) {
+        setModules([]);
+        return;
+      }
+      setModulesLoading(true);
+      try {
+        const res = await fetch(OWNER_API.courseModules(courseId), { headers: ownerAuthHeaders() });
+        if (res.status === 401 || res.status === 403) {
+          router.replace("/lms/admin/login");
+          return;
+        }
+        if (await maybeUpgrade(res)) return;
+        if (!res.ok) {
+          setModules([]);
+          return;
+        }
+        const json = await res.json();
+        setModules(
+          (json.modules ?? []).map((m: { id: number; title: string }) => ({ id: m.id, title: m.title })),
+        );
+      } catch {
+        setModules([]); // non-fatal — owner can still save into the course as a whole
+      } finally {
+        setModulesLoading(false);
+      }
+    },
+    [router],
+  );
+
+  // Refresh the module list whenever the chosen course changes.
+  useEffect(() => {
+    loadModules(saveCourseId);
+  }, [saveCourseId, loadModules]);
 
   useEffect(() => {
     if (!getOwnerToken()) {
@@ -165,6 +219,10 @@ export default function OwnerAiMaterialsPage() {
     setGenError(null);
     setResultUrl(null);
     setExportUrl(null);
+    // Lock in the export format for this run (PDF unless PowerPoint was chosen) so
+    // the eventual save stores the file with the right type even if the owner edits
+    // the brief afterwards. Mirrors the backend's "default an omitted export to PDF".
+    setResultFormat(form.exportAs === "pptx" ? "pptx" : "pdf");
     setSaveMsg(null);
     setPhase("starting");
 
@@ -239,10 +297,24 @@ export default function OwnerAiMaterialsPage() {
     setSaving(true);
     setSaveMsg(null);
     try {
+      // Into a module → send the export URL + format so the backend downloads a
+      // real file (and keeps the editable link). Into the course as a whole →
+      // just the editable Gamma link, as before.
+      const body: Record<string, unknown> = { title, url: resultUrl };
+      if (saveModuleId) {
+        body.module_id = Number(saveModuleId);
+        if (exportUrl) {
+          body.export_url = exportUrl;
+          body.format = resultFormat;
+        }
+      } else {
+        body.course_id = Number(saveCourseId);
+      }
+
       const res = await fetch(OWNER_API.aiSave, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
-        body: JSON.stringify({ title, url: resultUrl, course_id: Number(saveCourseId) }),
+        body: JSON.stringify(body),
       });
       if (res.status === 401 || res.status === 403) {
         router.replace("/lms/admin/login");
@@ -258,8 +330,22 @@ export default function OwnerAiMaterialsPage() {
         return;
       }
       const courseTitle = courses.find((c) => String(c.id) === String(saveCourseId))?.title || "your course";
-      toast(`Saved “${title}” to ${courseTitle}.`, "success");
-      setSaveMsg({ kind: "ok", text: `Saved to ${courseTitle}. Students will find it under the course's materials.` });
+      if (saveModuleId) {
+        const moduleTitle = modules.find((m) => String(m.id) === String(saveModuleId))?.title || "the module";
+        // `downloaded` reflects whether the backend actually stored a file (vs.
+        // falling back to the editable link if the export couldn't be fetched).
+        const asFile = j?.downloaded === true;
+        toast(`Saved “${title}” to ${moduleTitle}.`, "success");
+        setSaveMsg({
+          kind: "ok",
+          text: asFile
+            ? `Saved to ${moduleTitle} as a downloadable file — students will find it in the module, and the editable Gamma copy is kept too.`
+            : `Saved to ${moduleTitle} as an editable Gamma link (the downloadable copy couldn't be fetched this time).`,
+        });
+      } else {
+        toast(`Saved “${title}” to ${courseTitle}.`, "success");
+        setSaveMsg({ kind: "ok", text: `Saved to ${courseTitle}. Students will find it under the course's materials.` });
+      }
     } catch (err) {
       setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
     } finally {
@@ -414,7 +500,7 @@ export default function OwnerAiMaterialsPage() {
                 <div>
                   <p className="text-sm font-semibold text-emerald-300">Your material is ready</p>
                   <p className="mt-0.5 text-sm text-site-muted">
-                    Open it in Gamma to review or edit, then save the link into a course below.
+                    Open it in Gamma to review or edit, then save it into a course or a specific module below.
                   </p>
                 </div>
                 <button
@@ -449,13 +535,14 @@ export default function OwnerAiMaterialsPage() {
                 ) : null}
               </div>
 
-              {/* Save into a course. We persist the durable Gamma link; students open
-                  it from the course's materials. */}
+              {/* Save into a course (editable link) or a specific module (a real
+                  downloadable file + the editable link). */}
               <div className="rounded-2xl border border-white/12 bg-black/20 p-5">
-                <p className="text-sm font-semibold text-white">Save to a course</p>
+                <p className="text-sm font-semibold text-white">Save to your course</p>
                 <p className="mt-0.5 text-xs text-site-muted">
-                  This adds the Gamma link as a material. Make sure the document&apos;s share setting in Gamma lets your
-                  students view it.
+                  Choose a course, and optionally a module. Saving into a module stores a downloadable copy students
+                  can open right away and keeps the editable Gamma link too. Make sure the document&apos;s share
+                  setting in Gamma lets your students view it.
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
@@ -492,6 +579,33 @@ export default function OwnerAiMaterialsPage() {
                     </select>
                   </div>
                 </div>
+                <div className="mt-4">
+                  <label className={labelClass}>Module (optional)</label>
+                  <select
+                    value={saveModuleId}
+                    onChange={(e) => setSaveModuleId(e.target.value)}
+                    disabled={modulesLoading || !saveCourseId}
+                    className={inputClass}
+                  >
+                    <option value="" className="bg-[#0b0b0b]">
+                      Whole course — editable link only
+                    </option>
+                    {modules.map((m) => (
+                      <option key={m.id} value={String(m.id)} className="bg-[#0b0b0b]">
+                        {m.title}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-site-muted">
+                    {modulesLoading
+                      ? "Loading modules…"
+                      : saveModuleId
+                        ? "A downloadable copy will be added to this module, plus the editable Gamma link."
+                        : modules.length
+                          ? "Pick a module to save a downloadable file into it, or leave as the whole course."
+                          : "This course has no modules yet — it'll be saved to the course as a link."}
+                  </p>
+                </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4">
                   <button
                     type="button"
@@ -499,7 +613,7 @@ export default function OwnerAiMaterialsPage() {
                     disabled={saving || !courses.length || !resultUrl}
                     className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
                   >
-                    {saving ? "Saving…" : "Save to course"}
+                    {saving ? "Saving…" : saveModuleId ? "Save to module" : "Save to course"}
                   </button>
                   {saveMsg ? (
                     <p className={`text-sm ${saveMsg.kind === "ok" ? "text-emerald-300" : "text-red-300"}`}>

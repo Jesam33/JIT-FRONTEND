@@ -98,8 +98,9 @@ export default function RootLayout({
                   // page. Mirrors the branded-area check in AppChrome.tsx.
                   var path = location.pathname;
                   if (!(path.startsWith('/lms') || path === '/i' || path.startsWith('/i/'))) return;
+                  var PRIMARY = ${JSON.stringify(process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas")};
                   var m = document.cookie.match(/(?:^|;\\s*)tenant=([^;]*)/);
-                  var slug = (m && m[1]) ? decodeURIComponent(m[1]) : ${JSON.stringify(process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas")};
+                  var slug = (m && m[1]) ? decodeURIComponent(m[1]) : PRIMARY;
                   var raw = localStorage.getItem('lms_branding:' + slug);
                   if (!raw) return;
                   var b = JSON.parse(raw);
@@ -115,6 +116,23 @@ export default function RootLayout({
                     link.setAttribute('data-brand-favicon', '');
                     link.href = b.logo_url;
                     document.head.appendChild(link);
+                  } else if (slug && slug !== PRIMARY) {
+                    // Logo-less NON-primary academy: draw a generated initial mark
+                    // on its brand color so the tab never shows the Jorsas "J".
+                    // Mirrors initialMarkDataUri() in lib/initial-mark.ts.
+                    var mk = (slug.match(/[a-zA-Z0-9]/) || ['•'])[0].toUpperCase();
+                    var col = (b.primary_color && hex.test(b.primary_color)) ? b.primary_color : '#ed180d';
+                    var rr = parseInt(col.slice(1,3),16), gg = parseInt(col.slice(3,5),16), bb = parseInt(col.slice(5,7),16);
+                    var tc = (0.299*rr + 0.587*gg + 0.114*bb) > 160 ? '#111111' : '#ffffff';
+                    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+                      + '<rect width="64" height="64" rx="12" fill="' + col + '"/>'
+                      + '<text x="32" y="32" font-family="Arial,Helvetica,sans-serif" font-size="38" font-weight="700" fill="' + tc + '" text-anchor="middle" dominant-baseline="central">' + mk + '</text>'
+                      + '</svg>';
+                    var link2 = document.createElement('link');
+                    link2.rel = 'icon';
+                    link2.setAttribute('data-brand-favicon', '');
+                    link2.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+                    document.head.appendChild(link2);
                   }
                 } catch (e) {}
               })()

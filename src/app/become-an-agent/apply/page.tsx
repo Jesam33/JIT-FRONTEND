@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AGENT_API, PUBLIC_API } from "../../../lib/api";
+import { tenantHeaders, pinTenantFromLocation } from "../../../lib/tenant-client";
 
 const qualifications = [
   "SSCE / WAEC / NECO",
@@ -24,12 +25,36 @@ export default function AgentApplyPage() {
   const [step, setStep] = useState(1);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  // Academy-aware: an application opened from an academy storefront carries
+  // ?tenant={slug}. We pin it so the apply POST (tenantHeaders) binds to that
+  // academy, list THAT academy's courses, and greet the applicant by its name.
+  // Absent (the apex Jorsas program) it falls back to the primary courses feed.
+  const [tenant, setTenant] = useState<string | null>(null);
+  const [academyName, setAcademyName] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(PUBLIC_API.instituteCourses)
-      .then((r) => r.json())
-      .then((data: Course[]) => setCourses(data))
-      .catch(() => {});
+    pinTenantFromLocation();
+    const slug = new URL(window.location.href).searchParams.get("tenant");
+    setTenant(slug);
+    if (slug) {
+      // The academy storefront returns its name + its own active courses in one
+      // call, so we scope both the greeting and the course checklist to it.
+      fetch(PUBLIC_API.storefront(slug))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { institute?: { name?: string }; courses?: Course[] } | null) => {
+          if (!d) return;
+          if (d.institute?.name) setAcademyName(d.institute.name);
+          if (Array.isArray(d.courses)) {
+            setCourses(d.courses.map((c) => ({ id: c.id, slug: c.slug, title: c.title })));
+          }
+        })
+        .catch(() => {});
+    } else {
+      fetch(PUBLIC_API.instituteCourses)
+        .then((r) => r.json())
+        .then((data: Course[]) => setCourses(data))
+        .catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
@@ -63,7 +88,7 @@ export default function AgentApplyPage() {
     try {
       const res = await fetch(AGENT_API.apply, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...tenantHeaders() },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
@@ -104,15 +129,15 @@ export default function AgentApplyPage() {
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Application Submitted!</h1>
             <p className="text-sm text-site-muted leading-relaxed">
-              Thank you for applying to be a Jorsas Admission Marketer! Our partnership team is reviewing your profile. We will email you once your portal credentials and referral code are generated.
+              Thank you for applying to be an Admission Marketer for {academyName ?? "Jorsas"}! Our partnership team is reviewing your profile. We will email you once your portal credentials and referral code are generated.
             </p>
           </div>
           <div className="pt-2">
             <Link
-              href="/"
+              href={tenant ? `/i/${tenant}` : "/"}
               className="inline-block w-full rounded-full bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-500 transition shadow-[0_8px_20px_-4px_rgba(237,24,13,0.3)]"
             >
-              Return Home
+              {tenant ? "Back to Courses" : "Return Home"}
             </Link>
           </div>
         </div>
@@ -128,7 +153,7 @@ export default function AgentApplyPage() {
         
         {/* Back navigation link */}
         <div className="mb-8">
-          <Link href="/become-an-agent" className="inline-flex items-center gap-2 text-sm text-site-muted hover:text-site-text transition">
+          <Link href={tenant ? `/become-an-agent?tenant=${encodeURIComponent(tenant)}` : "/become-an-agent"} className="inline-flex items-center gap-2 text-sm text-site-muted hover:text-site-text transition">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>

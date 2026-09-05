@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { getTenantSlug } from "@/lib/tenant-client";
+import { initialMarkDataUri } from "@/lib/initial-mark";
+
+const PRIMARY = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
 
 // Swaps the browser-tab icon to the institute's own logo at runtime (owners /
 // staff / students otherwise see the Jorsas favicon inside a customised
@@ -31,21 +35,49 @@ import { useEffect } from "react";
 // default. A full page load (which resets <head>) or the next area's own favicon
 // handles reverting to Jorsas; platform pages that must look default call
 // resetBrandingToDefault() explicitly (see lib/branding-cache.ts).
-export default function DynamicFavicon({ href }: { href?: string | null }) {
+//
+// `fallbackColor` (the academy's primary color) drives a GENERATED initial mark
+// for a NON-primary academy that has no uploaded logo: rather than leak the
+// Jorsas "J", the tab shows the academy's initial (from its tenant slug) on its
+// brand color. The generated mark never overwrites a real logo — it only fills
+// the gap when `href` is absent and the tenant is not the Jorsas primary.
+export default function DynamicFavicon({ href, fallbackColor }: { href?: string | null; fallbackColor?: string | null }) {
   useEffect(() => {
-    if (typeof document === "undefined" || !href) return;
+    if (typeof document === "undefined") return;
     const head = document.head;
 
-    // Replace any brand favicon we (or the pre-paint script) set previously, so
-    // there is exactly one and it reflects the current logo.
-    head.querySelectorAll("link[data-brand-favicon]").forEach((l) => l.remove());
+    if (href) {
+      // Real logo — replace any brand favicon we set previously so there is
+      // exactly one and it reflects the current logo.
+      head.querySelectorAll("link[data-brand-favicon]").forEach((l) => l.remove());
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.setAttribute("data-brand-favicon", "");
+      link.href = href;
+      head.appendChild(link);
+      return;
+    }
+
+    // No logo. Generate an initial mark for a NON-primary academy so the tab
+    // never shows the Jorsas "J". The primary keeps its own (root metadata)
+    // icon, so we do nothing there — and, per rule 1, we never tear down an
+    // existing favicon to reveal the default.
+    const slug = getTenantSlug();
+    if (!slug || slug === PRIMARY) return;
+
+    // Never clobber a real logo (e.g. one the pre-paint set from cached
+    // branding): if any existing brand favicon is a real URL, leave it. Only a
+    // previously-generated data: mark may be refreshed to the current color.
+    const existing = Array.from(head.querySelectorAll<HTMLLinkElement>("link[data-brand-favicon]"));
+    if (existing.some((l) => !l.href.startsWith("data:"))) return;
+    existing.forEach((l) => l.remove());
 
     const link = document.createElement("link");
     link.rel = "icon";
     link.setAttribute("data-brand-favicon", "");
-    link.href = href;
+    link.href = initialMarkDataUri(slug, fallbackColor ?? null);
     head.appendChild(link);
-  }, [href]);
+  }, [href, fallbackColor]);
 
   return null;
 }

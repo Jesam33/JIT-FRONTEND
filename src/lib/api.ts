@@ -79,6 +79,9 @@ export const OWNER_API = {
   aiGenerate: api("/api/frontend/lms/owner/ai/materials/generate"),
   aiStatus: (id: string) => api(`/api/frontend/lms/owner/ai/materials/${encodeURIComponent(id)}`),
   aiSave: api("/api/frontend/lms/owner/ai/materials/save"),
+  // Modules of one owner course — populates the AI-materials "save into module"
+  // picker. Saving into a module (vs. the course) stores the downloadable export.
+  courseModules: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}/modules`),
   signup: api("/api/signup"),
   signupVerify: (ref: string) => api(`/api/signup/verify?reference=${encodeURIComponent(ref)}`),
   plans: api("/api/plans"),

@@ -36,7 +36,7 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
 
   return (
     <StudentGuard>
-      <DynamicFavicon href={branding?.logo_url ?? null} />
+      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
       {!hideSidebar && <IdleLogout tokenKeys={["lms_student_token"]} redirectTo={() => tenantLoginPath("student")} />}
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
          <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>

@@ -16,6 +16,9 @@ type Course = {
   requirements: string | null;
   price: number | string | null;
   original_price?: number | string | null;
+  // Separate (cheaper) price charged when a student picks pre-recorded. Null =
+  // no distinct price, so pre-recorded is charged at the live `price`.
+  prerecorded_price?: number | string | null;
   cover_image_url?: string | null;
   rating_average?: number;
   rating_count?: number;
@@ -58,6 +61,7 @@ const emptyForm = {
   requirements: "",
   price: "",
   originalPrice: "",
+  prerecordedPrice: "",
   maxStudents: "",
   isLive: true,
   isPrerecorded: false,
@@ -207,6 +211,8 @@ export default function OwnerCoursesPage() {
       requirements: c.requirements ?? "",
       price: c.price === null || c.price === undefined ? "" : String(c.price),
       originalPrice: c.original_price === null || c.original_price === undefined ? "" : String(c.original_price),
+      prerecordedPrice:
+        c.prerecorded_price === null || c.prerecorded_price === undefined ? "" : String(c.prerecorded_price),
       maxStudents: c.max_students ? String(c.max_students) : "",
       isLive: !!c.is_live_available,
       isPrerecorded: !!c.is_prerecorded_available,
@@ -237,6 +243,21 @@ export default function OwnerCoursesPage() {
     if (form.originalPrice !== "" && (Number.isNaN(Number(form.originalPrice)) || Number(form.originalPrice) < 0)) {
       setSaveMsg({ kind: "err", text: "Original price must be a number (0 or more)." });
       return;
+    }
+    // A distinct pre-recorded price is optional, but when set it must be a
+    // positive number below the live price — the whole point is that the
+    // pre-recorded option is the cheaper one. Only meaningful when pre-recorded is
+    // available on this plan and toggled on for the course.
+    const prerecordedActive = prerecordedAllowed && form.isPrerecorded;
+    if (prerecordedActive && form.prerecordedPrice !== "") {
+      if (Number.isNaN(Number(form.prerecordedPrice)) || Number(form.prerecordedPrice) <= 0) {
+        setSaveMsg({ kind: "err", text: "Pre-recorded price must be greater than ₦0." });
+        return;
+      }
+      if (form.price !== "" && Number(form.prerecordedPrice) >= Number(form.price)) {
+        setSaveMsg({ kind: "err", text: "Pre-recorded price should be lower than the live price." });
+        return;
+      }
     }
     // Capacity is the seats for this course. It must be at least 1 and can't
     // exceed the plan's student cap (Free = 1 student). Pro/Enterprise have no
@@ -271,6 +292,9 @@ export default function OwnerCoursesPage() {
       // Pre-recorded is a Pro+ feature; never send it as available on a plan
       // that doesn't include it, even if a stale form state had it checked.
       is_prerecorded_available: prerecordedAllowed && form.isPrerecorded,
+      // Distinct (cheaper) pre-recorded price. Null when unset or pre-recorded
+      // isn't active — the backend then charges the live price for both modes.
+      prerecorded_price: prerecordedActive && form.prerecordedPrice !== "" ? Number(form.prerecordedPrice) : null,
       is_active: form.isActive,
     };
 
@@ -596,6 +620,29 @@ export default function OwnerCoursesPage() {
             </label>
           </div>
 
+          {/* Pre-recorded price — only when pre-recorded is available on this plan
+              AND toggled on for this course. Optional: left blank, pre-recorded is
+              charged at the live price. */}
+          {prerecordedAllowed && form.isPrerecorded ? (
+            <div className="sm:max-w-xs">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                Pre-recorded price (₦)
+              </label>
+              <input
+                type="number"
+                min={1}
+                step="0.01"
+                value={form.prerecordedPrice}
+                onChange={(e) => setField("prerecordedPrice", e.target.value)}
+                placeholder="Optional — same as live if blank"
+                className={inputClass}
+              />
+              <p className="mt-1 text-[11px] text-white/40">
+                Charged when a student picks pre-recorded. Usually lower than the live price.
+              </p>
+            </div>
+          ) : null}
+
           {/* Cover image — fronts the storefront card. Required for every course and
               cropped to a uniform 16:9 on pick. In create mode the pick is staged and
               uploaded the moment the course is created; in edit mode it uploads now. */}
@@ -728,6 +775,9 @@ export default function OwnerCoursesPage() {
                     <div>{formatPrice(c.price)}</div>
                     {c.original_price != null && Number(c.original_price) > Number(c.price ?? 0) ? (
                       <div className="text-[11px] text-white/40 line-through">{formatPrice(c.original_price)}</div>
+                    ) : null}
+                    {c.is_prerecorded_available && c.prerecorded_price != null ? (
+                      <div className="text-[11px] text-white/50">Pre-rec {formatPrice(c.prerecorded_price)}</div>
                     ) : null}
                   </td>
                   <td className="px-5 py-3 text-site-muted">{c.students_count}</td>

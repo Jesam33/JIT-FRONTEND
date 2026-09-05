@@ -29,6 +29,10 @@ export type DetailCourse = {
   is_base_currency?: boolean;
   charge_currency?: string;
   purchasable?: boolean;
+  // Optional cheaper pre-recorded price (null → one price for both modes).
+  // `_display` mirrors the FX path used for the live `price_display`.
+  prerecorded_price?: number | null;
+  prerecorded_price_display?: number | null;
   // Udemy-style card signals (honestly derived server-side — see CourseCards).
   original_price?: number | null;
   original_price_display?: number | null;
@@ -65,6 +69,18 @@ function detailOriginalPrice(course: DetailCourse): string | null {
   const current = course.price_display ?? course.price;
   if (orig == null || !(orig > current)) return null;
   return formatPrice(orig, course.display_currency ?? "NGN");
+}
+
+// The cheaper pre-recorded price, shown as a secondary line beneath the headline
+// (which is the live price — the register form defaults to Live). Only rendered
+// when the course sets a distinct, genuinely lower pre-recorded price.
+function prerecordedPriceLabel(course: DetailCourse): string | null {
+  if (course.price <= 0) return null;
+  const pre = course.prerecorded_price_display ?? course.prerecorded_price ?? null;
+  if (pre == null) return null;
+  const live = course.price_display ?? course.price;
+  if (!(pre < live)) return null;
+  return formatPrice(pre, course.display_currency ?? "NGN");
 }
 
 // First character of the title, for the branded placeholder when no cover is set.
@@ -160,7 +176,17 @@ export default function InstituteCourseDetail({
               {detailOriginalPrice(course) ? (
                 <span className="text-lg text-white/40 line-through">{detailOriginalPrice(course)}</span>
               ) : null}
+              {prerecordedPriceLabel(course) ? (
+                <span className="rounded-full border border-white/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-white/60">
+                  live
+                </span>
+              ) : null}
             </div>
+            {prerecordedPriceLabel(course) ? (
+              <p className="mt-1 text-sm text-white/75">
+                or <span className="font-semibold text-white">{prerecordedPriceLabel(course)}</span> pre-recorded
+              </p>
+            ) : null}
             {course.price > 0 && course.is_base_currency === false ? (
               <p className="mt-1 text-xs text-white/60">
                 Approx. shown in {course.display_currency} · you&apos;ll be charged{" "}

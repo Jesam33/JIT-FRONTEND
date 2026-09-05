@@ -50,7 +50,10 @@ export type StorefrontData = {
   // `show_powered_by` is true while the institute's plan keeps the Jorsas badge
   // (free tier); a paid plan with `remove_branding` sends false. See backend
   // PublicInstituteController.
-  institute: { name: string; slug: string; show_powered_by?: boolean };
+  // `show_agent_program` is true only for a NON-primary academy whose plan
+  // includes the Admission-Marketer Network — it gates the "Become an agent"
+  // banner so it never shows on the Jorsas primary storefront.
+  institute: { name: string; slug: string; show_powered_by?: boolean; show_agent_program?: boolean };
   branding: OwnerBranding;
   // Optional: the apex fallback view renders with no profile at all.
   profile?: InstituteProfile;
@@ -127,7 +130,8 @@ export default function InstituteStorefront({
   hrefBase,
   showAgentBanner = false,
   showHeroLogo = true,
-}: StorefrontData & { hrefBase: string; showAgentBanner?: boolean; showHeroLogo?: boolean }) {
+  agentTenantSlug,
+}: StorefrontData & { hrefBase: string; showAgentBanner?: boolean; showHeroLogo?: boolean; agentTenantSlug?: string }) {
   // When a cover photo backs the hero, its text sits on the dark scrim (see
   // heroOverlayStyle) and must be forced white in BOTH themes — otherwise light
   // mode paints the heading/body dark over the photo (the reported bug).
@@ -282,7 +286,7 @@ export default function InstituteStorefront({
 
       <InstituteContactFooter profile={profile} instituteName={institute.name} />
 
-      {showAgentBanner ? <AgentBanner /> : null}
+      {showAgentBanner ? <AgentBanner tenantSlug={agentTenantSlug} /> : null}
 
     </section>
   );

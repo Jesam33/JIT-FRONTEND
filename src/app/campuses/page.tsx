@@ -60,7 +60,7 @@ export default function CampusesPage() {
   return (
     <section>
       <InnerPageHero
-        title="Campuses"
+        title="Campus"
         subtitle="POWERED BY JORSAS TECH"
       >
         <p>

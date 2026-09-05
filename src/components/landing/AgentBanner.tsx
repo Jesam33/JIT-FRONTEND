@@ -2,7 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 import agentBanner from "../../../public/images/sections/work.png"
 
-export default function AgentBanner() {
+// `tenantSlug` scopes the CTA to a specific academy's agent program
+// (/become-an-agent?tenant={slug}), so a visitor who applies from an academy's
+// storefront is onboarded as THAT academy's agent. Absent (the apex Jorsas
+// /institute banner) it links to the plain primary program, unchanged.
+export default function AgentBanner({ tenantSlug }: { tenantSlug?: string }) {
+  const applyHref = tenantSlug
+    ? `/become-an-agent?tenant=${encodeURIComponent(tenantSlug)}`
+    : "/become-an-agent";
   return (
     <section className="section-pad section-divider">
       <div className="container-wide">
@@ -14,19 +21,19 @@ export default function AgentBanner() {
                 Earn 10% Commission
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-8 text-site-text/75">
-                Refer students to our courses and earn 10% commission on every enrollment. 
+                Refer students to our courses and earn 10% commission on every enrollment.
                 Your students get 5% off too. Join our Admission-Marketer network and start earning today.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
-                  href="/become-an-agent"
+                  href={applyHref}
                   className="inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-red-500"
                 >
                   Apply Now
                   <span aria-hidden="true">↗</span>
                 </Link>
                 <Link
-                  href="/become-an-agent"
+                  href={applyHref}
                   className="inline-flex items-center gap-2 rounded-full border border-site-border/30 px-6 py-3 text-sm font-semibold text-site-text transition hover:bg-site-surface"
                 >
                   Learn More

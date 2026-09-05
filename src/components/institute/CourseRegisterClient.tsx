@@ -22,6 +22,12 @@ type CourseDetail = {
   // feature, so a Free academy sends false and the radio below is disabled.
   is_live_available?: boolean;
   is_prerecorded_available?: boolean;
+  // Optional cheaper price for the pre-recorded mode (null when the course
+  // charges one price for both). `_display` mirrors the FX path used for the
+  // live `price_display`. The button below shows whichever the chosen mode
+  // costs; the backend re-derives the authoritative charge from learning_mode.
+  prerecorded_price?: number | null;
+  prerecorded_price_display?: number | null;
 };
 
 const qualifications = [
@@ -86,6 +92,16 @@ export default function CourseRegisterClient({
   const [step, setStep] = useState<"form" | "paying" | "done">("form");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Which price the chosen delivery mode costs. Pre-recorded uses its own
+  // cheaper price when the course sets one, else falls back to the live price.
+  // Display-only — LmsIntakeController::register() re-derives the charge from
+  // learning_mode server-side, so the button can never disagree with the bill.
+  const usePrerecordedPrice =
+    form.learning_mode === "pre_recorded" && course.prerecorded_price != null;
+  const displayPrice = usePrerecordedPrice
+    ? course.prerecorded_price_display ?? course.prerecorded_price ?? course.price
+    : course.price_display ?? course.price;
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -230,7 +246,7 @@ export default function CourseRegisterClient({
             ? "Processing..."
             : course.price <= 0
               ? "Register Free"
-              : `Register & Pay ${formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN")}`}
+              : `Register & Pay ${formatPrice(displayPrice, course.display_currency ?? "NGN")}`}
         </button>
         {message ? <p className="text-xs text-rose-200">{message}</p> : null}
       </form>

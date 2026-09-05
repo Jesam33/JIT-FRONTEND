@@ -18,6 +18,11 @@ type Overview = {
   // The academy's own branding (colors/logo + entity_label). Present on the owner
   // overview payload; used to render this academy's configurable noun in copy.
   branding?: OwnerBranding | null;
+  // Per-plan resource caps (null = unlimited). Drives the "used / limit" figure on
+  // the stat cards. `tracks` has no cap, so it isn't listed here.
+  plan_summary?: {
+    limits: { courses: number | null; students: number | null; staff: number | null };
+  };
 };
 
 // Real per-institute analytics (fix #1) — 6-month series + funnel + totals.
@@ -309,19 +314,31 @@ export default function OwnerDashboardPage() {
             </div>
           </div>
 
-          {/* Stat cards */}
+          {/* Stat cards — each shows used / plan limit (∞ when unlimited). */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STAT_CARDS.map((card) => (
-              <Link
-                key={card.key}
-                href={card.href}
-                className="group rounded-[20px] border border-white/20 bg-white/[0.04] p-6 transition hover:border-white/35 hover:bg-white/[0.07]"
-              >
-                <div className="text-sm text-site-muted">{card.label}</div>
-                <div className="mt-2 text-3xl font-bold text-white">{data.counts[card.key]}</div>
-                <div className="mt-2 text-xs text-site-muted group-hover:text-white/70">Manage →</div>
-              </Link>
-            ))}
+            {STAT_CARDS.map((card) => {
+              const key = card.key;
+              const count = data.counts[key];
+              // Per-plan cap (null = unlimited → ∞). `tracks` has no cap, so it
+              // renders the count on its own.
+              const limit = key === "tracks" ? undefined : data.plan_summary?.limits[key];
+              return (
+                <Link
+                  key={key}
+                  href={card.href}
+                  className="group rounded-[20px] border border-white/20 bg-white/[0.04] p-6 transition hover:border-white/35 hover:bg-white/[0.07]"
+                >
+                  <div className="text-sm text-site-muted">{card.label}</div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span className="text-3xl font-bold text-white">{count}</span>
+                    {limit !== undefined && (
+                      <span className="text-lg font-semibold text-site-muted">/ {limit ?? "∞"}</span>
+                    )}
+                  </div>
+                  <div className="mt-2 text-xs text-site-muted group-hover:text-white/70">Manage →</div>
+                </Link>
+              );
+            })}
           </div>
 
           {/* Analytics — real, tenant-scoped data */}
