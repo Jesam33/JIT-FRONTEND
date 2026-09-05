@@ -16,6 +16,12 @@ export type OwnerBranding = {
   // or the owner's own override. Text-only — never a code identifier.
   entity_label?: string | null;
   entity_label_plural?: string | null;
+  // The academy's own display name (customer-facing text). Carried on the
+  // fetched branding — NOT on the branding cookie (serializeBranding still
+  // whitelists, so the cookie stays name-free; the owner name rides in its own
+  // OWNER_NAME_COOKIE for first-paint). Public institute pages read this to
+  // title the browser tab with the academy instead of "Jorsas Tech".
+  name?: string | null;
 };
 
 // Concrete defaults (the current red/blue theme). Typed with plain-string

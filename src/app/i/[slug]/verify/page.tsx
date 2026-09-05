@@ -85,12 +85,25 @@ function PageContent() {
               <p className="mt-2 text-sm text-white/60">
                 We&apos;ve sent your setup link to your email. Click it to set your password and access your portal.
               </p>
-              <Link
-                href={home}
-                className="mt-6 inline-block rounded-full px-8 py-3 text-sm font-bold text-white"
+              {/* After paying, the real next step is the setup link we emailed —
+                  the portal isn't reachable until they set a password there — so
+                  the prominent action restates that instead of a "Back to Home"
+                  link that points nowhere useful yet. A quiet secondary link
+                  still lets them return to the storefront. */}
+              <div
+                className="mt-6 flex items-center justify-center gap-3 rounded-xl px-5 py-4 text-white"
                 style={{ background: "var(--color-primary, #e60000)" }}
               >
-                Back to Home
+                <span className="text-xl leading-none" aria-hidden>
+                  ✉
+                </span>
+                <span className="text-sm font-semibold">Check your email for instructions</span>
+              </div>
+              <Link
+                href={home}
+                className="mt-4 inline-block text-sm text-white/60 underline-offset-4 hover:underline"
+              >
+                Back to home
               </Link>
             </>
           ) : (
