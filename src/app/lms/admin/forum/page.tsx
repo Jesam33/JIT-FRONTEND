@@ -218,7 +218,7 @@ export default function OwnerForumPage() {
       <header>
         <h1 className="text-2xl font-semibold text-white">CEO&apos;s Forum</h1>
         <p className="mt-1 text-sm text-white/60">
-          Live sessions hosted by Jorsas Tech for institute owners. Join from here and re-watch past sessions.
+          Live sessions hosted by Jorsas Tech for academy owners. Join from here and re-watch past sessions.
         </p>
       </header>
 

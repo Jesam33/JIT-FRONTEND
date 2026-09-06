@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AGENT_API, PUBLIC_API } from "../../../lib/api";
 import { tenantHeaders, pinTenantFromLocation } from "../../../lib/tenant-client";
+import { brandingStyle, type OwnerBranding } from "../../../lib/owner-branding";
 
 const qualifications = [
   "SSCE / WAEC / NECO",
@@ -31,19 +32,25 @@ export default function AgentApplyPage() {
   // Absent (the apex Jorsas program) it falls back to the primary courses feed.
   const [tenant, setTenant] = useState<string | null>(null);
   const [academyName, setAcademyName] = useState<string | null>(null);
+  // AppChrome drops the global Jorsas navbar/footer on /become-an-agent, so this
+  // page wears the academy's own palette. brandingStyle overrides --color-primary
+  // and the font on the wrapper; all accents below read from those tokens.
+  const [branding, setBranding] = useState<OwnerBranding | null>(null);
 
   useEffect(() => {
     pinTenantFromLocation();
     const slug = new URL(window.location.href).searchParams.get("tenant");
     setTenant(slug);
     if (slug) {
-      // The academy storefront returns its name + its own active courses in one
-      // call, so we scope both the greeting and the course checklist to it.
+      // The academy storefront returns its name + branding + its own active
+      // courses in one call, so we scope the greeting, palette and the course
+      // checklist to it.
       fetch(PUBLIC_API.storefront(slug))
         .then((r) => (r.ok ? r.json() : null))
-        .then((d: { institute?: { name?: string }; courses?: Course[] } | null) => {
+        .then((d: { institute?: { name?: string }; branding?: OwnerBranding; courses?: Course[] } | null) => {
           if (!d) return;
           if (d.institute?.name) setAcademyName(d.institute.name);
+          if (d.branding) setBranding(d.branding);
           if (Array.isArray(d.courses)) {
             setCourses(d.courses.map((c) => ({ id: c.id, slug: c.slug, title: c.title })));
           }
@@ -117,11 +124,11 @@ export default function AgentApplyPage() {
 
   if (done) {
     return (
-      <div className="relative min-h-screen site-shell flex items-center justify-center px-6 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-red-600/5 blur-[120px] pointer-events-none" />
-        
+      <div className="relative min-h-screen site-shell flex items-center justify-center px-6 overflow-hidden" style={brandingStyle(branding)}>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full blur-[120px] pointer-events-none" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }} />
+
         <div className="max-w-md w-full text-center space-y-6 relative z-10 border border-site-border bg-site-surface p-8 md:p-10 rounded-3xl shadow-xl">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, transparent)", borderColor: "color-mix(in srgb, var(--color-primary) 20%, transparent)", color: "var(--color-primary)" }}>
             <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
@@ -135,7 +142,8 @@ export default function AgentApplyPage() {
           <div className="pt-2">
             <Link
               href={tenant ? `/i/${tenant}` : "/"}
-              className="inline-block w-full rounded-full bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-500 transition shadow-[0_8px_20px_-4px_rgba(237,24,13,0.3)]"
+              className="inline-block w-full rounded-full px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
+              style={{ backgroundColor: "var(--color-primary)" }}
             >
               {tenant ? "Back to Courses" : "Return Home"}
             </Link>
@@ -146,8 +154,8 @@ export default function AgentApplyPage() {
   }
 
   return (
-    <div className="relative min-h-screen site-shell overflow-hidden">
-      <div className="absolute top-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-red-600/5 blur-[120px]" />
+    <div className="relative min-h-screen site-shell overflow-hidden" style={brandingStyle(branding)}>
+      <div className="absolute top-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full blur-[120px]" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }} />
 
       <div className="relative mx-auto max-w-6xl px-6 py-20 lg:py-28">
         
@@ -167,7 +175,7 @@ export default function AgentApplyPage() {
           {/* Left Column - Information Summary */}
           <div className="lg:col-span-5 space-y-8">
             <div className="space-y-4">
-              <span className="text-xs uppercase font-extrabold tracking-widest text-red-500">Admission-Marketer Onboarding</span>
+              <span className="text-xs uppercase font-extrabold tracking-widest" style={{ color: "var(--color-primary)" }}>Admission-Marketer Onboarding</span>
               <h1 className="text-3xl font-extrabold sm:text-4xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>
                 Start your Admission-Marketer application
               </h1>
@@ -179,9 +187,12 @@ export default function AgentApplyPage() {
             {/* Stepper Display */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border font-bold text-sm transition-all duration-300 ${
-                  step >= 1 ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-500/20" : "border-site-border bg-site-surface-soft text-site-muted"
-                }`}>
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border font-bold text-sm transition-all duration-300 ${
+                    step >= 1 ? "text-white shadow-md" : "border-site-border bg-site-surface-soft text-site-muted"
+                  }`}
+                  style={step >= 1 ? { backgroundColor: "var(--color-primary)", borderColor: "var(--color-primary)" } : undefined}
+                >
                   1
                 </div>
                 <div>
@@ -191,9 +202,12 @@ export default function AgentApplyPage() {
               </div>
               <div className="h-8 w-0.5 bg-site-border ml-5" />
               <div className="flex items-center gap-4">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border font-bold text-sm transition-all duration-300 ${
-                  step >= 2 ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-500/20" : "border-site-border bg-site-surface-soft text-site-muted"
-                }`}>
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border font-bold text-sm transition-all duration-300 ${
+                    step >= 2 ? "text-white shadow-md" : "border-site-border bg-site-surface-soft text-site-muted"
+                  }`}
+                  style={step >= 2 ? { backgroundColor: "var(--color-primary)", borderColor: "var(--color-primary)" } : undefined}
+                >
                   2
                 </div>
                 <div>
@@ -204,8 +218,8 @@ export default function AgentApplyPage() {
             </div>
 
             {/* Micro card highlight */}
-            <div className="rounded-2xl border border-red-500/10 bg-red-500/5 p-5 space-y-2">
-              <h5 className="font-bold text-red-500 text-sm">⚠️ Double Check Your Email</h5>
+            <div className="rounded-2xl border p-5 space-y-2" style={{ borderColor: "color-mix(in srgb, var(--color-primary) 10%, transparent)", backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }}>
+              <h5 className="font-bold text-sm" style={{ color: "var(--color-primary)" }}>Double check your email</h5>
               <p className="text-xs text-site-muted leading-relaxed">
                 We generate your Admission-Marketer account credentials and onboarding dashboard access details using the email address you submit here. Make sure it is active.
               </p>
@@ -324,11 +338,16 @@ export default function AgentApplyPage() {
                         {courses.map((c) => (
                           <label
                             key={c.id}
-                            className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition text-sm ${
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition text-sm border ${
                               selectedCourses.includes(c.title)
-                                ? "bg-red-600/10 border border-red-500/30 text-site-text"
-                                : "bg-transparent border border-transparent text-site-muted hover:text-site-text"
+                                ? "text-site-text"
+                                : "bg-transparent border-transparent text-site-muted hover:text-site-text"
                             }`}
+                            style={
+                              selectedCourses.includes(c.title)
+                                ? { backgroundColor: "color-mix(in srgb, var(--color-primary) 10%, transparent)", borderColor: "color-mix(in srgb, var(--color-primary) 30%, transparent)" }
+                                : undefined
+                            }
                           >
                             <input
                               type="checkbox"
@@ -340,7 +359,8 @@ export default function AgentApplyPage() {
                                     : [...prev, c.title]
                                 );
                               }}
-                              className="h-4 w-4 rounded border-site-border accent-red-600"
+                              className="h-4 w-4 rounded border-site-border"
+                              style={{ accentColor: "var(--color-primary)" }}
                             />
                             {c.title}
                           </label>
@@ -351,7 +371,7 @@ export default function AgentApplyPage() {
                 )}
 
                 {error ? (
-                  <p className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">{error}</p>
+                  <p className="text-xs font-semibold text-rose-500 bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 rounded-xl">{error}</p>
                 ) : null}
 
                 {/* Form Nav Buttons */}
@@ -368,7 +388,8 @@ export default function AgentApplyPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-[2] rounded-full bg-red-600 px-6 py-3.5 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-50 transition shadow-[0_8px_20px_-4px_rgba(237,24,13,0.3)]"
+                    className="flex-[2] rounded-full px-6 py-3.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition shadow-lg"
+                    style={{ backgroundColor: "var(--color-primary)" }}
                   >
                     {submitting ? (
                       <span className="inline-flex items-center gap-2">

@@ -16,8 +16,16 @@ export default function AppChrome({ children }: AppChromeProps) {
   // (/i/*), which renders an institute-branded header/footer via its own layout.
   // `startsWith("/i/")` intentionally excludes the apex "/institute" page (no
   // trailing slash), so that public page keeps the global chrome.
+  //
+  // The Admission Marketer flow (/become-an-agent[/apply]) is reached from an
+  // academy storefront carrying ?tenant={slug}, so it must NOT wear the Jorsas
+  // navbar/footer/logo. It renders its own academy-branded shell inside the page
+  // (no separate layout), so we simply drop the global chrome here.
   const hideGlobalChrome =
-    pathname.startsWith("/lms") || pathname === "/i" || pathname.startsWith("/i/");
+    pathname.startsWith("/lms") ||
+    pathname === "/i" ||
+    pathname.startsWith("/i/") ||
+    pathname.startsWith("/become-an-agent");
 
   return (
     <div className="site-shell">
