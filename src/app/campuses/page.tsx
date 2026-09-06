@@ -19,7 +19,7 @@ type Campus = {
   course_count: number;
 };
 
-// The two initials we render inside the avatar when an academy has no logo —
+// The two initials we render inside the avatar when an academy has no logo, 
 // derived from its name so each circle still reads as that specific brand.
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

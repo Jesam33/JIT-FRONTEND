@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 type CalendarClass = {
   id: number;
   // 'classroom' (legacy lms_classrooms) or 'scheduled' (LmsScheduledClass). The
-  // timetable endpoint merges both tables, so id alone isn't unique across them —
+  // timetable endpoint merges both tables, so id alone isn't unique across them, 
   // React keys must be namespaced by class_type. Optional: the staff timetable
   // sends a single table (no class_type), where id is already unique on its own.
   class_type?: string;

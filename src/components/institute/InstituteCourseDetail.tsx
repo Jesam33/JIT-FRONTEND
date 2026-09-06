@@ -33,7 +33,7 @@ export type DetailCourse = {
   // `_display` mirrors the FX path used for the live `price_display`.
   prerecorded_price?: number | null;
   prerecorded_price_display?: number | null;
-  // Udemy-style card signals (honestly derived server-side — see CourseCards).
+  // Udemy-style card signals (honestly derived server-side, see CourseCards).
   original_price?: number | null;
   original_price_display?: number | null;
   cover_image_url?: string | null;
@@ -46,7 +46,7 @@ export type DetailCourse = {
 // The shape returned by /api/frontend/i/{slug}/courses/{courseSlug} and the
 // primary equivalent.
 export type CourseDetailData = {
-  // See StorefrontData — true keeps the "Powered by Jorsas" strip (free tier),
+  // See StorefrontData, true keeps the "Powered by Jorsas" strip (free tier),
   // false when a paid plan removes branding.
   institute: { name: string; slug: string; show_powered_by?: boolean };
   branding: OwnerBranding;
@@ -61,7 +61,7 @@ function headlinePrice(course: DetailCourse): string {
   return formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN");
 }
 
-// The struck-through "was" price beside the headline — only when a real original
+// The struck-through "was" price beside the headline, only when a real original
 // was entered AND it exceeds the current price (compared in the same currency space).
 function detailOriginalPrice(course: DetailCourse): string | null {
   if (course.price <= 0) return null;
@@ -72,7 +72,7 @@ function detailOriginalPrice(course: DetailCourse): string | null {
 }
 
 // The cheaper pre-recorded price, shown as a secondary line beneath the headline
-// (which is the live price — the register form defaults to Live). Only rendered
+// (which is the live price, the register form defaults to Live). Only rendered
 // when the course sets a distinct, genuinely lower pre-recorded price.
 function prerecordedPriceLabel(course: DetailCourse): string | null {
   if (course.price <= 0) return null;
@@ -106,7 +106,7 @@ export default function InstituteCourseDetail({
         <div className="container-wide">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <article className="rounded-xl border border-white/20 bg-white/5 p-6 md:p-8">
-            {/* Cover hero — owner upload or branded initial placeholder. */}
+            {/* Cover hero, owner upload or branded initial placeholder. */}
             <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-lg ring-1 ring-inset ring-[color:var(--color-primary)]/40">
               {course.cover_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element

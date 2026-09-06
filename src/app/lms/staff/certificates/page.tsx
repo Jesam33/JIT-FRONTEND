@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-// Certificates were moved off the staff portal — issuing is now an
+// Certificates were moved off the staff portal, issuing is now an
 // admin-only action (see OwnerAdminController + /lms/admin/certificates).
 // This stub stays so any bookmarked /lms/staff/certificates URL lands on a
 // clear explanation instead of a dead route or a form staff shouldn't use.

@@ -10,10 +10,10 @@ import { PUBLIC_API } from "@/lib/api";
 
 // A live, in-editor preview of an institute's REAL public page (/i/{slug}).
 //
-// It renders the exact same tree as app/i/[slug]/layout.tsx + page.tsx —
+// It renders the exact same tree as app/i/[slug]/layout.tsx + page.tsx, 
 // brandingStyle + storefrontBackgroundStyle wrapper, InstituteHeader, the
 // storefront (hero logo hidden, since the header already carries the logo), and
-// the slim site footer — so what an owner sees here is what visitors get.
+// the slim site footer, so what an owner sees here is what visitors get.
 //
 // The difference is the DATA source: instead of the saved storefront, it takes
 // the owner's *unsaved* edits as overrides (brandingOverride on the Customization
@@ -22,7 +22,7 @@ import { PUBLIC_API } from "@/lib/api";
 // whichever half isn't being edited). That's what lets colors/font/cover/copy
 // update live as the owner types, before they hit Save.
 //
-// The whole rendered page is pointer-events-none/select-none — it's a picture,
+// The whole rendered page is pointer-events-none/select-none, it's a picture,
 // not a working page (clicks, the theme toggle, and links are all inert); only
 // the frame's "Open ↗" link is live. Scrolling still works: wheel/touch events
 // fall through to the scrollable frame.
@@ -42,7 +42,7 @@ const SAMPLE_COURSES: StorefrontCourse[] = [
     is_full: false,
     is_live_available: true,
     is_prerecorded_available: true,
-    // Sample card signals — this is the owner's DESIGN preview widget (clearly
+    // Sample card signals, this is the owner's DESIGN preview widget (clearly
     // labelled "sample courses"), not the live storefront, so populated values
     // here don't breach the "no dummy on the storefront" rule.
     original_price: 200000,
@@ -157,7 +157,7 @@ export default function StorefrontPreview({
         ) : null}
       </div>
 
-      {/* The page itself — scrollable, inert. storefrontBackgroundStyle paints
+      {/* The page itself, scrollable, inert. storefrontBackgroundStyle paints
           the institute's ambient glow behind it, exactly like the live layout. */}
       <div className="max-h-[600px] overflow-y-auto overflow-x-hidden">
         <div style={wrapperStyle}>

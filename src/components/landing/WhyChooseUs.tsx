@@ -57,7 +57,7 @@ export default function WhyChooseUs() {
         {/* ── Bento grid ────────────────────────────────────── */}
         <div className="grid auto-rows-[180px] gap-3 md:grid-cols-4 lg:grid-cols-6">
 
-          {/* Large photo tile — discussions (2 cols × 2 rows) */}
+          {/* Large photo tile, discussions (2 cols × 2 rows) */}
           <div className="reveal relative col-span-2 row-span-2 overflow-hidden rounded-2xl border border-site-border/20 lg:col-span-2">
             <Image src={discussions} alt="Jorsas team" fill className="object-cover transition duration-700 hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
@@ -69,7 +69,7 @@ export default function WhyChooseUs() {
             </div>
           </div>
 
-          {/* Reason tiles — all 3 with image backgrounds */}
+          {/* Reason tiles, all 3 with image backgrounds */}
           {reasons.map((r, i) => (
             <div
               key={r.title}
@@ -87,7 +87,7 @@ export default function WhyChooseUs() {
             </div>
           ))}
 
-          {/* Work photo tile — wide */}
+          {/* Work photo tile, wide */}
           <div className="reveal relative col-span-2 row-span-1 overflow-hidden rounded-2xl border border-site-border/20 md:col-span-2 lg:col-span-2">
             <Image src={work} alt="Working at Jorsas" fill className="object-cover transition duration-700 hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
@@ -96,7 +96,7 @@ export default function WhyChooseUs() {
             </div>
           </div>
 
-          {/* Four stat tiles — each with its own image */}
+          {/* Four stat tiles, each with its own image */}
           {stats.map((s, i) => (
             <div
               key={s.label}
@@ -114,7 +114,7 @@ export default function WhyChooseUs() {
             </div>
           ))}
 
-          {/* Tagline tile — with image */}
+          {/* Tagline tile, with image */}
           <div
             className="reveal relative col-span-2 row-span-1 overflow-hidden rounded-2xl border border-site-border/20 md:col-span-2 lg:col-span-2"
             style={{ animationDelay: "420ms" }}

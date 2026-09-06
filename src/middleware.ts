@@ -15,7 +15,7 @@ const RESERVED = new Set([
 function subdomainFor(host: string): string | null {
   const hostOnly = host.split(":")[0];
 
-  // A raw IPv4 address (e.g. 127.0.0.1) has no subdomain — never treat its
+  // A raw IPv4 address (e.g. 127.0.0.1) has no subdomain, never treat its
   // first octet ("127") as a tenant slug. Without this guard, browsing on
   // http://127.0.0.1:3000 fires /api/tenant/resolve?slug=127 on every request
   // (a harmless but noisy 404). Use http://localhost:3000 or a real subdomain.
@@ -45,7 +45,7 @@ export async function middleware(req: NextRequest) {
 
   // Visitor country from a CDN geo header, if the host provides one (Cloudflare
   // `cf-ipcountry` / Vercel `x-vercel-ip-country`). Namecheap shared hosting
-  // doesn't, so this is best-effort — the /api/geo route + manual currency
+  // doesn't, so this is best-effort, the /api/geo route + manual currency
   // selector are the guaranteed fallback. Set once; never clobber a value the
   // client already resolved. `decorate()` stamps it onto whichever response we
   // ultimately return so it applies with or without a tenant match.
@@ -95,7 +95,7 @@ export async function middleware(req: NextRequest) {
         return decorate(response);
       }
     } catch {
-      // ignore — fall through without setting a cookie
+      // ignore, fall through without setting a cookie
     }
   }
 

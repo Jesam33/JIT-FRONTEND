@@ -17,7 +17,7 @@ type ModuleContent = {
   content_url: string | null;
   content_body: string | null;
   sort_order: number;
-  // Externally-hosted video (Bunny Stream) pointers — set only for a video whose
+  // Externally-hosted video (Bunny Stream) pointers, set only for a video whose
   // file was uploaded to Bunny (content_url is then the player embed URL).
   provider?: string | null;
   external_id?: string | null;
@@ -129,7 +129,7 @@ export default function StaffModulesPage() {
       if (searchTerm) params.set("search", searchTerm);
       const qs = params.toString();
 
-      // These three reads are independent — run them in parallel instead of a
+      // These three reads are independent, run them in parallel instead of a
       // three-step waterfall. Each keeps its own catch so one failure doesn't
       // reject the batch.
       const [modRes, courseRes, classRes] = await Promise.all([

@@ -24,7 +24,7 @@ export default function BecomeAnAgentPage() {
         if (d?.institute?.name) setAcademyName(d.institute.name);
       })
       .catch(() => {
-        /* name is decorative — fall back to the generic heading */
+        /* name is decorative, fall back to the generic heading */
       });
   }, []);
 

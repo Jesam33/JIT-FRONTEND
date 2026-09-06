@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // shared hosting). The storefront calls this once client-side when it has no
 // country/currency cookie; we resolve the country from the forwarded IP via a
 // free, no-key provider, stash it in a 7-day cookie, and return it so the page
-// can re-render localized. Every failure path is silent — the manual currency
+// can re-render localized. Every failure path is silent, the manual currency
 // selector is the guaranteed fallback, so the storefront never depends on this.
 
 export async function GET(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         if (/^[A-Z]{2}$/.test(cc)) country = cc;
       }
     } catch {
-      // ignore — fall through to no country
+      // ignore, fall through to no country
     }
   }
 

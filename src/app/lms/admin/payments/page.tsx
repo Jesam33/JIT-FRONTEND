@@ -51,7 +51,7 @@ export default function PaymentsPage() {
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
 
-  // Account-name confirmation (Paystack /bank/resolve) — confirmatory only, it
+  // Account-name confirmation (Paystack /bank/resolve), confirmatory only, it
   // links nothing and never blocks linking if the gateway can't resolve.
   const [accountName, setAccountName] = useState("");
   const [resolving, setResolving] = useState(false);
@@ -91,7 +91,7 @@ export default function PaymentsPage() {
 
   // Confirm the account holder's name once a full 10-digit NUBAN + a bank are
   // entered. Debounced so we don't hit Paystack on every keystroke. This is
-  // purely confirmatory — it never gates linking, and a down/unconfigured
+  // purely confirmatory, it never gates linking, and a down/unconfigured
   // gateway just leaves the note blank.
   useEffect(() => {
     setAccountName("");
@@ -116,7 +116,7 @@ export default function PaymentsPage() {
           // Auto-fill the legal name from the resolved bank record so the name we
           // send to Paystack matches the account holder exactly (first token →
           // first name, the rest → last name, so recombining round-trips the whole
-          // name). Only runs on a fresh resolve — i.e. when the bank/number changed —
+          // name). Only runs on a fresh resolve, i.e. when the bank/number changed, 
           // so a hand-edit the owner makes afterwards is never clobbered.
           const parts = String(json.account_name).trim().split(/\s+/);
           if (parts.length) {
@@ -330,7 +330,7 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {/* NOT-CONNECTED STATE — link form */}
+      {/* NOT-CONNECTED STATE, link form */}
       {!loading && data && data.gateway_ready && !configured && (
         <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
           <h2 className="text-lg font-semibold text-white">Link your payout bank</h2>
@@ -350,7 +350,7 @@ export default function PaymentsPage() {
                 <option value="">Select your bank…</option>
                 {data.banks.map((b, i) => (
                   // Paystack's bank list repeats codes (a bank + its USSD/variant
-                  // entries share one code, e.g. 057), so key on code+index — the
+                  // entries share one code, e.g. 057), so key on code+index, the
                   // value stays the code, which is what we submit and look up.
                   <option key={`${b.code}-${i}`} value={b.code} className="bg-[#0b0b0b]">
                     {b.name}

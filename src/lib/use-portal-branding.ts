@@ -8,15 +8,15 @@ import { writeCachedBranding } from "./branding-cache";
 
 // Fetch the institute's white-label branding for a student/staff portal shell.
 // The branding endpoint resolves the tenant from the caller's bearer session,
-// so we send the portal token when present (harmless if absent — the backend
+// so we send the portal token when present (harmless if absent, the backend
 // falls back to the primary tenant's palette). Returns null until loaded, so
 // callers should default with brandingStyle(null) meanwhile (no visible flash,
 // since that just re-applies the site's own default font/colors).
 //
 // When there is no portal session (a public page like login / reset sitting
 // inside this shell) and a `publicEndpoint` is given, we resolve branding from
-// the public endpoint instead — keyed by the URL's invite/setup token and the
-// tenant header — so unauthenticated institute pages still wear their colors.
+// the public endpoint instead, keyed by the URL's invite/setup token and the
+// tenant header, so unauthenticated institute pages still wear their colors.
 export function usePortalBranding(endpoint: string, tokenKey: string, publicEndpoint?: string): OwnerBranding | null {
   const [branding, setBranding] = useState<OwnerBranding | null>(null);
 
@@ -33,7 +33,7 @@ export function usePortalBranding(endpoint: string, tokenKey: string, publicEndp
       url = withUrlToken(publicEndpoint);
       Object.assign(headers, tenantHeaders());
     } else {
-      // No session and no public fallback — keep the site's default theme.
+      // No session and no public fallback, keep the site's default theme.
       return;
     }
 
@@ -49,7 +49,7 @@ export function usePortalBranding(endpoint: string, tokenKey: string, publicEndp
         }
       })
       .catch(() => {
-        /* branding is decorative — ignore failures and keep the default theme */
+        /* branding is decorative, ignore failures and keep the default theme */
       });
 
     return () => {
@@ -65,7 +65,7 @@ export function usePortalBranding(endpoint: string, tokenKey: string, publicEndp
 // is resolved from the URL's invite/setup token when present (authoritative
 // even on the bare apex domain, since the registration is tenant-stamped), else
 // the tenant header (subdomain / ?tenant cookie); the backend falls back to the
-// primary palette. Returns null until loaded — brandingStyle(null) is the
+// primary palette. Returns null until loaded, brandingStyle(null) is the
 // default theme, so there is no visible flash.
 export function usePublicInstituteBranding(): OwnerBranding | null {
   const [branding, setBranding] = useState<OwnerBranding | null>(null);
@@ -82,7 +82,7 @@ export function usePublicInstituteBranding(): OwnerBranding | null {
         }
       })
       .catch(() => {
-        /* decorative — keep the default theme on failure */
+        /* decorative, keep the default theme on failure */
       });
 
     return () => {

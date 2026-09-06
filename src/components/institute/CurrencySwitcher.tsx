@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { CURRENCY_OPTIONS, readCookie } from "@/lib/currency";
 
 // Subtle currency control for the storefront. It does NOT convert prices itself
-// — it sets a cookie and asks Next to re-render the server view, so the backend
+//, it sets a cookie and asks Next to re-render the server view, so the backend
 // (the single FX source) recomputes every price. Two jobs:
 //
 //  1. One-shot geo autodetect for hosts with no CDN geo header (Namecheap): if
 //     the visitor has neither manually chosen a currency nor been geo-tagged,
 //     hit /api/geo (which sets a `country` cookie) and refresh once.
 //  2. Manual override: the guaranteed fallback for visitors whose country we
-//     can't detect or whose local currency we don't map — pick any supported
+//     can't detect or whose local currency we don't map, pick any supported
 //     currency, or "Auto" to clear the override and fall back to detection.
 
 function setCookie(name: string, value: string, days: number) {

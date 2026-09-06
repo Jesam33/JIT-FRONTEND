@@ -27,12 +27,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${data.institute.name} | Courses`;
   const description = data.profile?.tagline || `Browse and enrol in courses at ${data.institute.name}.`;
   // The share image prefers the academy's cover photo, then its logo, so a shared
-  // storefront link wears the academy's brand — not Jorsas' default OG image.
+  // storefront link wears the academy's brand, not Jorsas' default OG image.
   const shareImage = data.profile?.cover_url || logo;
   // The browser-tab icon is the academy's own logo (fix #7) so the public
   // storefront wears the tenant's brand, not Jorsas'. When the academy has NOT
   // uploaded a logo we generate an initial mark (its name's first letter on its
-  // brand color) rather than fall through to the Jorsas "J" — but only for a
+  // brand color) rather than fall through to the Jorsas "J", but only for a
   // non-primary academy; the Jorsas primary keeps its real branded icon.
   const primarySlug = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
   const iconHref =

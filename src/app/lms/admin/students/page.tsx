@@ -41,7 +41,7 @@ export default function OwnerStudentsPage() {
 
   // Course-invite controls. Empty courseId keeps the original behaviour (create
   // course-less accounts via importStudents); picking a course attaches it so
-  // the invitee knows what they're joining, and — when it's paid — the toggle
+  // the invitee knows what they're joining, and, when it's paid, the toggle
   // decides whether they pay (via the academy's Paystack) or are comped in.
   const [courses, setCourses] = useState<OwnerCourse[]>([]);
   const [courseId, setCourseId] = useState("");
@@ -114,7 +114,7 @@ export default function OwnerStudentsPage() {
     try {
       if (courseId) {
         // Course invite: attach the course, honour the pay/comp choice. The
-        // "requires payment" flag only bites on a paid course — a free course
+        // "requires payment" flag only bites on a paid course, a free course
         // always skips payment regardless of the toggle.
         const selected = courses.find((c) => String(c.id) === courseId);
         const base = selected
@@ -264,7 +264,7 @@ export default function OwnerStudentsPage() {
         <h2 className="text-lg font-semibold text-white">Invite students</h2>
         <p className="mt-1 text-sm text-site-muted">
           Paste one or more email addresses, then optionally attach a course. With a course selected, each invite names the
-          course — and if it&apos;s a paid course, the student gets a link to pay and enrol; otherwise they just set a password.
+          course, and if it&apos;s a paid course, the student gets a link to pay and enrol; otherwise they just set a password.
         </p>
         <form onSubmit={invite} className="mt-4 space-y-3">
           <textarea
@@ -283,11 +283,11 @@ export default function OwnerStudentsPage() {
                 onChange={(e) => setCourseId(e.target.value)}
                 className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-2.5 text-sm text-white"
               >
-                <option value="">— No specific course (just create accounts) —</option>
+                <option value="">, No specific course (just create accounts), </option>
                 {courses.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.title}
-                    {Number(c.price ?? 0) > 0 ? ` — ₦${Number(c.price).toLocaleString()}` : " — Free"}
+                    {Number(c.price ?? 0) > 0 ? `, ₦${Number(c.price).toLocaleString()}` : ", Free"}
                   </option>
                 ))}
               </select>
@@ -320,8 +320,8 @@ export default function OwnerStudentsPage() {
                 Requires payment
                 <span className="mt-0.5 block text-xs text-site-muted">
                   {requiresPayment
-                    ? `Students pay ₦${baseFee.toLocaleString()} to enrol — the invite email carries a payment link.`
-                    : "Comped — students are enrolled free and just set a password."}
+                    ? `Students pay ₦${baseFee.toLocaleString()} to enrol, the invite email carries a payment link.`
+                    : "Comped, students are enrolled free and just set a password."}
                 </span>
               </span>
             </label>

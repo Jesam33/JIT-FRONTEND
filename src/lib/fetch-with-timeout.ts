@@ -28,7 +28,7 @@ export async function fetchWithTimeout(
   // 30s (not 15s): a portal page fires ~10-14 API calls in parallel on load.
   // Behind a single-threaded dev server (`php artisan serve`, one worker, no
   // opcache) those requests serialize at ~0.8s each, so the tail can take ~16s
-  // — past a 15s ceiling — and abort mid-load, surfacing as a false "couldn't
+  //, past a 15s ceiling, and abort mid-load, surfacing as a false "couldn't
   // load"/login-bounce even though every request ultimately returns 200. In
   // production (php-fpm workers + opcache) requests are ~100ms and concurrent,
   // so this higher ceiling is pure safety margin, never hit on the happy path.
@@ -37,13 +37,13 @@ export async function fetchWithTimeout(
   // server can momentarily stop accepting connections, so ONE call in the
   // burst comes back as a network error / connection reset while every other
   // returns 200. Those fail FAST (milliseconds), so a quick retry a beat later
-  // — server now free — succeeds, and the load stays seamless instead of the
+  //, server now free, succeeds, and the load stays seamless instead of the
   // single blip ejecting a validly-logged-in user (the StaffGuard bounce) or
   // dead-ending the dashboard ("we hit a snag"). We retry GET/HEAD on a fast
   // transient failure (network error, or a 5xx server hiccup). We deliberately
   // do NOT retry a full timeout: a request that genuinely hung for the whole
   // `timeout` window is pathological, and retrying would make the user stare at
-  // a blank guard for 2-3× as long — surface it once instead. Non-idempotent
+  // a blank guard for 2-3× as long, surface it once instead. Non-idempotent
   // methods (POST/PUT/DELETE) are NEVER retried (a half-applied submit/payment
   // must not be replayed). A 401 is auth, not transient: handled immediately.
   const { timeout = 30000, portal = "student", retries = 2, ...rest } = init ?? {};
@@ -69,7 +69,7 @@ export async function fetchWithTimeout(
         onUnauthorized(portal);
         throw new Error("Unauthorized");
       }
-      // Transient server hiccup on an idempotent read — retry before surfacing.
+      // Transient server hiccup on an idempotent read, retry before surfacing.
       if (response.status >= 500 && attempt < maxAttempts) {
         lastError = new Error(`Server error ${response.status}`);
         await sleep(300 * attempt);
@@ -77,7 +77,7 @@ export async function fetchWithTimeout(
       }
       return response;
     } catch (err) {
-      // Genuine auth failure — onUnauthorized already redirected; never retry.
+      // Genuine auth failure, onUnauthorized already redirected; never retry.
       if (err instanceof Error && err.message === "Unauthorized") throw err;
       // The caller aborted (unmount / navigation): stop quietly, don't retry.
       if (callerSignal?.aborted) throw err;
@@ -102,12 +102,12 @@ export async function fetchWithTimeout(
 
 // Guard a response before reading its body as data. A non-OK response
 // (403/404/500 from a tenant/auth hiccup or a server error) still carries a
-// JSON body — usually `{message: "..."}` — and `.then((r) => r.json())` will
+// JSON body, usually `{message: "..."}`, and `.then((r) => r.json())` will
 // happily parse THAT into component state, painting a misleading "empty" UI
 // with zero error signal (the "No course selected yet" class of bug). Throw
 // instead, so the caller's `.catch()` / `Promise.allSettled` path runs and the
 // state keeps its safe default (or shows an explicit error+retry). 401s never
-// reach here — fetchWithTimeout redirects to login first.
+// reach here, fetchWithTimeout redirects to login first.
 export async function okJson<T = any>(response: Response): Promise<T> {
   if (!response.ok) throw new Error(`Request failed (${response.status})`);
   return response.json() as Promise<T>;

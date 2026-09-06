@@ -4,7 +4,7 @@
 // uploaded logo shows its own mark instead of leaking the Jorsas "J".
 //
 // Consumers: DynamicFavicon (client, /lms portals), the /i/[slug] storefront
-// generateMetadata (server), and — mirrored inline as vanilla JS — the
+// generateMetadata (server), and, mirrored inline as vanilla JS, the
 // `branding-init` pre-paint in app/layout.tsx. Keep those three in sync.
 //
 // Deliberately dependency-free (no React, no browser globals beyond the
@@ -22,7 +22,7 @@ export function markInitial(text: string | null | undefined): string {
 }
 
 // White text unless the brand color is very light (luminance-weighted), then
-// near-black — so the initial stays legible on any brand color.
+// near-black, so the initial stays legible on any brand color.
 function readableTextColor(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);

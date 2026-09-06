@@ -36,7 +36,7 @@ export const OWNER_API = {
   students: api("/api/frontend/lms/owner/students"),
   deleteStudent: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}`),
   resendStudentInvite: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/resend-invite`),
-  // Invite students straight into a specific course — paid via the academy's
+  // Invite students straight into a specific course, paid via the academy's
   // own Paystack (pay-first) or comped in. Distinct from importStudents, which
   // only creates course-less accounts.
   inviteStudentToCourse: api("/api/frontend/lms/owner/students/invite"),
@@ -48,7 +48,7 @@ export const OWNER_API = {
   setStaffActive: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/active`),
   courses: api("/api/frontend/lms/owner/courses"),
   tracks: api("/api/frontend/lms/owner/tracks"),
-  // Owner course management (create/edit/delete — set description, price, capacity).
+  // Owner course management (create/edit/delete, set description, price, capacity).
   storeCourse: api("/api/frontend/lms/owner/courses"),
   updateCourse: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}`),
   deleteCourse: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}`),
@@ -57,15 +57,19 @@ export const OWNER_API = {
   // Owner cohort management (create + assign/reassign an instructor).
   createTrack: api("/api/frontend/lms/owner/tracks"),
   updateTrack: (id: string | number) => api(`/api/frontend/lms/owner/tracks/${id}`),
-  // Owner certificates (institute-issued, admin-only — moved off the staff portal).
+  // Owner certificates (institute-issued, admin-only, moved off the staff portal).
   certificates: api("/api/frontend/lms/owner/certificates"),
   issueCertificate: api("/api/frontend/lms/owner/certificates"),
   revokeCertificate: (id: string | number) => api(`/api/frontend/lms/owner/certificates/${id}`),
   notifications: api("/api/frontend/lms/owner/notifications"),
+  // CEO's Forum: list upcoming/past platform-hosted sessions, and mint a
+  // participant token to join in-portal (only inside the join window).
+  forums: api("/api/frontend/lms/owner/forums"),
+  forumToken: (id: string | number) => api(`/api/frontend/lms/owner/forums/${id}/token`),
   branding: api("/api/frontend/lms/owner/branding"),
   brandingUpdate: api("/api/frontend/lms/owner/branding"),
   brandingLogo: api("/api/frontend/lms/owner/branding/logo"),
-  // Public-page profile (hero/about/contact/socials + cover image) — the content
+  // Public-page profile (hero/about/contact/socials + cover image), the content
   // shown on the institute's own /i/{slug} storefront. GET + POST share a URL.
   profile: api("/api/frontend/lms/owner/profile"),
   profileUpdate: api("/api/frontend/lms/owner/profile"),
@@ -74,7 +78,7 @@ export const OWNER_API = {
   // settle to its bank (institute collects, not the platform). GET + POST share.
   paymentSettings: api("/api/frontend/lms/owner/payment-settings"),
   paymentSettingsUpdate: api("/api/frontend/lms/owner/payment-settings"),
-  // Confirm the account holder's name (Paystack /bank/resolve) before linking —
+  // Confirm the account holder's name (Paystack /bank/resolve) before linking, 
   // confirmatory only, never blocks linking if the gateway is down.
   resolveAccount: api("/api/frontend/lms/owner/resolve-account"),
   // AI training materials (Gamma, Pro+). generate → poll aiStatus(id) → aiSave the
@@ -83,7 +87,7 @@ export const OWNER_API = {
   aiGenerate: api("/api/frontend/lms/owner/ai/materials/generate"),
   aiStatus: (id: string) => api(`/api/frontend/lms/owner/ai/materials/${encodeURIComponent(id)}`),
   aiSave: api("/api/frontend/lms/owner/ai/materials/save"),
-  // Modules of one owner course — populates the AI-materials "save into module"
+  // Modules of one owner course, populates the AI-materials "save into module"
   // picker. Saving into a module (vs. the course) stores the downloadable export.
   courseModules: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}/modules`),
   signup: api("/api/signup"),
@@ -103,7 +107,7 @@ export const STUDENT_API = {
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/notifications/${id}/read`),
   attendance: api("/api/frontend/lms/attendance"),
   courses: api("/api/frontend/lms/courses"),
-  // Rate the course the student is enrolled in (1–5). One rating per student per
+  // Rate the course the student is enrolled in (1 to 5). One rating per student per
   // course; re-posting updates it. Returns the fresh {rating_average, rating_count}.
   rateCourse: (id: string | number) => api(`/api/frontend/lms/courses/${id}/rate`),
   classroomJoin: (id: string | number) => api(`/api/frontend/lms/classrooms/${id}/join`),
@@ -230,7 +234,7 @@ export const PUBLIC_API = {
   institutePrimaryCourse: (courseSlug: string) => api(`/api/frontend/institute/primary/courses/${courseSlug}`),
   storefront: (slug: string) => api(`/api/frontend/i/${slug}`),
   storefrontCourse: (slug: string, courseSlug: string) => api(`/api/frontend/i/${slug}/courses/${courseSlug}`),
-  // "Campuses" directory — every Pro-and-above academy on the platform, shown
+  // "Campuses" directory, every Pro-and-above academy on the platform, shown
   // as avatar cards on jorsastech's own /campuses page.
   campuses: api("/api/frontend/campuses"),
   trainingRegister: api("/api/frontend/training/register"),

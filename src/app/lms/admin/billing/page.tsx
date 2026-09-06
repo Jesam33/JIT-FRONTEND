@@ -8,7 +8,7 @@ import { tenantLoginPath } from "@/lib/tenant-client";
 
 // A plan limit; null means unlimited.
 type Limits = { courses: number | null; students: number | null; staff: number | null };
-// Plan feature flags — keys mirror config/saas.php `features` (all 13).
+// Plan feature flags, keys mirror config/saas.php `features` (all 13).
 type Features = {
   live_classes: boolean;
   chat: boolean;
@@ -136,7 +136,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  // The horizontal plan carousel — used to arrow-scroll on desktop and to
+  // The horizontal plan carousel, used to arrow-scroll on desktop and to
   // auto-centre the owner's current (elevated) plan when the page loads.
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
@@ -222,7 +222,7 @@ export default function BillingPage() {
   // the top tier), falling back to the raw stored plan.
   const currentPlan = summary?.slug ?? status?.plan ?? "free";
 
-  // Scroll the carousel by one card (+ the gap) — wired to the desktop arrows.
+  // Scroll the carousel by one card (+ the gap), wired to the desktop arrows.
   const scrollByCard = (dir: number) => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -231,7 +231,7 @@ export default function BillingPage() {
     el.scrollBy({ left: dir * amount, behavior: "smooth" });
   };
 
-  // On load, bring the current plan into view centred — it's the "popped-out"
+  // On load, bring the current plan into view centred, it's the "popped-out"
   // card, so the swiper should open focused on the tier the owner is on.
   useEffect(() => {
     if (!status) return;
@@ -300,11 +300,11 @@ export default function BillingPage() {
             ) : null}
           </div>
 
-          {/* Full plan comparison — a swipeable carousel. The current plan is
+          {/* Full plan comparison, a swipeable carousel. The current plan is
               "popped out" (scaled, ringed, badged) the way pricing sections
               highlight the active tier. Cards are wide and peek at the edges so
               it reads as a swiper: arrows scroll on desktop, touch/trackpad on
-              the rest. No carousel library — native scroll-snap. */}
+              the rest. No carousel library, native scroll-snap. */}
           <div className="relative">
             <button
               type="button"

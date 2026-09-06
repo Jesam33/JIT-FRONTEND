@@ -45,7 +45,7 @@ export default function StaffProfilePage() {
   useEffect(() => {
     if (!token) return;
     // Gate on r.ok so a failed load never leaves the form populated from an
-    // error body (blank name/email) — a Save from that state would overwrite
+    // error body (blank name/email), a Save from that state would overwrite
     // the real profile with empty values. On failure we show error+retry.
     setLoadError(false);
     setLoading(true);

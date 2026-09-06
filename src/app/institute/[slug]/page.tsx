@@ -4,8 +4,8 @@ import InstituteCourseDetail, { type CourseDetailData } from "@/components/insti
 import { pricingQuery } from "@/lib/pricing-query";
 
 // This route's [slug] is a COURSE slug under the PRIMARY institute (JIT). It
-// sources from the tenant-scoped primary course endpoint so the detail — and
-// the register flow it hosts — stay bound to JIT only.
+// sources from the tenant-scoped primary course endpoint so the detail, and
+// the register flow it hosts, stay bound to JIT only.
 type Props = {
   params: Promise<{ slug: string }>;
 };

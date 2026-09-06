@@ -35,8 +35,8 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
 
   // Every staff auth screen (login, forgot/reset/setup password) now uses the
   // shared neutral <AuthLayout>, which owns the whole viewport (its own logo,
-  // branding + favicon). Render them all chrome-free — no sidebar shell, no
-  // extra glow container, no second <main> — so they read as clean full-screen
+  // branding + favicon). Render them all chrome-free, no sidebar shell, no
+  // extra glow container, no second <main>, so they read as clean full-screen
   // pages like the owner login, instead of sitting in a constrained panel.
   if (hideSidebar) {
     return (

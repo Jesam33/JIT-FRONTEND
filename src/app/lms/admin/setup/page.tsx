@@ -26,13 +26,13 @@ function SetupInner() {
   const [loading, setLoading] = useState(false);
 
   // This is a platform onboarding page for a brand-new institute, so it must
-  // always render in the default Jorsas theme — hence it deliberately does NOT
+  // always render in the default Jorsas theme, hence it deliberately does NOT
   // use the <AuthLayout> wrapper (which fetches + applies public institute
   // branding). A stale `tenant` cookie + cached branding (e.g. from an institute
   // that was later deleted) would otherwise bleed its colors in through the
   // global pre-paint script (app/layout.tsx). Reset the live :root to default on
   // mount and drop the stale cache so it can't reappear on refresh. Safe: setup
-  // resolves the tenant from the invite token server-side — the cookie/cache
+  // resolves the tenant from the invite token server-side, the cookie/cache
   // play no part in it. Once the owner logs into their new institute,
   // OwnerLayoutClient re-pins the correct cookie. (We still reuse AuthLayout's
   // token-based field primitives so this screen matches the rest of the auth
@@ -92,11 +92,11 @@ function SetupInner() {
   return (
     // Plain <div>, no opaque background and no `site-shell` of its own: the root
     // AppChrome already paints the ambient "pill" glow behind every page, so this
-    // clean surface card simply sits over it — matching the login / forgot / reset
+    // clean surface card simply sits over it, matching the login / forgot / reset
     // screens instead of a flat black canvas.
     <div className="flex min-h-[100dvh] w-full flex-col items-center justify-center gap-6 px-4 py-10">
       <div className="w-full max-w-md">
-        {/* Neutral education mark — this is platform onboarding, before the
+        {/* Neutral education mark, this is platform onboarding, before the
             institute has any branding of its own to show. */}
         <div className="mb-6 flex justify-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-site-surface text-site-muted ring-1 ring-site-border">

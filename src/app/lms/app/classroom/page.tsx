@@ -118,7 +118,7 @@ export default function StudentClassroomPage() {
       const items = await apiFetch(STUDENT_API.attendance).then((r) => r.json());
       setAttendanceItems(Array.isArray(items) ? items : []);
     } catch {
-      // Best-effort — the server recomputes from first_joined_at either way.
+      // Best-effort, the server recomputes from first_joined_at either way.
     }
   }, []);
 
@@ -319,7 +319,7 @@ export default function StudentClassroomPage() {
 
             {iframeUrl ? (
               <>
-                {/* CSS pseudo-fullscreen overlay — keeps iframe in DOM so Jitsi re-layouts on resize */}
+                {/* CSS pseudo-fullscreen overlay, keeps iframe in DOM so Jitsi re-layouts on resize */}
                 <div
                   className={isFullscreen
                     ? "fixed inset-0 z-[9999] bg-black w-screen h-screen"
@@ -378,7 +378,7 @@ export default function StudentClassroomPage() {
                     <p className="mt-1 text-sm text-white/70">{formatLocalDateTime(c.starts_at)}</p>
                     {c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
                   </div>
-                  {/* Upcoming classes are info-only — the live room opens (in-portal) once the
+                  {/* Upcoming classes are info-only, the live room opens (in-portal) once the
                       class is active, so no external join link here. */}
                   <span className="rounded-full border border-white/15 px-3 py-1 text-[11px] text-white/50">Upcoming</span>
                 </div>

@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 
 // Build the ?currency=/?country= suffix the storefront server pages forward to
 // Laravel, read from the visitor's cookies:
-//   • `currency` — a manual selector override (wins; cosmetic display only)
-//   • `country`  — the detected country hint (CDN header via middleware, or the
+//   • `currency`, a manual selector override (wins; cosmetic display only)
+//   • `country`, the detected country hint (CDN header via middleware, or the
 //                  /api/geo route)
 // Neither present → "" (the backend shows the base NGN price). The amount is
 // always server-authoritative; this only ever influences DISPLAY currency (and,

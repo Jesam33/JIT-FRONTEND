@@ -42,12 +42,12 @@ type StarRatingProps = {
 
 /**
  * Amber star rating, in two modes:
- *   - read-only  (no onRate)  — fractional-fill stars + "value.toFixed(1) (count)"
- *   - interactive (onRate set) — five clickable stars with hover/focus preview
+ *   - read-only  (no onRate), fractional-fill stars + "value.toFixed(1) (count)"
+ *   - interactive (onRate set), five clickable stars with hover/focus preview
  *
  * Stars are conventional amber (independent of the institute's brand color, which
  * would make a 3-star look "on-brand" rather than "meh"). Empty states (count 0 /
- * value 0) are the caller's call — this just renders what it's given.
+ * value 0) are the caller's call, this just renders what it's given.
  */
 export default function StarRating({
   value = 0,

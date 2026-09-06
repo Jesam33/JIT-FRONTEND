@@ -18,10 +18,10 @@ export type OwnerIdentity = {
   branding?: OwnerBranding | null;
 };
 
-// A per-item `badge` (e.g. "Pro") is a small pill after the label — used to mark a
+// A per-item `badge` (e.g. "Pro") is a small pill after the label, used to mark a
 // paid-tier entry that stays VISIBLE to every plan (clicking it on a lower plan hits
 // the backend gate → 402 → UpgradeModal), rather than being hidden. When the item
-// names a `gatedFeature`, the badge is dropped once the current plan includes it —
+// names a `gatedFeature`, the badge is dropped once the current plan includes it, 
 // so an owner already on Pro doesn't see a "Pro" tag on a feature they now own.
 type SidebarItem = { href: string; label: string; badge?: string; gatedFeature?: string };
 
@@ -56,6 +56,10 @@ const groups: SidebarGroup[] = [
   {
     label: "Staff operations",
     items: [{ href: "/lms/admin/staff", label: "Staff Accounts" }],
+  },
+  {
+    label: "Community",
+    items: [{ href: "/lms/admin/forum", label: "CEO's Forum" }],
   },
   {
     label: "Settings",
@@ -122,7 +126,7 @@ export default function OwnerSidebar({
   };
 
   function isActive(href: string) {
-    // Dashboard is the index — active only on an exact match so it doesn't
+    // Dashboard is the index, active only on an exact match so it doesn't
     // light up for every /lms/admin/* child route.
     if (href === "/lms/admin") return pathname === "/lms/admin";
     return pathname.startsWith(href);

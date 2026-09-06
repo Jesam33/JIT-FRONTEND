@@ -65,7 +65,7 @@ export default function OwnerAiMaterialsPage() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [exportUrl, setExportUrl] = useState<string | null>(null);
   // The export format actually requested for THIS generation (captured at kick-off,
-  // not read from the live form at save time — the owner may edit the brief after).
+  // not read from the live form at save time, the owner may edit the brief after).
   // The backend defaults an omitted export to PDF, so a downloadable copy always
   // exists; "pptx" only when they explicitly picked PowerPoint.
   const [resultFormat, setResultFormat] = useState<"pdf" | "pptx">("pdf");
@@ -109,7 +109,7 @@ export default function OwnerAiMaterialsPage() {
       setCourses(list);
       if (list.length) setSaveCourseId((cur) => cur || String(list[0].id));
     } catch {
-      /* non-fatal — the owner can still generate, just can't save without courses */
+      /* non-fatal, the owner can still generate, just can't save without courses */
     } finally {
       setCoursesLoading(false);
     }
@@ -142,7 +142,7 @@ export default function OwnerAiMaterialsPage() {
           (json.modules ?? []).map((m: { id: number; title: string }) => ({ id: m.id, title: m.title })),
         );
       } catch {
-        setModules([]); // non-fatal — owner can still save into the course as a whole
+        setModules([]); // non-fatal, owner can still save into the course as a whole
       } finally {
         setModulesLoading(false);
       }
@@ -196,10 +196,10 @@ export default function OwnerAiMaterialsPage() {
           setPhase("failed");
           return;
         }
-        // Still working — check again shortly.
+        // Still working, check again shortly.
         pollRef.current = window.setTimeout(() => poll(id), 5000);
       } catch {
-        // Transient network blip — back off a touch and keep waiting rather than
+        // Transient network blip, back off a touch and keep waiting rather than
         // failing a generation that's probably still running server-side.
         pollRef.current = window.setTimeout(() => poll(id), 6000);
       }
@@ -339,7 +339,7 @@ export default function OwnerAiMaterialsPage() {
         setSaveMsg({
           kind: "ok",
           text: asFile
-            ? `Saved to ${moduleTitle} as a downloadable file — students will find it in the module, and the editable Gamma copy is kept too.`
+            ? `Saved to ${moduleTitle} as a downloadable file, students will find it in the module, and the editable Gamma copy is kept too.`
             : `Saved to ${moduleTitle} as an editable Gamma link (the downloadable copy couldn't be fetched this time).`,
         });
       } else {
@@ -462,7 +462,7 @@ export default function OwnerAiMaterialsPage() {
         </div>
       </form>
 
-      {/* Result / progress — only once a job has been kicked off */}
+      {/* Result / progress, only once a job has been kicked off */}
       {phase !== "idle" && (
         <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
           {phase === "starting" || phase === "pending" ? (
@@ -588,7 +588,7 @@ export default function OwnerAiMaterialsPage() {
                     className={inputClass}
                   >
                     <option value="" className="bg-[#0b0b0b]">
-                      Whole course — editable link only
+                      Whole course, editable link only
                     </option>
                     {modules.map((m) => (
                       <option key={m.id} value={String(m.id)} className="bg-[#0b0b0b]">
@@ -603,7 +603,7 @@ export default function OwnerAiMaterialsPage() {
                         ? "A downloadable copy will be added to this module, plus the editable Gamma link."
                         : modules.length
                           ? "Pick a module to save a downloadable file into it, or leave as the whole course."
-                          : "This course has no modules yet — it'll be saved to the course as a link."}
+                          : "This course has no modules yet, it'll be saved to the course as a link."}
                   </p>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4">

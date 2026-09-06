@@ -32,7 +32,7 @@ function MaterialCard({ item }: { item: MaterialItem }) {
           <p className="mt-1 text-xs text-white/55">Type: {resolvedType.toUpperCase()}</p>
           {resolvedType === "video" && isBunny ? (
             // Only mount the iframe on click so a page of videos doesn't spin up
-            // N players at once — until then we show the thumbnail as a poster.
+            // N players at once, until then we show the thumbnail as a poster.
             <div className="mt-2">
               {playing ? (
                 <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">

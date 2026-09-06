@@ -12,11 +12,11 @@ import { fontStackFor } from "./owner-branding";
 // visitor to a customised institute never sees the Jorsas theme. The portal
 // branding hooks write the cache on every successful fetch, so it self-heals
 // and stays fresh. First-ever visit (empty cache) still shows the default for
-// one frame — an accepted trade-off, mirroring the owner cookie approach.
+// one frame, an accepted trade-off, mirroring the owner cookie approach.
 //
 // We store a RESOLVED font stack (not the font-key) so the pre-paint script can
 // apply it without importing fontStackFor. Only presentational fields live here
-// — never a token — and the init script re-validates every hex before use.
+//, never a token, and the init script re-validates every hex before use.
 export type CachedBranding = {
   primary_color: string | null;
   secondary_color: string | null;
@@ -24,7 +24,7 @@ export type CachedBranding = {
   logo_url: string | null;
   // The academy's entity label, cached so a portal shell can render it on the
   // first frame (no "Online Academy" → custom-label text flash). Presentational
-  // text only — no identifier, no token.
+  // text only, no identifier, no token.
   entity_label: string | null;
   entity_label_plural: string | null;
 };
@@ -48,7 +48,7 @@ export function writeCachedBranding(slug: string | null | undefined, b: OwnerBra
     };
     localStorage.setItem(brandingCacheKey(slug), JSON.stringify(payload));
   } catch {
-    /* storage full / disabled — the cache is an optimisation, so ignore */
+    /* storage full / disabled, the cache is an optimisation, so ignore */
   }
 }
 
@@ -70,14 +70,14 @@ export function clearCachedBranding(slug: string | null | undefined): void {
   try {
     localStorage.removeItem(brandingCacheKey(slug));
   } catch {
-    /* storage disabled — nothing to clear */
+    /* storage disabled, nothing to clear */
   }
 }
 
 // Revert the LIVE :root to the default Jorsas theme by undoing exactly what the
 // `branding-init` pre-paint script (app/layout.tsx) sets. Removing the inline
 // custom properties lets the stylesheet's own defaults (--color-primary #ed180d,
-// etc.) take back over — so this needs no hardcoded palette. Call this on
+// etc.) take back over, so this needs no hardcoded palette. Call this on
 // platform pages that must always look default (e.g. the owner setup page),
 // where a stale tenant cookie + cache would otherwise bleed a deleted
 // institute's colors through the pre-paint.
@@ -91,6 +91,6 @@ export function resetBrandingToDefault(): void {
     root.removeAttribute("data-branded");
     document.querySelectorAll("link[data-brand-favicon]").forEach((el) => el.remove());
   } catch {
-    /* defensive — never let a cosmetic reset throw */
+    /* defensive, never let a cosmetic reset throw */
   }
 }

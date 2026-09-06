@@ -113,7 +113,7 @@ export default function StudentDashboardPage() {
     router.push("/lms/app/materials");
   }
 
-  // Submit (or update) the student's 1–5 rating for their enrolled course. The
+  // Submit (or update) the student's 1 to 5 rating for their enrolled course. The
   // backend enforces enrollment + one-row-per-student; we optimistically show the
   // chosen value and reconcile from the returned aggregate.
   async function submitRating(n: number) {

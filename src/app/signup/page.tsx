@@ -8,7 +8,7 @@ import { OWNER_API } from "@/lib/api";
 // payment, provisioned instantly) or pick a paid plan and pay via Paystack up
 // front. Feature lists are display-only (mirror the approved plan model in
 // config/saas.php) so owners understand what each tier includes before choosing.
-// Enterprise is contact-sales (see the tile below the grid) — not self-serve here.
+// Enterprise is contact-sales (see the tile below the grid), not self-serve here.
 const PLANS = [
   {
     slug: "free",
@@ -70,7 +70,7 @@ function SignupInner() {
   const [subdomain, setSubdomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Set on a successful FREE signup — the tenant is provisioned inline (no
+  // Set on a successful FREE signup, the tenant is provisioned inline (no
   // payment), so we show an inline "check your email" panel instead of
   // redirecting to Paystack.
   const [done, setDone] = useState<{ message: string; email: string } | null>(null);
@@ -88,7 +88,7 @@ function SignupInner() {
       slug: String(form.get("subdomain") || "").trim().toLowerCase() || undefined,
       admin_name: `${String(form.get("first_name") || "").trim()} ${String(form.get("last_name") || "").trim()}`.trim(),
       admin_email: String(form.get("email") || "").trim(),
-      // No password here — the owner sets it via the emailed setup link after payment.
+      // No password here, the owner sets it via the emailed setup link after payment.
       plan: String(form.get("plan") || DEFAULT_PLAN),
     };
 
@@ -125,7 +125,7 @@ function SignupInner() {
       }
 
       // Paid plan: the tenant is created `pending`. Hand off to Paystack to
-      // collect payment — provisioning + the setup-link email happen only after
+      // collect payment, provisioning + the setup-link email happen only after
       // payment confirms (on the /signup/verify page and via the webhook).
       if (json?.authorization_url) {
         window.location.href = json.authorization_url as string;
@@ -272,7 +272,7 @@ function SignupInner() {
               The applicable platform fee is deducted from each eligible successful course sale.
             </p>
 
-            {/* Enterprise is contact-sales — unlimited everything, custom terms. Not a
+            {/* Enterprise is contact-sales, unlimited everything, custom terms. Not a
                 self-serve checkout plan, so it sits below the selectable grid as an enquiry CTA. */}
             <div className="mt-4 rounded-[20px] border border-white/20 bg-white/[0.04] p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">

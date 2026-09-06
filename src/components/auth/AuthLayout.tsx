@@ -9,7 +9,7 @@ import DynamicFavicon from "@/components/DynamicFavicon";
 // A warm, neutral sign-in shell shared by the student, staff and owner auth
 // screens. Deliberately un-techy: a clean surface card sitting over the site's
 // soft ambient glow (tinted to the institute when branded), the institute's own
-// logo, a soft brand-tinted primary action — no dark glass, no gradient/display
+// logo, a soft brand-tinted primary action, no dark glass, no gradient/display
 // headings. It still white-labels via brandingStyle() (institute
 // primary/secondary/font as CSS variables) and shows the institute logo when set,
 // so each institute keeps its identity without the "developer console" look.
@@ -18,7 +18,7 @@ import DynamicFavicon from "@/components/DynamicFavicon";
 //   - The root AppChrome already renders a single <main> around every page and
 //     wraps it in `.site-shell` (the site's soft ambient "pill" glow). This
 //     component is therefore a plain <div> (never nest a second <main>) and does
-//     NOT paint an opaque background — so that ambient glow shows through behind
+//     NOT paint an opaque background, so that ambient glow shows through behind
 //     the card instead of a flat black canvas. A branded institute gets its own
 //     tinted glow via storefrontBackgroundStyle() (opaque, so it replaces the
 //     default), matching the staff/student/owner portal shells.
@@ -78,7 +78,7 @@ export function AuthPasswordField({ label, hint, className, ...props }: AuthFiel
   );
 }
 
-// The full-width primary submit button — soft brand primary with a spinner while
+// The full-width primary submit button, soft brand primary with a spinner while
 // the request is in flight.
 export function AuthSubmitButton({
   loading,

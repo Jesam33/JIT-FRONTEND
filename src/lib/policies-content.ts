@@ -1,4 +1,4 @@
-// AUTO-GENERATED from the client's verbatim policy text — do not edit by hand.
+// AUTO-GENERATED from the client's verbatim policy text, do not edit by hand.
 // Source: legal text supplied by Jorsas Tech. Regenerate if the source changes.
 
 export type PolicyBlock =
@@ -10956,8 +10956,8 @@ const policiesRaw: Policy[] = [
 ];
 
 // Display order: Terms & Conditions first, then Privacy, then Acceptable Use, then
-// every other policy in its original order. Reordered HERE — rather than by
-// physically moving the large verbatim blocks above — so the source text stays a
+// every other policy in its original order. Reordered HERE, rather than by
+// physically moving the large verbatim blocks above, so the source text stays a
 // faithful 1:1 copy of the supplied legal wording. Array.prototype.sort is stable,
 // so policies not named in POLICY_ORDER keep their existing relative order.
 const POLICY_ORDER = ["terms-and-conditions", "privacy-policy", "acceptable-use"];

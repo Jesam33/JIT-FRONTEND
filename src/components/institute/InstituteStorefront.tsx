@@ -22,7 +22,7 @@ export type StorefrontCourse = {
   is_full: boolean;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
-  // Localized DISPLAY pricing (cosmetic — money is still charged in NGN/USD).
+  // Localized DISPLAY pricing (cosmetic, money is still charged in NGN/USD).
   // Present on every course from the backend; optional here so a partially
   // built view (e.g. the apex empty-shell fallback) still type-checks.
   currency?: string;
@@ -51,7 +51,7 @@ export type StorefrontData = {
   // (free tier); a paid plan with `remove_branding` sends false. See backend
   // PublicInstituteController.
   // `show_agent_program` is true only for a NON-primary academy whose plan
-  // includes the Admission-Marketer Network — it gates the "Become an agent"
+  // includes the Admission-Marketer Network, it gates the "Become an agent"
   // banner so it never shows on the Jorsas primary storefront.
   institute: { name: string; slug: string; show_powered_by?: boolean; show_agent_program?: boolean };
   branding: OwnerBranding;
@@ -62,7 +62,7 @@ export type StorefrontData = {
 
 // Render a course's price in the visitor's display currency. Free courses (base
 // NGN price ≤ 0 are free everywhere) always read "Free". A converted price is
-// shown plainly — no "≈" estimate prefix — since the course detail page carries
+// shown plainly, no "≈" estimate prefix, since the course detail page carries
 // the "Approx. shown in {currency} · you'll be charged {NGN/USD}" disclosure.
 function coursePrice(course: StorefrontCourse): string {
   if (course.price <= 0) return "Free";
@@ -71,7 +71,7 @@ function coursePrice(course: StorefrontCourse): string {
   return formatPrice(amount, currency);
 }
 
-// The struck-through "was" price — rendered ONLY when a real original price was
+// The struck-through "was" price, rendered ONLY when a real original price was
 // entered AND it exceeds the current price (never auto-invented). Compared in the
 // same space as coursePrice (both display, or both base NGN) so the test is fair.
 function courseOriginalPrice(course: StorefrontCourse): string | null {
@@ -98,14 +98,14 @@ const HERO_IMAGE_MASK = "radial-gradient(ellipse 92% 82% at 50% 22%, #000 42%, t
 
 // The wash laid OVER the hero cover photo. Because the photo is masked to blend
 // into the page, this only needs to (a) keep the heading legible and (b) glow the
-// institute's brand colour from the top — a TRANSLUCENT tint (the same "pill"
+// institute's brand colour from the top, a TRANSLUCENT tint (the same "pill"
 // shape the theme uses), never an opaque fill, so the photo still reads through
 // and the hero blends into the dark theme instead of becoming a flat colour panel.
 function heroOverlayStyle(branding: OwnerBranding): CSSProperties {
   const bg = branding.background_color;
   // A dark scrim across the FULL hero height (it does NOT fade to transparent at
   // the foot) so the white heading AND the body copy stay legible over any cover
-  // photo — in BOTH light and dark mode. In light mode this reads as a deliberate
+  // photo, in BOTH light and dark mode. In light mode this reads as a deliberate
   // dark hero band, which is exactly the fix for the "white text on a light page"
   // bug the owner reported; the page below the hero stays on the light theme.
   const scrim = "linear-gradient(180deg, rgba(0,0,0,0.66) 0%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.46) 100%)";
@@ -133,7 +133,7 @@ export default function InstituteStorefront({
   agentTenantSlug,
 }: StorefrontData & { hrefBase: string; showAgentBanner?: boolean; showHeroLogo?: boolean; agentTenantSlug?: string }) {
   // When a cover photo backs the hero, its text sits on the dark scrim (see
-  // heroOverlayStyle) and must be forced white in BOTH themes — otherwise light
+  // heroOverlayStyle) and must be forced white in BOTH themes, otherwise light
   // mode paints the heading/body dark over the photo (the reported bug).
   const hasCover = !!profile?.cover_url;
   return (
@@ -142,7 +142,7 @@ export default function InstituteStorefront({
         {profile?.cover_url ? (
           <>
             {/* Cover photo sits INSIDE the hero as its background layer, masked
-                so its edges feather into the page — the blended look, not a panel. */}
+                so its edges feather into the page, the blended look, not a panel. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={profile.cover_url}
@@ -151,7 +151,7 @@ export default function InstituteStorefront({
               className="pointer-events-none absolute inset-0 h-full w-full object-cover"
               style={{ maskImage: HERO_IMAGE_MASK, WebkitMaskImage: HERO_IMAGE_MASK }}
             />
-            {/* …with a translucent brand glow laid over it — the photo shows
+            {/* …with a translucent brand glow laid over it, the photo shows
                 through while the institute's colour tints the hero. */}
             <div className="pointer-events-none absolute inset-0" style={heroOverlayStyle(branding)} />
           </>
@@ -202,7 +202,7 @@ export default function InstituteStorefront({
               className="group flex flex-col overflow-hidden rounded-xl border border-site-border/30 bg-site-surface-soft transition hover:border-site-border/60 hover:bg-site-surface"
             >
               <article className="flex h-full flex-col">
-                {/* Cover — owner upload, or a branded initial placeholder (never a
+                {/* Cover, owner upload, or a branded initial placeholder (never a
                     stock photo). Brand-colored inset ring frames it like the ref card. */}
                 <div className="relative aspect-video w-full overflow-hidden bg-site-surface ring-1 ring-inset ring-[color:var(--color-primary)]/40">
                   {course.cover_image_url ? (

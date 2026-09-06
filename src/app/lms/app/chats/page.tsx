@@ -98,7 +98,7 @@ export default function StudentChatsPage() {
 
     // Show chat UI immediately (empty state), populate as data arrives. Gate the
     // object-shape reads on r.ok (okJson) so a tenant/auth hiccup never spreads an
-    // error body into state — 401s redirect upstream in fetchWithTimeout.
+    // error body into state, 401s redirect upstream in fetchWithTimeout.
     const bootstrapPromise = apiFetch(STUDENT_API.chatBootstrap)
       .then(okJson).then((p) => setChatBootstrap(p)).catch(() => {});
 

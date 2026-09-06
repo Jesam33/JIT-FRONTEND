@@ -70,7 +70,7 @@ const initialForm: FormData = {
 
 // `slug` is the institute's tenant slug. When present it is sent as
 // `institute_slug` so the backend binds THIS institute as the tenant before
-// creating the registration — essential on /i/{slug} storefronts, which carry
+// creating the registration, essential on /i/{slug} storefronts, which carry
 // no tenant cookie (the page was server-rendered). Absent → backend falls back
 // to the header/primary tenant, preserving the apex flow's behaviour.
 // `branding` threads this academy's configurable noun into visitor-facing copy.
@@ -95,7 +95,7 @@ export default function CourseRegisterClient({
 
   // Which price the chosen delivery mode costs. Pre-recorded uses its own
   // cheaper price when the course sets one, else falls back to the live price.
-  // Display-only — LmsIntakeController::register() re-derives the charge from
+  // Display-only, LmsIntakeController::register() re-derives the charge from
   // learning_mode server-side, so the button can never disagree with the bill.
   const usePrerecordedPrice =
     form.learning_mode === "pre_recorded" && course.prerecorded_price != null;
@@ -122,7 +122,7 @@ export default function CourseRegisterClient({
           course_name: course.title,
           referral_code: form.referral_code,
           institute_slug: slug,
-          // Country HINT only (never sets the amount — the server freezes the
+          // Country HINT only (never sets the amount, the server freezes the
           // charge currency from this). Mirrors the storefront's display hint.
           country: readCookie("country") || undefined,
         }),

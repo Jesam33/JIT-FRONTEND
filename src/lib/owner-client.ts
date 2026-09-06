@@ -57,7 +57,7 @@ export function clearBrandingCookie(): void {
 // server-side title the /lms/admin subtree inherits the root's "Jorsas Tech", and
 // because the layout now ships an async generateMetadata (for the favicon) Next
 // streams that inherited title in after hydration and clobbers the client's
-// `document.title` — so the tab title has to come from the server too. Scoped to
+// `document.title`, so the tab title has to come from the server too. Scoped to
 // /lms/admin + this origin exactly like the branding cookie.
 export function writeOwnerNameCookie(name: string | null | undefined): void {
   if (typeof document === "undefined") return;
@@ -73,7 +73,7 @@ export function clearOwnerNameCookie(): void {
 
 // Read the owner branding the shell already wrote to the /lms/admin cookie. This
 // is a SYNCHRONOUS source for owner-admin pages that need the academy's label
-// (academyLabel(readOwnerBranding())) but don't otherwise fetch branding — no
+// (academyLabel(readOwnerBranding())) but don't otherwise fetch branding, no
 // extra round-trip, no loading flash, and it matches exactly what the server
 // layout pre-paints from. Returns null server-side or before the cookie exists.
 export function readOwnerBranding(): OwnerBranding | null {
@@ -102,7 +102,7 @@ export type UpgradeInfo = {
 };
 
 // Raise the global upgrade modal (mounted once in OwnerLayoutClient). Safe to call
-// from anywhere on the client — server-side it's a no-op.
+// from anywhere on the client, server-side it's a no-op.
 export function dispatchUpgradeRequired(info: UpgradeInfo): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(UPGRADE_REQUIRED_EVENT, { detail: info }));

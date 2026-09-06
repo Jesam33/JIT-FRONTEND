@@ -89,7 +89,7 @@ function PageContent() {
 
   // Paid invite: kick off Paystack against the pending registration (the tenant
   // is bound server-side from the row), then hand off to the academy's checkout.
-  // After payment the student sets their password from the confirmation email —
+  // After payment the student sets their password from the confirmation email, 
   // the same path public paid registrations already use.
   async function payAndJoin() {
     if (!registrationId) return;
@@ -154,7 +154,7 @@ function PageContent() {
               <p className="text-sm text-white/80">
                 Hi {firstName || "there"}, you&apos;ve been invited to join{" "}
                 <span className="font-semibold text-white">{courseName || "this course"}</span>. Complete your enrolment to
-                secure your place — you&apos;ll set your password right after payment.
+                secure your place, you&apos;ll set your password right after payment.
               </p>
               <div className="flex gap-3">
                 <button

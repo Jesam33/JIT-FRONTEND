@@ -46,7 +46,7 @@ function LoginForm() {
     router.push(isSafeNextPath(nextParam) ? nextParam : "/lms/app");
   }
 
-  // Where "browse the courses to register" points — this institute's public
+  // Where "browse the courses to register" points, this institute's public
   // storefront (its own /i/{slug} mini-site or subdomain), where a prospective
   // student can pick a course and self-register.
   const coursesHref = tenantStorefrontUrl(getTenantSlug());

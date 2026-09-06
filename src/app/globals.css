@@ -62,7 +62,7 @@ a {
   text-decoration: none;
 }
 
-/* Embedded text links — links that sit INSIDE running prose (a paragraph or a
+/* Embedded text links, links that sit INSIDE running prose (a paragraph or a
    list item) are almost always inline references ("Already have one? Sign in",
    "Browse courses to register", policy links, etc.), and those should read as
    clickable, so we underline them project-wide. Navbars, sidebars, footers and
@@ -144,7 +144,7 @@ html.light .display-gradient {
   z-index: -1;
   pointer-events: none;
 
-  /* Fine grid lines — dark mode (white lines on dark bg) */
+  /* Fine grid lines, dark mode (white lines on dark bg) */
   background-image:
     linear-gradient(rgba(255,255,255,0.065) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.065) 1px, transparent 1px);
@@ -341,8 +341,8 @@ html.light {
    The student & staff portals use a monochrome (white-on-dark) accent in dark
    mode by default. When an institute picks a custom brand color, its portal
    shell gets [data-branded] (see use-portal-branding.ts), and these rules tint
-   the same key accents the light-mode block above already themes — the active
-   sidebar nav item and primary action buttons — with the institute's primary
+   the same key accents the light-mode block above already themes, the active
+   sidebar nav item and primary action buttons, with the institute's primary
    color, so branding is visible in BOTH themes. Un-branded institutes (default
    red) never get [data-branded], so their dark mode stays monochrome as before.
    var(--color-primary) is supplied by the inline brandingStyle() on the shell. */

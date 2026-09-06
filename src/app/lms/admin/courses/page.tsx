@@ -92,7 +92,7 @@ export default function OwnerCoursesPage() {
   // Cover image is managed separately from the text form. In EDIT mode it POSTs
   // immediately on pick/remove. In CREATE mode the course doesn't exist yet (the
   // endpoint needs its id), so the pick is staged here and uploaded right after the
-  // course is created — that's what makes a cover compulsory "during setup".
+  // course is created, that's what makes a cover compulsory "during setup".
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -138,7 +138,7 @@ export default function OwnerCoursesPage() {
   }, [router]);
 
   // Pull the plan summary (feature flags + limits) so the form can gate the
-  // pre-recorded checkbox and cap the capacity field. Best-effort — silent on
+  // pre-recorded checkbox and cap the capacity field. Best-effort, silent on
   // failure so the courses list still works.
   const loadPlan = useCallback(async () => {
     try {
@@ -154,7 +154,7 @@ export default function OwnerCoursesPage() {
           features: { pre_recorded_video: !!summary.features.pre_recorded_video },
         });
         // Prefill the capacity default so a new course starts at the plan's
-        // student cap (Free = 1), not blank — but only in create mode and only
+        // student cap (Free = 1), not blank, but only in create mode and only
         // while the field is still untouched, so we never stomp an owner edit.
         setForm((f) =>
           !editingIdRef.current && f.maxStudents === ""
@@ -229,7 +229,7 @@ export default function OwnerCoursesPage() {
       setSaveMsg({ kind: "err", text: "Enter a course title." });
       return;
     }
-    // Price is compulsory and must be greater than zero — there are no free
+    // Price is compulsory and must be greater than zero, there are no free
     // courses (the platform earns a commission % on each sale, so a ₦0 course
     // would earn nothing and can't be sold).
     if (form.price === "") {
@@ -245,7 +245,7 @@ export default function OwnerCoursesPage() {
       return;
     }
     // A distinct pre-recorded price is optional, but when set it must be a
-    // positive number below the live price — the whole point is that the
+    // positive number below the live price, the whole point is that the
     // pre-recorded option is the cheaper one. Only meaningful when pre-recorded is
     // available on this plan and toggled on for the course.
     const prerecordedActive = prerecordedAllowed && form.isPrerecorded;
@@ -275,7 +275,7 @@ export default function OwnerCoursesPage() {
       return;
     }
     // A cover is compulsory when creating a course (it fronts the storefront card).
-    // In edit mode the course already has one — replacing it is optional.
+    // In edit mode the course already has one, replacing it is optional.
     if (!editingId && !coverFile) {
       setSaveMsg({ kind: "err", text: "Add a cover image. It's required for every course." });
       return;
@@ -293,7 +293,7 @@ export default function OwnerCoursesPage() {
       // that doesn't include it, even if a stale form state had it checked.
       is_prerecorded_available: prerecordedAllowed && form.isPrerecorded,
       // Distinct (cheaper) pre-recorded price. Null when unset or pre-recorded
-      // isn't active — the backend then charges the live price for both modes.
+      // isn't active, the backend then charges the live price for both modes.
       prerecorded_price: prerecordedActive && form.prerecordedPrice !== "" ? Number(form.prerecordedPrice) : null,
       is_active: form.isActive,
     };
@@ -326,7 +326,7 @@ export default function OwnerCoursesPage() {
             clearStagedCover();
             resetForm();
             // A course isn't teachable until it has a cohort (a student who
-            // registers is placed into the course's open cohort — no cohort
+            // registers is placed into the course's open cohort, no cohort
             // means no instructor, chat, or timetable, and the student stays
             // invisible to staff). So the moment a course is created we route
             // the owner straight to cohort setup, carrying the new course id to
@@ -334,7 +334,7 @@ export default function OwnerCoursesPage() {
             router.push(`/lms/admin/tracks?course=${created.id}&new=1`);
             return;
           }
-          // Cover upload failed — keep the owner in edit mode so they can retry
+          // Cover upload failed, keep the owner in edit mode so they can retry
           // the cover on the now-created course rather than losing their work.
           startEdit(created);
         } else if (created?.id) {
@@ -361,7 +361,7 @@ export default function OwnerCoursesPage() {
       fd.append("file", file);
       const res = await fetch(OWNER_API.courseCover(id), {
         method: "POST",
-        headers: ownerAuthHeaders(), // no Content-Type — browser sets the multipart boundary
+        headers: ownerAuthHeaders(), // no Content-Type, browser sets the multipart boundary
         body: fd,
       });
       if (res.status === 401 || res.status === 403) {
@@ -475,7 +475,7 @@ export default function OwnerCoursesPage() {
     "w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-white/40";
 
   // This academy's configurable noun (Jorsas → "Institute", others → their label),
-  // read synchronously from the shell's branding cookie — no extra fetch here.
+  // read synchronously from the shell's branding cookie, no extra fetch here.
   const label = academyLabel(readOwnerBranding()).singular;
 
   // Pre-recorded video is a Pro+ feature. Until the plan loads we assume it's
@@ -562,7 +562,7 @@ export default function OwnerCoursesPage() {
                 placeholder="e.g. 15000"
                 className={inputClass}
               />
-              <p className="mt-1 text-[11px] text-white/40">Courses can&apos;t be free — a platform fee applies to each sale.</p>
+              <p className="mt-1 text-[11px] text-white/40">Courses can&apos;t be free, a platform fee applies to each sale.</p>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
@@ -612,7 +612,7 @@ export default function OwnerCoursesPage() {
                 Pre-recorded available
               </label>
             ) : (
-              // Pre-recorded video is a Pro+ feature — show it disabled with an
+              // Pre-recorded video is a Pro+ feature, show it disabled with an
               // upgrade hint on plans that don't include it rather than hiding it,
               // so owners know the capability exists.
               <label className="flex items-center gap-2 text-sm text-white/40" title="Pre-recorded video is available on Pro and above.">
@@ -627,7 +627,7 @@ export default function OwnerCoursesPage() {
             </label>
           </div>
 
-          {/* Pre-recorded price — only when pre-recorded is available on this plan
+          {/* Pre-recorded price, only when pre-recorded is available on this plan
               AND toggled on for this course. Optional: left blank, pre-recorded is
               charged at the live price. */}
           {prerecordedAllowed && form.isPrerecorded ? (
@@ -641,7 +641,7 @@ export default function OwnerCoursesPage() {
                 step="0.01"
                 value={form.prerecordedPrice}
                 onChange={(e) => setField("prerecordedPrice", e.target.value)}
-                placeholder="Optional — same as live if blank"
+                placeholder="Optional, same as live if blank"
                 className={inputClass}
               />
               <p className="mt-1 text-[11px] text-white/40">
@@ -650,7 +650,7 @@ export default function OwnerCoursesPage() {
             </div>
           ) : null}
 
-          {/* Cover image — fronts the storefront card. Required for every course and
+          {/* Cover image, fronts the storefront card. Required for every course and
               cropped to a uniform 16:9 on pick. In create mode the pick is staged and
               uploaded the moment the course is created; in edit mode it uploads now. */}
           <div>
@@ -792,7 +792,7 @@ export default function OwnerCoursesPage() {
                     {c.tracks_count > 0 ? (
                       <span className="text-site-muted">{c.tracks_count}</span>
                     ) : (
-                      // A course with no cohort can't actually teach anyone — flag
+                      // A course with no cohort can't actually teach anyone, flag
                       // it and link straight to cohort setup for this course.
                       <button
                         type="button"
@@ -867,7 +867,7 @@ export default function OwnerCoursesPage() {
         </div>
       </div>
 
-      {/* Drag-to-position modal — opens after a cover is picked, hands back the
+      {/* Drag-to-position modal, opens after a cover is picked, hands back the
           already-cropped 16:9 file. */}
       {positioningFile ? (
         <CoverPositioner

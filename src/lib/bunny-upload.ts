@@ -1,4 +1,4 @@
-// Hand-rolled TUS uploader for Bunny Stream — no `tus-js-client` dependency, so
+// Hand-rolled TUS uploader for Bunny Stream, no `tus-js-client` dependency, so
 // deploying stays "paste env keys + migrate" with zero new npm packages (the
 // same hand-rolled ethos as the RS256 JWT minting on the backend).
 //
@@ -34,7 +34,7 @@ export type BunnyUploadSession = {
 };
 
 // TUS Upload-Metadata values are base64; encode UTF-8 safely (titles may carry
-// accents/emoji). btoa alone throws on non-Latin1 — the unescape/encodeURIComponent
+// accents/emoji). btoa alone throws on non-Latin1, the unescape/encodeURIComponent
 // dance widens it to full UTF-8 first.
 function b64(value: string): string {
   return btoa(unescape(encodeURIComponent(value)));
@@ -50,9 +50,9 @@ function authHeaders(session: BunnyUploadSession): Record<string, string> {
 }
 
 /**
- * Upload one file to Bunny Stream for a pre-created video. Reports 0–100 progress
+ * Upload one file to Bunny Stream for a pre-created video. Reports 0 to 100 progress
  * via onProgress. Resolves when Bunny has accepted every byte (the video then
- * transcodes server-side — poll videoStatus for readiness). Rejects with a
+ * transcodes server-side, poll videoStatus for readiness). Rejects with a
  * human-friendly Error on any failure.
  */
 export async function uploadToBunny(
@@ -60,7 +60,7 @@ export async function uploadToBunny(
   file: File,
   onProgress?: (pct: number) => void,
 ): Promise<void> {
-  // 1) Create the upload — POST returns the per-upload Location to PATCH into.
+  // 1) Create the upload, POST returns the per-upload Location to PATCH into.
   const metadata = [
     `filetype ${b64(file.type || "video/mp4")}`,
     `title ${b64(file.name || "lesson video")}`,
@@ -85,7 +85,7 @@ export async function uploadToBunny(
   if (!location) {
     throw new Error("The upload could not be started. Please try again.");
   }
-  // Bunny may return a relative Location — resolve it against the endpoint's origin.
+  // Bunny may return a relative Location, resolve it against the endpoint's origin.
   const uploadUrl = new URL(location, session.upload_endpoint).toString();
 
   // 2) Send the bytes in a single PATCH via XHR so we get upload progress.

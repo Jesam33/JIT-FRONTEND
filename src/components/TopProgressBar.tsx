@@ -4,14 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 // A slim top-of-viewport progress bar that signals "something is loading" during
-// client-side navigations — the global counterpart to our per-button spinners
+// client-side navigations, the global counterpart to our per-button spinners
 // (fix #2: "anything that involves a delay before response … let's have a
 // loader"). It is a pure OVERLAY: it never replaces page content. (An earlier
 // attempt swapped children for a spinner on link mousedown and bounced clicks
-// back to the dashboard — see OwnerLayoutClient. This must stay an overlay.)
+// back to the dashboard, see OwnerLayoutClient. This must stay an overlay.)
 //
 // It starts when an internal link/router navigation begins (captured document
-// click) and completes when the URL — path or query — actually changes. A safety
+// click) and completes when the URL, path or query, actually changes. A safety
 // timeout force-completes so the bar can never get stuck.
 export default function TopProgressBar() {
   const pathname = usePathname();

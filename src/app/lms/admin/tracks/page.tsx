@@ -98,7 +98,7 @@ function TracksContent() {
 
   // Decide the explainer's initial state once: always open for someone who just
   // created a course (?new=1), otherwise open only until they've dismissed it
-  // once (remembered per browser). Wrapped in try/catch — storage can throw.
+  // once (remembered per browser). Wrapped in try/catch, storage can throw.
   useEffect(() => {
     if (isNewFromCourse) {
       setExplainerOpen(true);
@@ -224,7 +224,7 @@ function TracksContent() {
         )}
       </div>
 
-      {/* Just arrived from creating a course — spell out the next step. */}
+      {/* Just arrived from creating a course, spell out the next step. */}
       {isNewFromCourse && (
         <div className="rounded-[20px] border border-emerald-400/25 bg-emerald-400/[0.08] px-5 py-4">
           <p className="text-sm font-semibold text-emerald-200">Your course is created. One more step.</p>
@@ -235,7 +235,7 @@ function TracksContent() {
         </div>
       )}
 
-      {/* What's a cohort? — the concept, in plain language. Dismissible; reopens
+      {/* What's a cohort?, the concept, in plain language. Dismissible; reopens
           from the header button. Always shown to a first-timer arriving from
           course creation. */}
       {explainerOpen && (
@@ -252,7 +252,7 @@ function TracksContent() {
             </button>
           </div>
           <p className="mt-2 text-sm text-site-muted">
-            A <span className="font-semibold text-white/90">cohort</span> is one running batch of a course — its
+            A <span className="font-semibold text-white/90">cohort</span> is one running batch of a course, its
             own group of students, led by one instructor, moving through the material together. It&apos;s the
             class students actually join.
           </p>
@@ -260,9 +260,9 @@ function TracksContent() {
             <li className="flex gap-2">
               <span className="text-white/40">•</span>
               <span>
-                One course can have several cohorts over time — e.g.{" "}
+                One course can have several cohorts over time, e.g.{" "}
                 <span className="text-white/80">&ldquo;March 2026 Batch&rdquo;</span> and{" "}
-                <span className="text-white/80">&ldquo;August 2026 Batch&rdquo;</span> — same curriculum,
+                <span className="text-white/80">&ldquo;August 2026 Batch&rdquo;</span>, same curriculum,
                 different intakes and instructors.
               </span>
             </li>

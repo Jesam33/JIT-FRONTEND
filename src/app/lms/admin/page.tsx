@@ -25,7 +25,7 @@ type Overview = {
   };
 };
 
-// Real per-institute analytics (fix #1) — 6-month series + funnel + totals.
+// Real per-institute analytics (fix #1), 6-month series + funnel + totals.
 // `advanced` (Pro+) gates the time-series trend charts; the KPI totals and the
 // registration funnel are standard analytics shown on every plan. When advanced
 // is false the backend returns empty `series`, so the trend charts are hidden
@@ -64,7 +64,7 @@ function CopyButton({ url }: { url: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard unavailable — the URL is shown above for manual copy */
+      /* clipboard unavailable, the URL is shown above for manual copy */
     }
   };
   return (
@@ -85,7 +85,7 @@ function CopyRow({ label, url }: { label: string; url: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard unavailable — user can select manually */
+      /* clipboard unavailable, user can select manually */
     }
   };
   return (
@@ -173,7 +173,7 @@ function AreaChart({ values, labels }: { values: number[]; labels: string[] }) {
   );
 }
 
-// Registration funnel — horizontal bars per status.
+// Registration funnel, horizontal bars per status.
 function Funnel({ reg }: { reg: Analytics["registrations"] }) {
   const rows = [
     { label: "Approved", value: reg.approved, color: "#10b981" },
@@ -234,7 +234,7 @@ export default function OwnerDashboardPage() {
         return;
       }
       setData(await ovRes.json());
-      // Analytics is best-effort — a failure here still leaves the dashboard usable.
+      // Analytics is best-effort, a failure here still leaves the dashboard usable.
       if (anRes.ok) setAnalytics(await anRes.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -278,7 +278,7 @@ export default function OwnerDashboardPage() {
 
       {data && (
         <>
-          {/* Public page banner — the first thing an owner sees on landing, so
+          {/* Public page banner, the first thing an owner sees on landing, so
               they know their public page URL immediately (where new students
               browse courses and register). Full share links live further down. */}
           <div className="rounded-[20px] border border-site-primary/40 bg-site-primary/[0.08] p-6">
@@ -314,7 +314,7 @@ export default function OwnerDashboardPage() {
             </div>
           </div>
 
-          {/* Stat cards — each shows used / plan limit (∞ when unlimited). */}
+          {/* Stat cards, each shows used / plan limit (∞ when unlimited). */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STAT_CARDS.map((card) => {
               const key = card.key;
@@ -341,7 +341,7 @@ export default function OwnerDashboardPage() {
             })}
           </div>
 
-          {/* Analytics — real, tenant-scoped data */}
+          {/* Analytics, real, tenant-scoped data */}
           {analytics && (
             <section className="space-y-4">
               <h2 className="text-lg font-semibold text-white">Analytics</h2>
@@ -356,7 +356,7 @@ export default function OwnerDashboardPage() {
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Trend charts are advanced analytics (Pro+). On plans without
                     it the backend sends empty series, so show one upgrade card
-                    in their place — the funnel below stays on every plan. */}
+                    in their place, the funnel below stays on every plan. */}
                 {analytics.advanced ? (
                   <>
                     <div className={chartCard}>

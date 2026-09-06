@@ -13,7 +13,7 @@ type ModuleContent = {
   content_url: string | null;
   content_body: string | null;
   sort_order: number;
-  // Externally-hosted video (Bunny Stream) pointers — content_url is the player
+  // Externally-hosted video (Bunny Stream) pointers, content_url is the player
   // embed URL for a video uploaded to Bunny.
   provider?: string | null;
   thumbnail_url?: string | null;

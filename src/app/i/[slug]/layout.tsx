@@ -7,14 +7,14 @@ import InstituteSiteFooter from "@/components/institute/InstituteSiteFooter";
 
 // Route-scoped chrome for every per-institute mini-site under /i/{slug}
 // (the storefront AND its /i/{slug}/{courseSlug} course pages). AppChrome
-// suppresses the global jorsastech Header/Footer on /i/* — this layout replaces
+// suppresses the global jorsastech Header/Footer on /i/*, this layout replaces
 // them with the institute's OWN sticky header and slim footer, so navigating
 // "Home"/logo keeps a visitor inside that institute's site instead of bouncing
 // back to the primary marketing site.
 //
 // The fetch below is byte-for-byte identical to the one in i/[slug]/page.tsx, so
 // Next's per-request fetch memoization collapses layout + page (+ the page's
-// generateMetadata) into a single backend call — no extra round-trip, no
+// generateMetadata) into a single backend call, no extra round-trip, no
 // backend change. Wrapping the subtree in brandingStyle(branding) is what
 // rebrands the header itself (font + --color-* tokens).
 
@@ -39,7 +39,7 @@ export default async function InstituteLayout({ children, params }: Props) {
   const data = await getStorefront(slug);
 
   if (!data) {
-    // Same verdict the page reaches — render the 404 chrome, not a broken shell.
+    // Same verdict the page reaches, render the 404 chrome, not a broken shell.
     notFound();
   }
 

@@ -11,7 +11,7 @@ type Options = {
   enabled?: boolean;
 };
 
-// Real user-interaction events. Background XHR/polling is deliberately NOT here —
+// Real user-interaction events. Background XHR/polling is deliberately NOT here, 
 // the portals poll (chat 5s, sidebars 30s) and counting that as "activity" would
 // mean the session never idles out after the user walks away.
 const ACTIVITY_EVENTS = [
@@ -26,7 +26,7 @@ const ACTIVITY_EVENTS = [
 
 /**
  * Logs the user out after `timeoutMs` of no real interaction. Idle is measured by
- * wall-clock delta (Date.now) checked on an interval — not a single setTimeout —
+ * wall-clock delta (Date.now) checked on an interval, not a single setTimeout, 
  * so laptop sleep or a throttled background tab can't under-count elapsed time.
  */
 export function useIdleLogout({ timeoutMs, onIdle, enabled = true }: Options) {

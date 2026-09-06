@@ -5,21 +5,21 @@ import Link from "next/link";
 import type { OwnerBranding } from "@/lib/owner-branding";
 
 // The top navigation for a per-institute mini-site (/i/{slug} and its course
-// pages). It deliberately mirrors the global site Header's visual language —
-// sticky, blurred bar; the same theme toggle; the same rounded controls — but
+// pages). It deliberately mirrors the global site Header's visual language, 
+// sticky, blurred bar; the same theme toggle; the same rounded controls, but
 // every link stays INSIDE the institute's own context (the logo and "Courses"
 // go to the institute storefront, never back to jorsastech). This is what makes
 // each institute read as its own "jorsastech.com"-style site rather than the
 // primary marketing site with a course injected into it.
 //
 // Rendered by app/i/[slug]/layout.tsx, which wraps this subtree in
-// brandingStyle(branding) — so `--color-primary`/`--color-secondary`/font are
+// brandingStyle(branding), so `--color-primary`/`--color-secondary`/font are
 // the institute's, and the logo below carries their identity.
 
 type InstituteHeaderProps = {
   institute: { name: string; slug: string };
   branding: OwnerBranding;
-  hrefBase: string; // "/i/{slug}" — the institute's home/storefront
+  hrefBase: string; // "/i/{slug}", the institute's home/storefront
   showContact?: boolean; // only offer the Contact anchor when a contact block exists
 };
 
@@ -44,7 +44,7 @@ export default function InstituteHeader({ institute, branding, hrefBase, showCon
   // Where returning students sign in. With a wildcard domain this is the pretty
   // subdomain; otherwise a relative path with ?tenant= so the LMS login binds
   // the right institute (SetTenantFromQuery). Deterministic (no window) so it
-  // renders identically on server and client — no hydration mismatch.
+  // renders identically on server and client, no hydration mismatch.
   const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN;
   const studentLoginHref = appDomain
     ? `https://${institute.slug}.${appDomain}/lms/login`

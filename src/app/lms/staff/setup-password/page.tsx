@@ -29,7 +29,7 @@ function PageContent() {
     }
     setSubmitting(true);
     // The invite emails a reset-style token; the staff reset endpoint doubles as
-    // account activation — it sets the password on the owner-issued account.
+    // account activation, it sets the password on the owner-issued account.
     const response = await fetch(AUTH_API.staffResetPassword, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...tenantHeaders() },

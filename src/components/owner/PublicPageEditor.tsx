@@ -1,6 +1,6 @@
 "use client";
 
-// The "Public page" editor — cover image, intro (tagline + about), contact
+// The "Public page" editor, cover image, intro (tagline + about), contact
 // details, and social links, with a live StorefrontPreview of the real
 // /i/{slug} mini-site. Extracted from the old standalone /lms/admin/profile
 // page so it can live as a tab inside Customisation (page title/description are
@@ -158,7 +158,7 @@ export default function PublicPageEditor() {
       fd.append("file", file);
       const res = await fetch(OWNER_API.profileCover, {
         method: "POST",
-        headers: ownerAuthHeaders(), // no Content-Type — the browser sets the multipart boundary
+        headers: ownerAuthHeaders(), // no Content-Type, the browser sets the multipart boundary
         body: fd,
       });
       if (res.status === 401 || res.status === 403) {
@@ -386,7 +386,7 @@ export default function PublicPageEditor() {
       </div>
         </div>
 
-        {/* Live public-page preview — mirrors /i/{slug}, updates as you edit */}
+        {/* Live public-page preview, mirrors /i/{slug}, updates as you edit */}
         <div className="space-y-2 xl:sticky xl:top-6">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">Live preview</p>
           <StorefrontPreview slug={slug} profileOverride={livePreviewProfile} />

@@ -19,10 +19,10 @@ export default function Capabilities({ items = capabilities }: CapabilitiesProps
           centered
         />
 
-        {/* Bento grid — asymmetric 4-col layout, every tile has an image */}
+        {/* Bento grid, asymmetric 4-col layout, every tile has an image */}
         <div className="grid auto-rows-[220px] gap-3 md:grid-cols-4">
 
-          {/* Web Dev — large hero tile (2 cols × 2 rows) */}
+          {/* Web Dev, large hero tile (2 cols × 2 rows) */}
           {webDev && (
             <article
               className="reveal relative col-span-2 row-span-2 overflow-hidden rounded-2xl border border-site-border/20"
@@ -40,7 +40,7 @@ export default function Capabilities({ items = capabilities }: CapabilitiesProps
             </article>
           )}
 
-          {/* Mobile App — image tile (1 col × 1 row) */}
+          {/* Mobile App, image tile (1 col × 1 row) */}
           {mobileApp && (
             <article
               className="reveal relative col-span-2 row-span-1 overflow-hidden rounded-2xl border border-site-border/20 md:col-span-1"
@@ -57,7 +57,7 @@ export default function Capabilities({ items = capabilities }: CapabilitiesProps
             </article>
           )}
 
-          {/* UI/UX — image tile (1 col × 1 row) */}
+          {/* UI/UX, image tile (1 col × 1 row) */}
           {uiUx && (
             <article
               className="reveal relative col-span-2 row-span-1 overflow-hidden rounded-2xl border border-site-border/20 md:col-span-1"
@@ -74,7 +74,7 @@ export default function Capabilities({ items = capabilities }: CapabilitiesProps
             </article>
           )}
 
-          {/* API Dev — image tile (1 col × 1 row) */}
+          {/* API Dev, image tile (1 col × 1 row) */}
           {apiDev && (
             <article
               className="reveal relative col-span-2 row-span-1 overflow-hidden rounded-2xl border border-site-border/20 md:col-span-1"
@@ -97,7 +97,7 @@ export default function Capabilities({ items = capabilities }: CapabilitiesProps
             </article>
           )}
 
-          {/* Accent stat tile — "4+ Core Services" with image (1 col × 1 row) */}
+          {/* Accent stat tile, "4+ Core Services" with image (1 col × 1 row) */}
           <div
             className="reveal relative col-span-2 row-span-1 overflow-hidden rounded-2xl border border-site-border/20 md:col-span-1"
             style={{ animationDelay: "280ms" }}

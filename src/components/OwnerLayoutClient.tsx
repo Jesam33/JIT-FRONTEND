@@ -15,7 +15,7 @@ import { tenantLoginPath, setTenantCookie, getTenantSlug } from "@/lib/tenant-cl
 import { writeCachedBranding } from "@/lib/branding-cache";
 import IdleLogout from "./IdleLogout";
 
-// Pages that render before the owner has a session — no sidebar, no auth guard.
+// Pages that render before the owner has a session, no sidebar, no auth guard.
 const PUBLIC_PATHS = ["/lms/admin/login", "/lms/admin/setup"];
 
 export default function OwnerLayoutClient({
@@ -35,7 +35,7 @@ export default function OwnerLayoutClient({
   const [identity, setIdentity] = useState<OwnerIdentity | null>(null);
 
   // The customization page broadcasts saved branding so the shell (topbar logo,
-  // colors, font) updates live without a reload — and we persist it to the
+  // colors, font) updates live without a reload, and we persist it to the
   // cookie so the next refresh is flash-free too.
   useEffect(() => {
     const handler = (e: Event) => {
@@ -65,7 +65,7 @@ export default function OwnerLayoutClient({
 
   // Keep the browser tab's title on the academy's name during a live, in-session
   // rename. The reliable layer is the server layout's generateMetadata, which sets
-  // the correct <title> from the name cookie on every load/navigation — a client
+  // the correct <title> from the name cookie on every load/navigation, a client
   // `document.title` write loses to Next's streamed metadata title on a fresh load.
   // This imperative set only has to cover the moment between renaming the academy
   // in Customisation and the next reload refreshing the cookie-backed metadata.
@@ -109,13 +109,13 @@ export default function OwnerLayoutClient({
       writeOwnerNameCookie(j?.tenant?.name ?? null);
       // Pin the tenant cookie + per-institute localStorage cache so the
       // global pre-paint script (app/layout.tsx) keys off this institute
-      // — self-heals owners logged in before the cookie fix shipped.
+      //, self-heals owners logged in before the cookie fix shipped.
       if (j?.tenant?.slug) {
         setTenantCookie(j.tenant.slug);
         writeCachedBranding(j.tenant.slug, j?.branding ?? null);
       }
     } catch {
-      /* leave identity as-is — the sidebar shows sensible placeholders */
+      /* leave identity as-is, the sidebar shows sensible placeholders */
     }
   }, [router]);
 
@@ -126,7 +126,7 @@ export default function OwnerLayoutClient({
 
   // Refetch identity when a page signals the plan/identity changed. The
   // billing/verify page renders INSIDE this shell, so a client-side "Back to
-  // dashboard" after an upgrade wouldn't otherwise re-run the fetch — the plan
+  // dashboard" after an upgrade wouldn't otherwise re-run the fetch, the plan
   // tag + paid-feature badges would stay stale until a hard refresh.
   useEffect(() => {
     const handler = () => {
@@ -143,7 +143,7 @@ export default function OwnerLayoutClient({
   // via CSS variables, so it cascades into the sidebar, topbar, and every page.
   // Until the live fetch resolves we fall back to the cookie-provided branding
   // (server + first client render agree on it, so there's no hydration mismatch
-  // and no flash). Children render unconditionally — each page owns its own
+  // and no flash). Children render unconditionally, each page owns its own
   // data-loading state, and swapping them for a spinner on link mousedown would
   // interrupt the client-side navigation (that was the old "clicks bounce to
   // dashboard" bug).
@@ -153,7 +153,7 @@ export default function OwnerLayoutClient({
     <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }}>
       <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
       <IdleLogout tokenKeys={["lms_owner_token"]} redirectTo={tenantLoginPath("owner")} />
-      {/* Global plan-limit prompt — any owner page raises it via maybeUpgrade(). */}
+      {/* Global plan-limit prompt, any owner page raises it via maybeUpgrade(). */}
       <UpgradeModal />
       <div className="container-wide grid items-start gap-4 md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <OwnerSidebar identity={identity} />

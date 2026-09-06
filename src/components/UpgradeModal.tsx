@@ -6,8 +6,8 @@ import { UPGRADE_REQUIRED_EVENT, type UpgradeInfo } from "@/lib/owner-client";
 
 // A single global modal that any owner page can raise by dispatching the
 // `owner-upgrade-required` window event (see maybeUpgrade() in owner-client.ts).
-// Mounted once in OwnerLayoutClient so every gated action — a 4th course on Free,
-// an extra staff seat, a paid-only feature — surfaces the same calm upgrade
+// Mounted once in OwnerLayoutClient so every gated action, a 4th course on Free,
+// an extra staff seat, a paid-only feature, surfaces the same calm upgrade
 // prompt instead of a raw error or (the old bug) a surprise logout.
 
 // Per-cap headline. Falls back to a generic title for anything unmapped.
@@ -65,7 +65,7 @@ export default function UpgradeModal() {
       aria-modal="true"
       aria-labelledby="upgrade-modal-title"
     >
-      {/* Backdrop — click to dismiss. */}
+      {/* Backdrop, click to dismiss. */}
       <button
         type="button"
         aria-label="Close"

@@ -7,7 +7,7 @@ import { resetBrandingToDefault } from "@/lib/branding-cache";
 // The global `branding-init` pre-paint (app/layout.tsx) writes the active
 // institute's palette onto :root to kill the portal flash-of-default-theme.
 // Those inline custom properties live on <html> and PERSIST across client-side
-// navigation — the beforeInteractive script only re-runs on a full page load —
+// navigation, the beforeInteractive script only re-runs on a full page load, 
 // so clicking from a customised institute's portal back to the Jorsas
 // marketing site would otherwise leave the institute's red painted on the
 // landing page's buttons.
@@ -24,7 +24,7 @@ import { resetBrandingToDefault } from "@/lib/branding-cache";
 // paint. With useEffect, the marketing page paints one frame with the stale
 // institute :root still in place (its buttons flash the institute color via
 // `.bg-site-primary` / the [data-branded] rules in globals.css) and only
-// corrects on the next frame — the intermittent "the buttons changed" bleed.
+// corrects on the next frame, the intermittent "the buttons changed" bleed.
 // A layout effect resets :root before that first paint, so there is no flash.
 // useLayoutEffect is unavailable during SSR (React warns), so we fall back to
 // useEffect on the server, where this side-effect does not apply anyway.

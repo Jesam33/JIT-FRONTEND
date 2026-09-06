@@ -55,7 +55,7 @@ export default function Hero({ content = heroContent }: HeroProps) {
             <Button href="/institute" variant="light">{content.ctaSecondary}</Button>
             {/* The header no longer carries a "Create your Online Academy" CTA
                 (removed so the desktop nav links have room to breathe), so the
-                hero is now its single home — one tap to signup on every screen,
+                hero is now its single home, one tap to signup on every screen,
                 right where academy owners land first. */}
             <Button href="/signup" variant="outline">Create your Online Academy</Button>
           </div>

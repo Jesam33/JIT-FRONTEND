@@ -10,7 +10,7 @@ const PUBLIC_PATHS = [
   "/lms/staff/login",
   "/lms/staff/forgot-password",
   "/lms/staff/reset-password",
-  // Owner-invited staff land here with no token yet — it must stay public, or
+  // Owner-invited staff land here with no token yet, it must stay public, or
   // the guard bounces them to login before they can set a password (the invite
   // "set password" bug).
   "/lms/staff/setup-password",
@@ -58,7 +58,7 @@ export default function StaffGuard({ children }: { children: React.ReactNode }) 
         // setLoading(false) would briefly flash the dashboard mid-redirect.
         if (err?.message === "Unauthorized") return;
         // Any OTHER failure (a cold-server timeout, a momentary network reset,
-        // a transient 5xx — already retried inside apiFetchStaff) is NOT proof
+        // a transient 5xx, already retried inside apiFetchStaff) is NOT proof
         // the session is invalid. Bouncing to login here was the "dashboard
         // flashes then kicks back to login" bug. Instead render the portal, as
         // StudentGuard does; the dashboard has its own error+retry if the data

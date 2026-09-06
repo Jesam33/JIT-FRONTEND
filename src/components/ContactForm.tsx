@@ -7,7 +7,7 @@ type FormState = "idle" | "submitting" | "success" | "error";
 // Contact form for the public /contact page. Posts to the same proven
 // `/contact/send` endpoint the quote form uses, with the identical payload shape
 // ({ name, email, phone, subject, content, agree_terms_and_policy }) so no new
-// backend wiring is needed — only the copy is contact-flavoured.
+// backend wiring is needed, only the copy is contact-flavoured.
 export default function ContactForm() {
   const [form, setForm] = useState({
     name: "",

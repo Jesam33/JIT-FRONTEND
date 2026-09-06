@@ -10,14 +10,14 @@ export type OwnerBranding = {
   // Ambient glow behind the institute's public storefront. Null = standard theme.
   background_color?: string | null;
   font_family?: string | null;
-  // What this academy calls itself — the customer-facing entity noun (e.g.
+  // What this academy calls itself, the customer-facing entity noun (e.g.
   // "Institute", "Academy", "School"). Resolved server-side (brandingArray):
   // "Institute" for the primary tenant, "Online Academy" for everyone else,
-  // or the owner's own override. Text-only — never a code identifier.
+  // or the owner's own override. Text-only, never a code identifier.
   entity_label?: string | null;
   entity_label_plural?: string | null;
   // The academy's own display name (customer-facing text). Carried on the
-  // fetched branding — NOT on the branding cookie (serializeBranding still
+  // fetched branding, NOT on the branding cookie (serializeBranding still
   // whitelists, so the cookie stays name-free; the owner name rides in its own
   // OWNER_NAME_COOKIE for first-paint). Public institute pages read this to
   // title the browser tab with the academy instead of "Jorsas Tech".
@@ -25,7 +25,7 @@ export type OwnerBranding = {
 };
 
 // Concrete defaults (the current red/blue theme). Typed with plain-string
-// colors/font — not Required<OwnerBranding>, whose `| null` would poison the
+// colors/font, not Required<OwnerBranding>, whose `| null` would poison the
 // `useState` inference in the customization form.
 export const DEFAULT_BRANDING = {
   logo_url: null as string | null,
@@ -36,7 +36,7 @@ export const DEFAULT_BRANDING = {
 };
 
 // Curated font choices. We map a stored key to a robust CSS stack rather than
-// storing raw font names — this keeps things reliable (no external font loads)
+// storing raw font names, this keeps things reliable (no external font loads)
 // and safe (nothing arbitrary is injected into styles).
 export const FONT_OPTIONS: { key: string; label: string; stack: string }[] = [
   { key: "default", label: "Default (DM Sans)", stack: 'var(--font-body), "DM Sans", system-ui, sans-serif' },
@@ -52,7 +52,7 @@ export function fontStackFor(key?: string | null): string {
 }
 
 // Cookie that mirrors the institute's cosmetic branding so the owner route's
-// server layout can render the right colors/font in the FIRST HTML — no flash of
+// server layout can render the right colors/font in the FIRST HTML, no flash of
 // the default theme on refresh while the authenticated overview fetch is still
 // in flight. It holds ONLY presentational fields (hex colors, a font-key, a logo
 // URL), never a token; brandingStyle()/fontStackFor() sanitise every value
@@ -80,7 +80,7 @@ export function parseBrandingCookie(raw?: string | null): OwnerBranding | null {
   try {
     text = decodeURIComponent(raw);
   } catch {
-    /* value wasn't percent-encoded — parse it as-is */
+    /* value wasn't percent-encoded, parse it as-is */
   }
   try {
     const o = JSON.parse(text) as Record<string, unknown>;
@@ -101,13 +101,13 @@ export function parseBrandingCookie(raw?: string | null): OwnerBranding | null {
 }
 
 // A tiny companion cookie holding ONLY the academy's display name, so the owner
-// server layout can render the correct browser-tab <title> in the first HTML —
+// server layout can render the correct browser-tab <title> in the first HTML, 
 // the same first-paint reasoning as the branding cookie, but the name is not a
 // branding field (OwnerBranding has no `name`), so it rides in its own cookie.
 // Written client-side once the authenticated overview resolves; read server-side
 // in generateMetadata. Text-only, no secrets; length-capped so even a tampered
 // cookie can't produce a runaway title. (Next escapes the title as text content,
-// so there is no injection surface — the cap is just hygiene.)
+// so there is no injection surface, the cap is just hygiene.)
 export const OWNER_NAME_COOKIE = "lms_owner_name";
 
 export function parseOwnerNameCookie(raw?: string | null): string | null {
@@ -116,7 +116,7 @@ export function parseOwnerNameCookie(raw?: string | null): string | null {
   try {
     text = decodeURIComponent(raw);
   } catch {
-    /* value wasn't percent-encoded — use it as-is */
+    /* value wasn't percent-encoded, use it as-is */
   }
   text = text.trim();
   if (!text) return null;
@@ -127,7 +127,7 @@ export function parseOwnerNameCookie(raw?: string | null): string | null {
 // loading/failure window (branding is null). Backend always resolves a concrete
 // label once loaded ("Institute" for Jorsas, "Online Academy" otherwise, or the
 // owner's override), so this fallback only shows for a frame before branding
-// arrives — "Online Academy" is the product-wide default noun.
+// arrives, "Online Academy" is the product-wide default noun.
 export function academyLabel(b?: OwnerBranding | null): { singular: string; plural: string } {
   const singular = (b?.entity_label && b.entity_label.trim()) || "Online Academy";
   const plural =
@@ -142,7 +142,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 // override the theme's primary/secondary tokens and set the institute font.
 // Stays NEUTRAL for null/loading branding (returns no fontFamily) so it never
 // overrides the pre-painted `--brand-font` (:root, from the branding-init cache)
-// or the site default while the branding fetch is still in flight — that
+// or the site default while the branding fetch is still in flight, that
 // override was the last remaining source of the font flash. When the institute
 // picked a font we set both the inline fontFamily (this subtree) and
 // `--brand-font` (so descendants reading the var stay consistent).
@@ -160,8 +160,8 @@ export function brandingStyle(b?: OwnerBranding | null): CSSProperties {
 
 // The storefront's ambient background. This is applied as a REAL `background`
 // (not a CSS variable) on the /i/{slug} layout wrapper, because that wrapper is
-// a descendant of `.site-shell`/`body` — the elements that actually paint the
-// page background — and CSS variables only inherit downward, never back up to a
+// a descendant of `.site-shell`/`body`, the elements that actually paint the
+// page background, and CSS variables only inherit downward, never back up to a
 // painting ancestor. Returns `{}` when no custom color is set, so the standard
 // theme glow (from `.site-shell`) shows through the transparent wrapper.
 //

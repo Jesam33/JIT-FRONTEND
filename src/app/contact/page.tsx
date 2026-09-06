@@ -2,7 +2,7 @@ import InnerPageHero from "@/components/layout/InnerPageHero";
 import ContactForm from "@/components/ContactForm";
 import { routeIntros } from "@/lib/content";
 
-// Prefilled WhatsApp enquiry text — same wording used in the site footer.
+// Prefilled WhatsApp enquiry text, same wording used in the site footer.
 const WA_TEXT = "?text=Hello%20Jorsas%20Tech%2C%20I%27d%20like%20to%20make%20an%20enquiry.";
 
 const CONTACT = {
@@ -32,7 +32,7 @@ export default function ContactPage() {
             <ContactForm />
           </div>
 
-          {/* Direct contact methods — WhatsApp + email (no physical office listings) */}
+          {/* Direct contact methods, WhatsApp + email (no physical office listings) */}
           <aside className="lg:col-span-2">
             <div className="rounded-2xl border border-white/20 bg-white/5 p-6 sm:p-8">
               <h2 className="text-xl font-semibold text-white">Reach us directly</h2>

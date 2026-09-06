@@ -32,7 +32,7 @@ function VerifyInner() {
       const json = await res.json().catch(() => ({}));
 
       if (res.status === 202) {
-        // Payment not yet confirmed by Paystack — offer a retry.
+        // Payment not yet confirmed by Paystack, offer a retry.
         setState("pending");
         setMessage(json?.message || "Your payment is still being confirmed.");
         return;
@@ -47,7 +47,7 @@ function VerifyInner() {
       setPlan(json?.plan ?? null);
       // The owner shell resolved identity (plan tag, paid-feature badges) once on
       // mount; this page lives inside that shell, so tell it to refetch now that
-      // the plan changed — otherwise "Back to dashboard" would show the old plan.
+      // the plan changed, otherwise "Back to dashboard" would show the old plan.
       window.dispatchEvent(new CustomEvent("owner-identity-refresh"));
     } catch (err) {
       setState("error");
@@ -56,7 +56,7 @@ function VerifyInner() {
   }, [params, router]);
 
   useEffect(() => {
-    // Re-pin THIS academy from the callback's ?tenant= first — the Paystack
+    // Re-pin THIS academy from the callback's ?tenant= first, the Paystack
     // round-trip can arrive with the tenant cookie missing (fresh/other origin),
     // and the login fallback below would otherwise show the primary (jorsas) brand.
     pinTenantFromLocation();

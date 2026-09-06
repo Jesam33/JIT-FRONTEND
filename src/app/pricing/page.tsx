@@ -2,7 +2,7 @@ import Link from "next/link";
 import InnerPageHero from "@/components/layout/InnerPageHero";
 import { pricingPlans } from "@/lib/content";
 
-// Enterprise is a contact-sales tier (never a self-serve checkout) — the CTA
+// Enterprise is a contact-sales tier (never a self-serve checkout), the CTA
 // opens a pre-addressed enquiry to the same address the site uses elsewhere.
 const ENTERPRISE_CONTACT = "mailto:contact@jorsastech.com?subject=Enterprise%20plan%20enquiry";
 

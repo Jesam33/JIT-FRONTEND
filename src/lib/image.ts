@@ -2,7 +2,7 @@
 //
 // cropImageToAspect center-crops a picked File to a target aspect ratio and caps
 // its width, returning a new JPEG File. Course covers must be a uniform shape so
-// the storefront grid reads cleanly — the card is `object-cover aspect-video`
+// the storefront grid reads cleanly, the card is `object-cover aspect-video`
 // (16:9), so feeding it a pre-cropped 16:9 image fills the frame with no awkward
 // letterboxing and no owner fighting an image editor to hit "the exact
 // dimensions". Any image in, a clean 16:9 out.
@@ -42,7 +42,7 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
  * `maxWidth` wide, returned as a JPEG File. By default the crop is centred;
  * pass `focus` (0..1 fractions, like CSS object-position) to let the owner
  * choose which part of an over-wide / over-tall image the frame keeps.
- * Transparent areas flatten to white (JPEG has no alpha) — irrelevant for the
+ * Transparent areas flatten to white (JPEG has no alpha), irrelevant for the
  * typical opaque cover photo.
  */
 export async function cropImageToAspect(

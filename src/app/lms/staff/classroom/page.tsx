@@ -70,7 +70,7 @@ export default function StaffClassroomPage() {
       const [cls, crs, sched] = await Promise.all([
         apiFetchStaff(STAFF_API.classrooms).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),
         // Tenant + instructor scoped (the teacher's assigned courses), NOT the
-        // public /courses list — a bare fetch there carries no token/tenant, so
+        // public /courses list, a bare fetch there carries no token/tenant, so
         // the backend falls back to the primary institute and leaks its courses
         // into another tenant's dropdown. Mirrors the Modules page.
         apiFetchStaff(STAFF_API.assignedCourses).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); }),

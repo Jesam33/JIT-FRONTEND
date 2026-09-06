@@ -37,7 +37,7 @@ export function formatPrice(amount: number, currency = "NGN"): string {
 }
 
 /**
- * The currencies offered in the manual selector — the guaranteed fallback for
+ * The currencies offered in the manual selector, the guaranteed fallback for
  * visitors whose country we can't detect or whose local currency we don't map.
  * Mirrors CurrencyService::selectableCurrencies().
  */

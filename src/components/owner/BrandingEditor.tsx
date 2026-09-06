@@ -1,6 +1,6 @@
 "use client";
 
-// The "Branding" editor — entity label, organisation name, logo, brand colors,
+// The "Branding" editor, entity label, organisation name, logo, brand colors,
 // public-page background, and font, with a compact swatch preview plus the full
 // live StorefrontPreview. Extracted from /lms/admin/branding so it can sit as a
 // tab inside the merged Customisation page (the page title/description are owned
@@ -48,7 +48,7 @@ export default function BrandingEditor() {
   const [slug, setSlug] = useState<string | null>(null);
   // The customer-facing entity noun this academy calls itself ("Online Academy",
   // "Academy", "School", …). `entityLabel` is the editable field; `loadedLabel`
-  // is the last-saved value used in THIS page's own copy — kept stable so the
+  // is the last-saved value used in THIS page's own copy, kept stable so the
   // surrounding wording doesn't shift under the owner while they type a new one.
   const [entityLabel, setEntityLabel] = useState("");
   const [loadedLabel, setLoadedLabel] = useState("Online Academy");
@@ -63,7 +63,7 @@ export default function BrandingEditor() {
       secondary_color: secondary,
       background_color: background,
       font_family: font,
-      // Preview the entity noun live too — once the storefront reads it, the
+      // Preview the entity noun live too, once the storefront reads it, the
       // public-page preview names the entity exactly as the owner is typing it.
       entity_label: entityLabel.trim() || null,
     }),
@@ -104,7 +104,7 @@ export default function BrandingEditor() {
       .finally(() => setLoading(false));
 
     // Slug for the live public-page preview (link + storefront fetch). Fire and
-    // forget — the preview simply skips the storefront fetch until it arrives.
+    // forget, the preview simply skips the storefront fetch until it arrives.
     fetch(OWNER_API.overview, { headers: ownerAuthHeaders() })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
@@ -134,7 +134,7 @@ export default function BrandingEditor() {
           secondary_color: secondary,
           font_family: font,
           // Send the hex when set; otherwise explicitly clear any stored value
-          // (a skipped key would preserve it — mirrors remove_logo).
+          // (a skipped key would preserve it, mirrors remove_logo).
           ...(hasBg ? { background_color: background } : { remove_background: true }),
         }),
       });
@@ -197,7 +197,7 @@ export default function BrandingEditor() {
 
   // Persist the entity noun (what this academy calls itself). The backend derives
   // the plural (Str::plural) unless an override is stored, and re-resolves the
-  // label for the primary institute — so we just send the singular the owner typed.
+  // label for the primary institute, so we just send the singular the owner typed.
   const saveLabel = async () => {
     const label = entityLabel.trim();
     if (label.length < 2) {
@@ -249,7 +249,7 @@ export default function BrandingEditor() {
       fd.append("file", file);
       const res = await fetch(OWNER_API.brandingLogo, {
         method: "POST",
-        headers: ownerAuthHeaders(), // do NOT set Content-Type — the browser adds the multipart boundary
+        headers: ownerAuthHeaders(), // do NOT set Content-Type, the browser adds the multipart boundary
         body: fd,
       });
       if (res.status === 401 || res.status === 403) {
@@ -326,7 +326,7 @@ export default function BrandingEditor() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Controls */}
         <div className="space-y-6">
-          {/* What you call your organisation — the customer-facing entity noun */}
+          {/* What you call your organisation, the customer-facing entity noun */}
           <section className={cardClass}>
             <h2 className="text-lg font-semibold text-white">What you call your organisation</h2>
             <p className="mt-1 text-sm text-site-muted">
@@ -553,7 +553,7 @@ export default function BrandingEditor() {
         </div>
       </div>
 
-      {/* Full public-page preview — the actual /i/{slug} storefront, live. The
+      {/* Full public-page preview, the actual /i/{slug} storefront, live. The
           compact swatch above is a quick reference; this shows the real page. */}
       <section className="space-y-2">
         <div>

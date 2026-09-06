@@ -25,19 +25,19 @@ export const metadata: Metadata = {
   // Default browser-tab + search-result icon, driven through metadata (served from
   // public/) rather than the app/favicon.ico file convention. File-convention icons
   // have HIGHER priority than generateMetadata and are injected on EVERY route, so a
-  // per-tenant page could never override them — that's why institute storefronts kept
+  // per-tenant page could never override them, that's why institute storefronts kept
   // showing the Jorsas favicon. As metadata, a deeper segment (e.g. /i/[slug])
   // REPLACES this icons key, so each institute's own logo becomes the sole favicon on
   // its page.
   //
   // ONE mark for every surface, no theme switching. icon.svg, favicon.ico and the PNG
-  // fallback are ALL the same transparent dark "J" — we deliberately DON'T ship a
+  // fallback are ALL the same transparent dark "J", we deliberately DON'T ship a
   // white/dark-mode variant. Google draws the SERP favicon on a WHITE circle no matter
   // the searcher's theme, but its crawler runs in dark mode, so a theme-adaptive SVG
   // handed it the white "J": the mark vanished on the white chip and only the red accent
-  // survived — the "white circle with a red dot" bug. A single dark "J" stays visible on
+  // survived, the "white circle with a red dot" bug. A single dark "J" stays visible on
   // Google's light chip and on light browser tabs; on a dark tab it's a touch quieter but
-  // always legible (the red accent anchors it). All marks are transparent — no plate.
+  // always legible (the red accent anchors it). All marks are transparent, no plate.
   // favicon.ico is a crisp multi-size (16/32/48/64) dark-J.
   icons: {
     icon: [
@@ -139,7 +139,7 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Organization structured data — the canonical signal Google uses to pick
+        {/* Organization structured data, the canonical signal Google uses to pick
             the logo it shows for the site (Knowledge Panel / rich results). Points at
             the correct brand mark so search stops surfacing the old favicon. */}
         <script

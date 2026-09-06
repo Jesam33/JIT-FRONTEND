@@ -1,4 +1,4 @@
-// An institute's public-page profile — the hero copy, contact details, and
+// An institute's public-page profile, the hero copy, contact details, and
 // social links that turn its /i/{slug} storefront into a real mini-site rather
 // than a bare course list. Stored server-side in tenant.settings.profile and
 // returned (fully keyed) by the storefront + owner endpoints. Parallels

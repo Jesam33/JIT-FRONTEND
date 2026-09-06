@@ -30,10 +30,10 @@ export default function OwnerStaffPage() {
   // Per-row actions live in a "⋮" menu (avoids the wide button row that forced the
   // table to scroll sideways). `menuFor` = which staff id's menu is open; `menuPos`
   // is its fixed viewport position (the row sits inside overflow-x-auto, so an
-  // absolute menu would be clipped — we anchor a fixed one to the button instead).
+  // absolute menu would be clipped, we anchor a fixed one to the button instead).
   // `confirmingId` switches the open menu to a Remove-confirm step. In-flight state
   // (deleting/resending/toggling) drives the spinners; `actionMsg` is the outcome
-  // banner — importantly the cohort-guard warning when a Remove is refused, and
+  // banner, importantly the cohort-guard warning when a Remove is refused, and
   // whether a resend email actually left the server.
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
@@ -139,7 +139,7 @@ export default function OwnerStaffPage() {
         setInviteMsg(json?.message || `Could not send invite (HTTP ${res.status}).`);
         return;
       }
-      // The account is created even if the email failed — always refresh the list
+      // The account is created even if the email failed, always refresh the list
       // and clear the field, but only claim success when it was actually emailed.
       setInviteOk(json?.email_sent !== false);
       setInviteMsg(json?.message || `Invited ${addr}. They'll get an email to set their password.`);
@@ -361,7 +361,7 @@ export default function OwnerStaffPage() {
         </div>
       </div>
 
-      {/* Row actions menu — fixed-positioned so it escapes the table's overflow
+      {/* Row actions menu, fixed-positioned so it escapes the table's overflow
           clipping; same look as the owner topbar dropdowns. */}
       {menuFor !== null && menuPos && activeStaff && (
         <>

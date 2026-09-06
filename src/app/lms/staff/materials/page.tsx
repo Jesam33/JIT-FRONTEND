@@ -66,7 +66,7 @@ export default function StaffMaterialsPage() {
     });
 
     if (upRes.status === 402) {
-      // Staff can't upgrade — point them at their admin (no owner UpgradeModal here).
+      // Staff can't upgrade, point them at their admin (no owner UpgradeModal here).
       setError("Video lessons need the Basic plan or higher. Ask your academy admin to upgrade to add videos.");
       return;
     }

@@ -202,7 +202,7 @@ export default function StaffSidebar() {
 
     const fetchUnread = () => {
       if (document.hidden) return;
-      // Chat is a paid-plan feature — only poll chat unread when enabled.
+      // Chat is a paid-plan feature, only poll chat unread when enabled.
       if (chatEnabledRef.current) {
         apiFetchStaff(STAFF_API.chatUnread)
           .then((r) => r.json())
@@ -256,7 +256,7 @@ export default function StaffSidebar() {
     return pathname.startsWith(href);
   }
 
-  // Chat is a paid-plan feature — drop the Chats link on the free plan.
+  // Chat is a paid-plan feature, drop the Chats link on the free plan.
   const visibleGroups = chatEnabled
     ? groups
     : groups.map((g) => ({

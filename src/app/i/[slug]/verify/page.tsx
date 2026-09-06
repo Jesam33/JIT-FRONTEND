@@ -9,7 +9,7 @@ import { PUBLIC_API } from "@/lib/api";
 // by LmsIntakeController::initializePayment as /i/{slug}/verify) after a student
 // pays on an institute's storefront. This route sits UNDER i/[slug]/layout.tsx,
 // so it already wears the institute's own header/footer, brand colours and font
-// — no JIT chrome. Every link stays inside /i/{slug} so navigating away keeps
+//, no JIT chrome. Every link stays inside /i/{slug} so navigating away keeps
 // the visitor on the institute's mini-site. It polls the same tenant-agnostic
 // verify endpoint the apex page uses (the tenant is resolved server-side from
 // the globally-unique payment reference).
@@ -85,8 +85,8 @@ function PageContent() {
               <p className="mt-2 text-sm text-white/60">
                 We&apos;ve sent your setup link to your email. Click it to set your password and access your portal.
               </p>
-              {/* After paying, the real next step is the setup link we emailed —
-                  the portal isn't reachable until they set a password there — so
+              {/* After paying, the real next step is the setup link we emailed, 
+                  the portal isn't reachable until they set a password there, so
                   the prominent action restates that instead of a "Back to Home"
                   link that points nowhere useful yet. A quiet secondary link
                   still lets them return to the storefront. */}
