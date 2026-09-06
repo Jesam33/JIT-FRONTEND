@@ -318,21 +318,28 @@ export default function OwnerCoursesPage() {
       } else {
         const created: Course | undefined = json?.course;
         toast(`Course “${title}” created.`, "success");
-        // Upload the staged cover to the just-created course, then finish. The
-        // create gate above guarantees coverFile is set here.
+        // Upload the staged cover to the just-created course, then hand off to
+        // cohort setup. The create gate above guarantees coverFile is set here.
         if (created?.id && coverFile) {
           const ok = await uploadCover(created.id, coverFile);
           if (ok) {
             clearStagedCover();
             resetForm();
-            setSaveMsg({ kind: "ok", text: `Created and published “${title}”.` });
-          } else {
-            // Cover upload failed — keep the owner in edit mode so they can retry
-            // the cover on the now-created course rather than losing their work.
-            startEdit(created);
+            // A course isn't teachable until it has a cohort (a student who
+            // registers is placed into the course's open cohort — no cohort
+            // means no instructor, chat, or timetable, and the student stays
+            // invisible to staff). So the moment a course is created we route
+            // the owner straight to cohort setup, carrying the new course id to
+            // preselect it and ?new=1 to show the first-time explainer/banner.
+            router.push(`/lms/admin/tracks?course=${created.id}&new=1`);
+            return;
           }
-        } else if (created?.id) {
+          // Cover upload failed — keep the owner in edit mode so they can retry
+          // the cover on the now-created course rather than losing their work.
           startEdit(created);
+        } else if (created?.id) {
+          router.push(`/lms/admin/tracks?course=${created.id}&new=1`);
+          return;
         } else {
           resetForm();
         }
@@ -781,7 +788,21 @@ export default function OwnerCoursesPage() {
                     ) : null}
                   </td>
                   <td className="px-5 py-3 text-site-muted">{c.students_count}</td>
-                  <td className="px-5 py-3 text-site-muted">{c.tracks_count}</td>
+                  <td className="px-5 py-3">
+                    {c.tracks_count > 0 ? (
+                      <span className="text-site-muted">{c.tracks_count}</span>
+                    ) : (
+                      // A course with no cohort can't actually teach anyone — flag
+                      // it and link straight to cohort setup for this course.
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/lms/admin/tracks?course=${c.id}&new=1`)}
+                        className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-200 transition hover:bg-amber-400/20"
+                      >
+                        Needs a cohort
+                      </button>
+                    )}
+                  </td>
                   <td className="px-5 py-3">
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${

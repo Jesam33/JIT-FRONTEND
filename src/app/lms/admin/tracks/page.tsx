@@ -1,6 +1,6 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
 
@@ -17,22 +17,41 @@ type Track = {
 type CourseOption = { id: number; title: string };
 type StaffOption = { id: number; name: string };
 
+// useSearchParams() must sit under a Suspense boundary in Next 16, so the page
+// is a thin wrapper around the real content.
 export default function OwnerTracksPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-site-muted">Loading…</p>}>
+      <TracksContent />
+    </Suspense>
+  );
+}
+
+function TracksContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Handoff from course creation: ?course={id} preselects the course, ?new=1
+  // shows the "your course is created, now set up its first cohort" banner.
+  const courseFromQuery = searchParams.get("course");
+  const isNewFromCourse = searchParams.get("new") === "1";
   const [tracks, setTracks] = useState<Track[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Create-cohort form.
+  // Create-cohort form. Course is seeded from the ?course= handoff so a cohort
+  // for the just-created course is one field away.
   const [name, setName] = useState("");
-  const [courseId, setCourseId] = useState("");
+  const [courseId, setCourseId] = useState(courseFromQuery ?? "");
   const [instructorId, setInstructorId] = useState("");
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   // Row whose instructor is being reassigned (disables just that select).
   const [savingId, setSavingId] = useState<number | null>(null);
+  // The "what is a cohort?" explainer starts open for a first-timer arriving
+  // from course creation; the choice is remembered so it doesn't nag afterward.
+  const [explainerOpen, setExplainerOpen] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -76,6 +95,32 @@ export default function OwnerTracksPage() {
     }
     load();
   }, [load, router]);
+
+  // Decide the explainer's initial state once: always open for someone who just
+  // created a course (?new=1), otherwise open only until they've dismissed it
+  // once (remembered per browser). Wrapped in try/catch — storage can throw.
+  useEffect(() => {
+    if (isNewFromCourse) {
+      setExplainerOpen(true);
+      // Bring the create form into view so the next step is obvious.
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    try {
+      setExplainerOpen(localStorage.getItem("cohortExplainerDismissed") !== "1");
+    } catch {
+      setExplainerOpen(true);
+    }
+  }, [isNewFromCourse]);
+
+  const dismissExplainer = () => {
+    setExplainerOpen(false);
+    try {
+      localStorage.setItem("cohortExplainerDismissed", "1");
+    } catch {
+      /* non-fatal: the panel just reopens next visit */
+    }
+  };
 
   const createTrack = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,12 +206,80 @@ export default function OwnerTracksPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white sm:text-3xl">Tracks &amp; Cohorts</h1>
-        <p className="mt-1 text-sm text-site-muted">
-          {loading ? "Loading…" : `${tracks.length} cohort${tracks.length === 1 ? "" : "s"}`}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">Tracks &amp; Cohorts</h1>
+          <p className="mt-1 text-sm text-site-muted">
+            {loading ? "Loading…" : `${tracks.length} cohort${tracks.length === 1 ? "" : "s"}`}
+          </p>
+        </div>
+        {!explainerOpen && (
+          <button
+            type="button"
+            onClick={() => setExplainerOpen(true)}
+            className="shrink-0 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10"
+          >
+            What&apos;s a cohort?
+          </button>
+        )}
       </div>
+
+      {/* Just arrived from creating a course — spell out the next step. */}
+      {isNewFromCourse && (
+        <div className="rounded-[20px] border border-emerald-400/25 bg-emerald-400/[0.08] px-5 py-4">
+          <p className="text-sm font-semibold text-emerald-200">Your course is created. One more step.</p>
+          <p className="mt-1 text-sm text-emerald-100/80">
+            Set up its first cohort below so students can enrol and start learning. A course can&apos;t take
+            students until it has a cohort.
+          </p>
+        </div>
+      )}
+
+      {/* What's a cohort? — the concept, in plain language. Dismissible; reopens
+          from the header button. Always shown to a first-timer arriving from
+          course creation. */}
+      {explainerOpen && (
+        <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-lg font-semibold text-white">What&apos;s a cohort?</h2>
+            <button
+              type="button"
+              onClick={dismissExplainer}
+              aria-label="Dismiss"
+              className="shrink-0 rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/60 transition hover:bg-white/10 hover:text-white"
+            >
+              Got it
+            </button>
+          </div>
+          <p className="mt-2 text-sm text-site-muted">
+            A <span className="font-semibold text-white/90">cohort</span> is one running batch of a course — its
+            own group of students, led by one instructor, moving through the material together. It&apos;s the
+            class students actually join.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm text-site-muted">
+            <li className="flex gap-2">
+              <span className="text-white/40">•</span>
+              <span>
+                One course can have several cohorts over time — e.g.{" "}
+                <span className="text-white/80">&ldquo;March 2026 Batch&rdquo;</span> and{" "}
+                <span className="text-white/80">&ldquo;August 2026 Batch&rdquo;</span> — same curriculum,
+                different intakes and instructors.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-white/40">•</span>
+              <span>When a student registers for a course, they&apos;re placed into its open cohort automatically.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-white/40">•</span>
+              <span>
+                Each cohort gets its own group chat, timetable and roster. The instructor you assign sees only
+                their own cohort&apos;s students.
+              </span>
+            </li>
+          </ul>
+        </div>
+      )}
 
       {/* Create cohort */}
       <div ref={formRef} className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
