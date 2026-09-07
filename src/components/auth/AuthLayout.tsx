@@ -151,7 +151,12 @@ export default function AuthLayout({
       style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }}
       data-branded={isBranded(branding) ? "" : undefined}
     >
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon
+        href={branding?.logo_url ?? null}
+        fallbackColor={branding?.primary_color ?? null}
+        isPrimary={branding?.is_primary ?? null}
+        markText={branding?.name ?? null}
+      />
 
       <div className="w-full max-w-md">
         {/* Institute logo (or a neutral education mark when none is set). */}
