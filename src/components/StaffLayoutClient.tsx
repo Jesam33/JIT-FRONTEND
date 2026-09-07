@@ -32,8 +32,10 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
   // this post-hydration write lands last and holds once branding resolves.
   useEffect(() => {
     const name = branding?.name?.trim();
-    const slug = getTenantSlug();
-    if (name && slug && slug !== PRIMARY) {
+    // Gate on the backend's authoritative is_primary, NOT the tenant cookie: on
+    // this bare /lms/staff/app URL the cookie falls back to the primary slug, so
+    // a slug check would wrongly skip the swap on a real academy.
+    if (name && branding && branding.is_primary === false) {
       document.title = name;
     }
   }, [branding]);
@@ -65,7 +67,12 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
   return (
     <StaffGuard>
       <ToastProvider>
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon
+        href={branding?.logo_url ?? null}
+        fallbackColor={branding?.primary_color ?? null}
+        isPrimary={branding?.is_primary ?? null}
+        markText={branding?.name ?? null}
+      />
       {!hideSidebar && <IdleLogout tokenKeys={["lms_staff_token"]} redirectTo={() => tenantLoginPath("staff")} />}
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
         <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>

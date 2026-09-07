@@ -23,6 +23,17 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
     pinTenantFromLocation();
   }, [pathname]);
 
+  // Title the browser tab with the academy, not the inherited "Student Portal",
+  // on a NON-primary institute. Gate on the backend's authoritative is_primary,
+  // NOT the tenant cookie: on a bare /lms/app URL the cookie falls back to the
+  // primary slug, so a slug check would wrongly skip the swap on a real academy.
+  React.useEffect(() => {
+    const name = branding?.name?.trim();
+    if (name && branding && branding.is_primary === false) {
+      document.title = name;
+    }
+  }, [branding]);
+
   const publicPaths = [
     "/lms/login",
     "/lms/signup",
@@ -36,7 +47,12 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
 
   return (
     <StudentGuard>
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon
+        href={branding?.logo_url ?? null}
+        fallbackColor={branding?.primary_color ?? null}
+        isPrimary={branding?.is_primary ?? null}
+        markText={branding?.name ?? null}
+      />
       {!hideSidebar && <IdleLogout tokenKeys={["lms_student_token"]} redirectTo={() => tenantLoginPath("student")} />}
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
          <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>

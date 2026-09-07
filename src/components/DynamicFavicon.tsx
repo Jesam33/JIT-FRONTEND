@@ -41,7 +41,24 @@ const PRIMARY = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
 // Jorsas "J", the tab shows the academy's initial (from its tenant slug) on its
 // brand color. The generated mark never overwrites a real logo, it only fills
 // the gap when `href` is absent and the tenant is not the Jorsas primary.
-export default function DynamicFavicon({ href, fallbackColor }: { href?: string | null; fallbackColor?: string | null }) {
+// `isPrimary` (when provided) is the backend's AUTHORITATIVE platform-tenant
+// flag, resolved from the session-bound tenant. It overrides the cookie-derived
+// slug guard below, because on an authenticated portal the `tenant` cookie can
+// be stale (a bare /lms/staff/app URL with no ?tenant= falls it back to the
+// primary slug), which would wrongly suppress the academy mark. `markText` is
+// the academy's own name, so the generated initial is the academy's letter (not
+// the stale cookie slug's "J").
+export default function DynamicFavicon({
+  href,
+  fallbackColor,
+  isPrimary,
+  markText,
+}: {
+  href?: string | null;
+  fallbackColor?: string | null;
+  isPrimary?: boolean | null;
+  markText?: string | null;
+}) {
   useEffect(() => {
     if (typeof document === "undefined") return;
     const head = document.head;
@@ -63,7 +80,10 @@ export default function DynamicFavicon({ href, fallbackColor }: { href?: string 
     // icon, so we do nothing there, and, per rule 1, we never tear down an
     // existing favicon to reveal the default.
     const slug = getTenantSlug();
-    if (!slug || slug === PRIMARY) return;
+    // Prefer the authoritative flag; only fall back to the cookie slug when the
+    // backend flag hasn't been passed (e.g. public pages with no session).
+    const nonPrimary = isPrimary === false || (isPrimary == null && !!slug && slug !== PRIMARY);
+    if (!nonPrimary) return;
 
     // Never clobber a real logo (e.g. one the pre-paint set from cached
     // branding): if any existing brand favicon is a real URL, leave it. Only a
@@ -75,9 +95,12 @@ export default function DynamicFavicon({ href, fallbackColor }: { href?: string 
     const link = document.createElement("link");
     link.rel = "icon";
     link.setAttribute("data-brand-favicon", "");
-    link.href = initialMarkDataUri(slug, fallbackColor ?? null);
+    // Draw the academy's own initial (from its name) when we have it, so the
+    // mark is the academy's letter even if the cookie slug is stale; fall back
+    // to the slug only when no name was passed.
+    link.href = initialMarkDataUri(markText ?? slug, fallbackColor ?? null);
     head.appendChild(link);
-  }, [href, fallbackColor]);
+  }, [href, fallbackColor, isPrimary, markText]);
 
   return null;
 }

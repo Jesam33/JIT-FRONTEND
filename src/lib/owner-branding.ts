@@ -22,6 +22,12 @@ export type OwnerBranding = {
   // OWNER_NAME_COOKIE for first-paint). Public institute pages read this to
   // title the browser tab with the academy instead of "Jorsas Tech".
   name?: string | null;
+  // Authoritative "is this the Jorsas platform tenant?" flag from the backend
+  // (resolved from the session-bound tenant, not the cookie). The portal shells
+  // use it to gate the tab title/favicon swap: on an authenticated portal the
+  // `tenant` cookie can be stale (a bare /lms URL with no ?tenant= falls it back
+  // to the primary slug), so it must not decide branding, this flag does.
+  is_primary?: boolean | null;
 };
 
 // Concrete defaults (the current red/blue theme). Typed with plain-string

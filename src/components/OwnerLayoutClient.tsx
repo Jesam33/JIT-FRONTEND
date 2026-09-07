@@ -151,7 +151,12 @@ export default function OwnerLayoutClient({
   return (
     <ToastProvider>
     <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }}>
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon
+        href={branding?.logo_url ?? null}
+        fallbackColor={branding?.primary_color ?? null}
+        isPrimary={branding?.is_primary ?? null}
+        markText={identity?.name ?? branding?.name ?? null}
+      />
       <IdleLogout tokenKeys={["lms_owner_token"]} redirectTo={tenantLoginPath("owner")} />
       {/* Global plan-limit prompt, any owner page raises it via maybeUpgrade(). */}
       <UpgradeModal />
