@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AGENT_API, PUBLIC_API } from "../../../lib/api";
-import { tenantHeaders, pinTenantFromLocation } from "../../../lib/tenant-client";
+import { tenantHeaders, pinTenantFromLocation, getTenantSlug } from "../../../lib/tenant-client";
 import { brandingStyle, type OwnerBranding } from "../../../lib/owner-branding";
+import DynamicFavicon from "@/components/DynamicFavicon";
+
+const PRIMARY = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
 
 const qualifications = [
   "SSCE / WAEC / NECO",
@@ -63,6 +66,17 @@ export default function AgentApplyPage() {
         .catch(() => {});
     }
   }, []);
+
+  // Title the browser tab with the academy, not the inherited "Jorsas Tech", on
+  // a NON-primary academy (mirrors the public storefront). The favicon is swapped
+  // by DynamicFavicon below.
+  useEffect(() => {
+    const name = (branding?.name ?? academyName)?.trim();
+    const slug = getTenantSlug();
+    if (name && slug && slug !== PRIMARY) {
+      document.title = name;
+    }
+  }, [branding, academyName]);
 
   useEffect(() => {
     setForm((f) => ({ ...f, courses_to_promote: selectedCourses.join(", ") }));
@@ -125,6 +139,7 @@ export default function AgentApplyPage() {
   if (done) {
     return (
       <div className="relative min-h-screen site-shell flex items-center justify-center px-6 overflow-hidden" style={brandingStyle(branding)}>
+        <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full blur-[120px] pointer-events-none" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }} />
 
         <div className="max-w-md w-full text-center space-y-6 relative z-10 border border-site-border bg-site-surface p-8 md:p-10 rounded-3xl shadow-xl">
@@ -155,6 +170,7 @@ export default function AgentApplyPage() {
 
   return (
     <div className="relative min-h-screen site-shell overflow-hidden" style={brandingStyle(branding)}>
+      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
       <div className="absolute top-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full blur-[120px]" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }} />
 
       <div className="relative mx-auto max-w-6xl px-6 py-20 lg:py-28">

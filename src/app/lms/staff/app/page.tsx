@@ -64,7 +64,7 @@ export default function StaffDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <section className="rounded-2xl border border-neutral-200 bg-white p-5 md:p-6 dark:border-white/20 dark:bg-white/[0.03]">
+      <section className="rounded-2xl border border-white/20 bg-white/[0.03] p-5 md:p-6">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-white/60">Staff Dashboard</p>
           <h1 className="mt-3 text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Teaching overview</h1>

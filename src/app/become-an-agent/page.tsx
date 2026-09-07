@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PUBLIC_API } from "@/lib/api";
-import { pinTenantFromLocation } from "@/lib/tenant-client";
+import { pinTenantFromLocation, getTenantSlug } from "@/lib/tenant-client";
 import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
+import DynamicFavicon from "@/components/DynamicFavicon";
+
+const PRIMARY = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
 
 export default function BecomeAnAgentPage() {
   // Academy-aware: reached either from the apex (the Jorsas program, no tenant)
@@ -34,6 +37,17 @@ export default function BecomeAnAgentPage() {
       });
   }, []);
 
+  // Title the browser tab with the academy, not the inherited "Jorsas Tech", on
+  // a NON-primary academy (mirrors the public storefront). The favicon is swapped
+  // by DynamicFavicon in the wrapper below.
+  useEffect(() => {
+    const name = (branding?.name ?? academyName)?.trim();
+    const slug = getTenantSlug();
+    if (name && slug && slug !== PRIMARY) {
+      document.title = name;
+    }
+  }, [branding, academyName]);
+
   const brandName = academyName ?? "Jorsas";
   const applyHref = tenant
     ? `/become-an-agent/apply?tenant=${encodeURIComponent(tenant)}`
@@ -41,6 +55,7 @@ export default function BecomeAnAgentPage() {
 
   return (
     <div className="min-h-screen site-shell" style={brandingStyle(branding)}>
+      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
       <div className="mx-auto max-w-4xl px-4 py-20 text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Become a <span className="text-site-text">{brandName} Admission Marketer</span>

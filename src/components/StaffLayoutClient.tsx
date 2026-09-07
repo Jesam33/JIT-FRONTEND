@@ -11,8 +11,10 @@ import DynamicFavicon from "./DynamicFavicon";
 import { STAFF_API, PUBLIC_API } from "@/lib/api";
 import { brandingStyle, storefrontBackgroundStyle } from "@/lib/owner-branding";
 import { usePortalBranding, isBranded } from "@/lib/use-portal-branding";
-import { tenantLoginPath, pinTenantFromLocation } from "@/lib/tenant-client";
+import { tenantLoginPath, pinTenantFromLocation, getTenantSlug } from "@/lib/tenant-client";
 import IdleLogout from "./IdleLogout";
+
+const PRIMARY = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
 
 export default function StaffLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
@@ -23,6 +25,18 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
   useEffect(() => {
     pinTenantFromLocation();
   }, [pathname]);
+
+  // Title the browser tab with the academy, not the inherited "Staff Portal",
+  // on a NON-primary institute (mirrors DynamicFavicon's guard + the owner /
+  // public-storefront shells). The static layout metadata ships "Staff Portal";
+  // this post-hydration write lands last and holds once branding resolves.
+  useEffect(() => {
+    const name = branding?.name?.trim();
+    const slug = getTenantSlug();
+    if (name && slug && slug !== PRIMARY) {
+      document.title = name;
+    }
+  }, [branding]);
 
   const publicPaths = [
     "/lms/staff/login",
