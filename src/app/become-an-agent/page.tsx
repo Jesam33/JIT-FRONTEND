@@ -55,7 +55,7 @@ export default function BecomeAnAgentPage() {
 
   return (
     <div className="min-h-screen site-shell" style={brandingStyle(branding)}>
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} isPrimary={branding?.is_primary ?? null} markText={branding?.name ?? null} />
       <div className="mx-auto max-w-4xl px-4 py-20 text-center">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Become a <span className="text-site-text">{brandName} Admission Marketer</span>

@@ -50,7 +50,12 @@ export default function InstitutePublicShell({ children }: { children: React.Rea
           for a logo-less non-primary academy, never the leaked Jorsas "J". A
           falsy href is a no-op, and the primary is skipped, so nothing regresses
           for Jorsas. */}
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon
+        href={branding?.logo_url ?? null}
+        fallbackColor={branding?.primary_color ?? null}
+        isPrimary={branding?.is_primary ?? null}
+        markText={branding?.name ?? null}
+      />
       {children}
     </div>
   );

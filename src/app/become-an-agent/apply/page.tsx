@@ -139,7 +139,7 @@ export default function AgentApplyPage() {
   if (done) {
     return (
       <div className="relative min-h-screen site-shell flex items-center justify-center px-6 overflow-hidden" style={brandingStyle(branding)}>
-        <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+        <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} isPrimary={branding?.is_primary ?? null} markText={branding?.name ?? null} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full blur-[120px] pointer-events-none" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }} />
 
         <div className="max-w-md w-full text-center space-y-6 relative z-10 border border-site-border bg-site-surface p-8 md:p-10 rounded-3xl shadow-xl">
@@ -170,7 +170,7 @@ export default function AgentApplyPage() {
 
   return (
     <div className="relative min-h-screen site-shell overflow-hidden" style={brandingStyle(branding)}>
-      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} />
+      <DynamicFavicon href={branding?.logo_url ?? null} fallbackColor={branding?.primary_color ?? null} isPrimary={branding?.is_primary ?? null} markText={branding?.name ?? null} />
       <div className="absolute top-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full blur-[120px]" style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 5%, transparent)" }} />
 
       <div className="relative mx-auto max-w-6xl px-6 py-20 lg:py-28">
