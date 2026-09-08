@@ -7,6 +7,7 @@ import InstituteStorefront, { type StorefrontCourse, type StorefrontData } from 
 import { brandingStyle, storefrontBackgroundStyle, DEFAULT_BRANDING, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { hasContactInfo, type InstituteProfile } from "@/lib/institute-profile";
 import { PUBLIC_API } from "@/lib/api";
+import { tenantStorefrontUrl } from "@/lib/tenant-client";
 
 // A live, in-editor preview of an institute's REAL public page (/i/{slug}).
 //
@@ -89,11 +90,6 @@ export default function StorefrontPreview({
 }: StorefrontPreviewProps) {
   const [base, setBase] = useState<StorefrontData | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
 
   useEffect(() => {
     if (!slug) {
@@ -143,11 +139,13 @@ export default function StorefrontPreview({
         <span className="h-3 w-3 rounded-full bg-amber-400/70" aria-hidden="true" />
         <span className="h-3 w-3 rounded-full bg-emerald-400/70" aria-hidden="true" />
         <div className="ml-2 flex-1 truncate rounded-md bg-black/40 px-3 py-1 text-[11px] text-white/45">
-          {slug ? `${origin ? origin.replace(/^https?:\/\//, "") : ""}/i/${slug}` : "Your public page"}
+          {/* The real shareable address: the subdomain when APP_DOMAIN is set,
+              the /i/{slug} path otherwise (tenantStorefrontUrl decides). */}
+          {slug ? tenantStorefrontUrl(slug).replace(/^https?:\/\//, "") : "Your public page"}
         </div>
         {slug ? (
           <a
-            href={`/i/${slug}`}
+            href={tenantStorefrontUrl(slug)}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 rounded-md border border-white/15 px-2.5 py-1 text-[11px] font-semibold text-white/70 transition hover:bg-white/10"

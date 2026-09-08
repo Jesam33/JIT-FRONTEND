@@ -12,6 +12,7 @@ import { OWNER_API } from "@/lib/api";
 import { getOwnerToken, ownerAuthHeaders, readOwnerBranding } from "@/lib/owner-client";
 import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { type InstituteProfile } from "@/lib/institute-profile";
+import { tenantStorefrontUrl } from "@/lib/tenant-client";
 import StorefrontPreview from "@/components/institute/StorefrontPreview";
 
 // Normalise a value coming back from the API (null/undefined) into a controlled
@@ -255,7 +256,7 @@ export default function PublicPageEditor() {
         </p>
         {slug ? (
           <a
-            href={`/i/${slug}`}
+            href={tenantStorefrontUrl(slug)}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/10"

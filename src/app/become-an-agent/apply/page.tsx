@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AGENT_API, PUBLIC_API } from "../../../lib/api";
-import { tenantHeaders, pinTenantFromLocation, getTenantSlug } from "../../../lib/tenant-client";
+import { tenantHeaders, pinTenantFromLocation, getTenantSlug, tenantStorefrontUrl } from "../../../lib/tenant-client";
 import { brandingStyle, type OwnerBranding } from "../../../lib/owner-branding";
 import DynamicFavicon from "@/components/DynamicFavicon";
 
@@ -156,7 +156,7 @@ export default function AgentApplyPage() {
           </div>
           <div className="pt-2">
             <Link
-              href={tenant ? `/i/${tenant}` : "/"}
+              href={tenant ? tenantStorefrontUrl(tenant) : "/"}
               className="inline-block w-full rounded-full px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
               style={{ backgroundColor: "var(--color-primary)" }}
             >
