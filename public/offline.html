@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>You are offline</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: #000000;
+        color: #ffffff;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        text-align: center;
+      }
+      .card { width: 100%; max-width: 420px; }
+      .badge {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto 28px;
+        border-radius: 22px;
+        background: #ed180d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 46px;
+        line-height: 1;
+        color: #ffffff;
+        box-shadow: 0 12px 40px rgba(237, 24, 13, 0.35);
+      }
+      h1 { font-size: 24px; font-weight: 700; margin: 0 0 12px; letter-spacing: 0.2px; }
+      p { font-size: 15px; line-height: 1.6; color: rgba(255, 255, 255, 0.62); margin: 0 0 28px; }
+      button {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        background: #ed180d;
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 600;
+        padding: 12px 28px;
+        border-radius: 999px;
+        transition: opacity 0.15s ease;
+      }
+      button:hover { opacity: 0.9; }
+      button:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
+      .hint { margin-top: 20px; font-size: 12.5px; color: rgba(255, 255, 255, 0.4); }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="badge" aria-hidden="true">J</div>
+      <h1>You are offline</h1>
+      <p>We could not reach the network right now. Check your connection, then try again to keep learning.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+      <p class="hint">Jorsas Tech</p>
+    </main>
+  </body>
+</html>

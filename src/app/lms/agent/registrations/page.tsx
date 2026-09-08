@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AGENT_API } from "../../../../lib/api";
 import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
@@ -38,11 +38,24 @@ const paymentLabel: Record<string, string> = {
   failed: "Failed",
 };
 
+// useSearchParams() must sit under a Suspense boundary in Next 16, so the page
+// is a thin wrapper around the real content.
 export default function AgentRegistrationsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <RegistrationsContent />
+    </Suspense>
+  );
+}
+
+function RegistrationsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // The top navbar search redirects here as ?search=; seed the box from it.
+  const urlSearch = searchParams.get("search") ?? "";
   const [items, setItems] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch);
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -57,6 +70,9 @@ export default function AgentRegistrationsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Refilter when the navbar pushes a new ?search= while already on this page.
+  useEffect(() => { setSearch(urlSearch); }, [urlSearch]);
 
   const filtered = items.filter((r) => {
     if (search && !r.name.toLowerCase().includes(search.toLowerCase()) && !r.email.toLowerCase().includes(search.toLowerCase())) return false;

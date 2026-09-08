@@ -5,37 +5,9 @@ import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
+import { isContactSalesPlan, type Features, type Limits, type Plan } from "@/lib/plans";
+import PlanCardBody from "@/components/plans/PlanCardBody";
 
-// A plan limit; null means unlimited.
-type Limits = { courses: number | null; students: number | null; staff: number | null };
-// Plan feature flags, keys mirror config/saas.php `features` (all 13).
-type Features = {
-  live_classes: boolean;
-  chat: boolean;
-  certificates: boolean;
-  pre_recorded_video: boolean;
-  admission_marketer: boolean;
-  remove_branding: boolean;
-  advanced_analytics: boolean;
-  advanced_reporting: boolean;
-  custom_domain: boolean;
-  priority_support: boolean;
-  ai_materials: boolean;
-  api_access: boolean;
-  white_label: boolean;
-};
-// One plan in the upgrade catalogue (from TenantBillingController::planCatalogue).
-// Enterprise is a contact-sales tier: price is null and contact_sales is true.
-type Plan = {
-  slug: string;
-  name: string;
-  label?: string | null;
-  price: number | null;
-  contact_sales?: boolean;
-  commission_percent?: number;
-  limits?: Limits;
-  features?: Features;
-};
 // The resolved current plan + live usage (from Tenant::planSummaryArray).
 type PlanSummary = {
   slug: string;
@@ -45,62 +17,33 @@ type PlanSummary = {
   features: Features;
   usage?: { courses: number; students: number; staff: number };
 };
+// Live subscription lifecycle (from Tenant::subscriptionInfo). `enforced` is the
+// master freeze flag; while it is false the whole feature is dark and the banner
+// stays hidden. `state` is active | grace | frozen.
+type Subscription = {
+  state: "active" | "grace" | "frozen";
+  freeze_eligible: boolean;
+  enforced: boolean;
+  frozen: boolean;
+  status: string | null;
+  current_period_end: string | null;
+  grace_ends_at: string | null;
+  grace_days: number;
+};
 type BillingStatus = {
   tenant: { id: number; slug: string; name: string };
   plan: string;
   subscription_status: string;
   current_period_end: string | null;
+  subscription?: Subscription;
   plan_summary?: PlanSummary;
   plans: Plan[];
   billing_configured: boolean;
 };
 
 // Human labels for the plan feature flags (keys mirror config/saas.php features).
-const FEATURE_LABELS: Record<keyof Features, string> = {
-  live_classes: "Live classes",
-  chat: "Group chat",
-  certificates: "Certificates",
-  pre_recorded_video: "Pre-recorded video lessons",
-  admission_marketer: "Admission-Marketer network",
-  remove_branding: "Remove “Powered by Jorsastech” badge",
-  advanced_analytics: "Advanced analytics",
-  advanced_reporting: "Advanced reporting & exports",
-  custom_domain: "Custom domain",
-  priority_support: "Priority support",
-  ai_materials: "AI material generation",
-  api_access: "API access",
-  white_label: "Full white-label",
-};
-
-// A short, warm one-liner per tier (display-only; the limits + features shown
-// below each are the real, enforced values from the backend).
-const TAGLINES: Record<string, string> = {
-  free: "Launch your academy online at no cost.",
-  basic: "Live classes, chat & certificates for growing academies.",
-  pro: "Scale with the lowest fees, AI materials & deepest insight.",
-  enterprise: "Custom limits, full white-label & API for large organisations.",
-};
-
-// The price line: Enterprise is contact-sales (no self-serve price); ₦0 is Free.
-function priceText(plan: Plan) {
-  if (plan.contact_sales || plan.price == null) return "Contact sales";
-  return plan.price <= 0 ? "Free" : `₦${plan.price.toLocaleString()}`;
-}
-
-// A plan limit rendered for humans: null (or missing) means unlimited.
-function limitText(n: number | null | undefined) {
-  return n == null ? "Unlimited" : n.toLocaleString();
-}
-
-// The three quota lines for a plan card ("3 courses · 50 students · 1 staff").
-function limitSummary(limits?: Limits): string {
-  if (!limits) return "";
-  return [
-    `${limitText(limits.courses)} course${limits.courses === 1 ? "" : "s"}`,
-    `${limitText(limits.students)} student${limits.students === 1 ? "" : "s"}`,
-    `${limitText(limits.staff)} staff`,
-  ].join(" · ");
-}
+// FEATURE_LABELS / TAGLINES / priceText / limitSummary live in lib/plans, shared
+// with the signup page so the plan cards stay identical.
 
 // One usage line ("Students  12 / 50") with a progress bar; unlimited plans show
 // the count only. The bar turns amber near the cap so owners see it coming.
@@ -266,6 +209,32 @@ export default function BillingPage() {
 
       {status && (
         <>
+          {/* Past-due nudge. Only shows once backend enforcement is switched on
+              (subscription.enforced); before that the whole freeze feature is
+              dark and this stays hidden. Amber during the grace window, red once
+              frozen. */}
+          {status.subscription && status.subscription.enforced && status.subscription.state !== "active" ? (
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                status.subscription.state === "frozen"
+                  ? "border-red-500/40 bg-red-500/10 text-red-100"
+                  : "border-amber-400/40 bg-amber-400/10 text-amber-100"
+              }`}
+            >
+              {status.subscription.state === "frozen" ? (
+                <>Your subscription is past due and your dashboard is now limited. Renew a plan below to restore full access.</>
+              ) : (
+                <>
+                  Your subscription has ended
+                  {status.subscription.grace_ends_at ? (
+                    <> and access pauses on {new Date(status.subscription.grace_ends_at).toLocaleDateString()}</>
+                  ) : null}
+                  . Renew a plan below to stay active.
+                </>
+              )}
+            </div>
+          ) : null}
+
           {/* Current plan + live usage against the plan's caps. */}
           <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -329,10 +298,9 @@ export default function BillingPage() {
             >
               {status.plans.map((plan) => {
                 const isCurrent = plan.slug === currentPlan;
-                const isContact = !!plan.contact_sales || plan.price == null;
+                const isContact = isContactSalesPlan(plan);
                 const isPaid = !isContact && (plan.price ?? 0) > 0;
                 const disabled = isCurrent || (isPaid && !status.billing_configured) || busyPlan !== null;
-                const features = plan.features;
                 return (
                   <div
                     key={plan.slug}
@@ -353,35 +321,8 @@ export default function BillingPage() {
                       </span>
                     ) : null}
 
-                    <div className="text-sm uppercase tracking-wide text-site-muted">{plan.name}</div>
-                    <div className="mt-2 text-3xl font-semibold text-white">{priceText(plan)}</div>
-                    <div className="text-xs text-site-muted">
-                      {isContact ? "tailored to you" : isPaid ? "per month" : "forever"}
-                    </div>
-
-                    {TAGLINES[plan.slug] ? <p className="mt-3 text-xs text-site-muted">{TAGLINES[plan.slug]}</p> : null}
-
-                    {typeof plan.commission_percent === "number" ? (
-                      <div className="mt-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/80">
-                        <span className="font-semibold text-white">{plan.commission_percent}%</span> platform fee on course sales
-                      </div>
-                    ) : null}
-
-                    {plan.limits ? <div className="mt-3 text-xs text-site-muted">{limitSummary(plan.limits)}</div> : null}
-
-                    {features ? (
-                      <ul className="mt-4 space-y-2 text-sm">
-                        {(Object.keys(FEATURE_LABELS) as (keyof Features)[]).map((key) => {
-                          const on = features[key];
-                          return (
-                            <li key={key} className={`flex items-center gap-2 ${on ? "text-white/85" : "text-site-muted"}`}>
-                              <span className={on ? "text-emerald-400" : "text-white/30"}>{on ? "✓" : "—"}</span>
-                              <span className={on ? "" : "opacity-70"}>{FEATURE_LABELS[key]}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : null}
+                    {/* Shared card body, identical to the signup plan cards. */}
+                    <PlanCardBody plan={plan} />
 
                     {isContact ? (
                       <a

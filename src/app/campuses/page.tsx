@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import InnerPageHero from "@/components/layout/InnerPageHero";
 import { PUBLIC_API } from "@/lib/api";
 import { tenantStorefrontUrl } from "@/lib/tenant-client";
@@ -15,6 +15,7 @@ type Campus = {
   primary_color: string | null;
   entity_label: string | null;
   description: string | null;
+  niche: string | null;
   course_titles: string[];
   course_count: number;
 };
@@ -34,6 +35,9 @@ export default function CampusesPage() {
   // The academy whose detail panel is open (null = the grid). Kept by slug so
   // it survives a re-fetch; resolved back to the object for rendering.
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  // The selected category filter (null = All). Only categories actually present
+  // are offered, so a selection always matches at least one academy.
+  const [activeNiche, setActiveNiche] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +60,25 @@ export default function CampusesPage() {
     () => (openSlug ? campuses?.find((c) => c.slug === openSlug) ?? null : null),
     [openSlug, campuses],
   );
+
+  // Distinct categories present across the loaded academies, sorted, so the
+  // filter row only ever offers niches that actually match an academy.
+  const niches = useMemo(() => {
+    if (!campuses) return [];
+    const set = new Set<string>();
+    for (const c of campuses) {
+      const n = (c.niche ?? "").trim();
+      if (n) set.add(n);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [campuses]);
+
+  // The grid after the active category filter (null = show every academy).
+  const filtered = useMemo(() => {
+    if (!campuses) return [];
+    if (!activeNiche) return campuses;
+    return campuses.filter((c) => (c.niche ?? "").trim() === activeNiche);
+  }, [campuses, activeNiche]);
 
   return (
     <section>
@@ -93,38 +116,55 @@ export default function CampusesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-            {campuses.map((c) => (
-              <button
-                key={c.slug}
-                type="button"
-                onClick={() => setOpenSlug(c.slug)}
-                className="group flex flex-col items-center gap-3 text-center focus:outline-none"
-              >
-                <span
-                  className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/15 transition group-hover:ring-site-primary group-focus-visible:ring-site-primary"
-                  style={{ backgroundColor: c.primary_color ?? "#1a1a1a" }}
+          <>
+            {/* Category filter, shown only once at least one academy has set a
+                category. "All" resets to the full directory. */}
+            {niches.length > 0 ? (
+              <div className="mb-8 flex flex-wrap gap-2">
+                <FilterChip active={activeNiche === null} onClick={() => setActiveNiche(null)}>
+                  All
+                </FilterChip>
+                {niches.map((n) => (
+                  <FilterChip key={n} active={activeNiche === n} onClick={() => setActiveNiche(n)}>
+                    {n}
+                  </FilterChip>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+              {filtered.map((c) => (
+                <button
+                  key={c.slug}
+                  type="button"
+                  onClick={() => setOpenSlug(c.slug)}
+                  className="group flex flex-col items-center gap-3 text-center focus:outline-none"
                 >
-                  {c.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={c.logo_url}
-                      alt={c.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl font-bold text-white">{initials(c.name)}</span>
-                  )}
-                </span>
-                <span className="text-sm font-semibold text-site-text transition group-hover:text-site-primary">
-                  {c.name}
-                </span>
-                <span className="text-xs text-site-text/60">
-                  {c.course_count} {c.course_count === 1 ? "course" : "courses"}
-                </span>
-              </button>
-            ))}
-          </div>
+                  <span
+                    className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/15 transition group-hover:ring-site-primary group-focus-visible:ring-site-primary"
+                    style={{ backgroundColor: c.primary_color ?? "#1a1a1a" }}
+                  >
+                    {c.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={c.logo_url}
+                        alt={c.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-white">{initials(c.name)}</span>
+                    )}
+                  </span>
+                  <span className="text-sm font-semibold text-site-text transition group-hover:text-site-primary">
+                    {c.name}
+                  </span>
+                  <span className="text-xs text-site-text/60">
+                    {c.course_count} {c.course_count === 1 ? "course" : "courses"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -212,5 +252,31 @@ export default function CampusesPage() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+// One pill in the category filter row. Filled with the brand primary when active.
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+        active
+          ? "border-site-primary bg-site-primary text-white"
+          : "border-site-border/40 bg-site-surface-soft text-site-text/70 hover:border-site-primary/60 hover:text-site-text"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

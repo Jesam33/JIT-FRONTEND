@@ -466,7 +466,7 @@ export default function OwnerDashboardPage() {
               </div>
               {data.recent_students.length ? (
                 <ul className="space-y-2">
-                  {data.recent_students.map((s) => (
+                  {data.recent_students.slice(0, 2).map((s) => (
                     <li
                       key={s.id}
                       className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-2.5"

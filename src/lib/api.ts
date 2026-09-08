@@ -78,9 +78,15 @@ export const OWNER_API = {
   // settle to its bank (institute collects, not the platform). GET + POST share.
   paymentSettings: api("/api/frontend/lms/owner/payment-settings"),
   paymentSettingsUpdate: api("/api/frontend/lms/owner/payment-settings"),
-  // Confirm the account holder's name (Paystack /bank/resolve) before linking, 
+  // Confirm the account holder's name (Paystack /bank/resolve) before linking,
   // confirmatory only, never blocks linking if the gateway is down.
   resolveAccount: api("/api/frontend/lms/owner/resolve-account"),
+  // Custom domains (Pro/Enterprise): point learn.youracademy.com at the platform.
+  // List/add, then verify the DNS TXT record so the domain resolves the academy.
+  domains: api("/api/frontend/lms/owner/domains"),
+  addDomain: api("/api/frontend/lms/owner/domains"),
+  verifyDomain: (id: string | number) => api(`/api/frontend/lms/owner/domains/${id}/verify`),
+  deleteDomain: (id: string | number) => api(`/api/frontend/lms/owner/domains/${id}`),
   // AI training materials (Gamma, Pro+). generate → poll aiStatus(id) → aiSave the
   // finished Gamma link into a course. A non-Pro academy gets 402 on generate/save,
   // which maybeUpgrade() turns into the UpgradeModal.

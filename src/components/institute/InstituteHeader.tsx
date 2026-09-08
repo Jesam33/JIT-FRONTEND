@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { OwnerBranding } from "@/lib/owner-branding";
 
@@ -24,22 +24,10 @@ type InstituteHeaderProps = {
 };
 
 export default function InstituteHeader({ institute, branding, hrefBase, showContact = false }: InstituteHeaderProps) {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("light", newTheme === "light");
-  };
+  // Theme toggle is hidden for now while light mode is being finished; the app
+  // runs dark-only (see the force-dark theme-init in app/layout.tsx). Restore
+  // the theme state, effect, toggleTheme and the toggle button to bring it back.
 
   // Where returning students sign in. With a wildcard domain this is the pretty
   // subdomain; otherwise a relative path with ?tenant= so the LMS login binds
@@ -86,24 +74,6 @@ export default function InstituteHeader({ institute, branding, hrefBase, showCon
           </nav>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/35 text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
-              aria-label="Toggle theme"
-            >
-              {theme === "light" ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-                </svg>
-              )}
-            </button>
-
             <Link
               href={studentLoginHref}
               className="hidden items-center rounded-full border border-white/35 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 md:inline-flex [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"

@@ -7,6 +7,7 @@ import { formatLocalDateTime, canJoinClassroom, isClassEnded, isClassActiveWindo
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_MODULE_API, STUDENT_API } from "../../../../lib/api";
 import { apiFetch, okJson } from "../../../../lib/fetch-with-timeout";
+import { getTenantSlug } from "@/lib/tenant-client";
 
 type TimetableItem = {
   id: number;
@@ -35,20 +36,67 @@ export default function StudentClassroomPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // The id of the class whose live room the student is currently inside. It
+  // pins that class as "active" so its scheduled end time can no longer tear
+  // the session down: the class ends when the teacher ends the meeting.
+  const [liveClassId, setLiveClassId] = useState<number | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const fullscreenWrapRef = useRef<HTMLDivElement>(null);
   // Which class is currently live in the embed, so the leave / class-ended /
   // hangup paths can post attendance for the right classroom. attendanceClosedRef
   // dedupes the close-out when both the button and the iframe's own leave fire.
   const liveClassRef = useRef<{ id: number; classType: string } | null>(null);
   const attendanceClosedRef = useRef<number | null>(null);
 
-  // Close pseudo-fullscreen with Escape key
+  // Fullscreen: on phones we request TRUE fullscreen and lock landscape for a
+  // usable call (auto-rotate no longer required); desktop falls back to the CSS
+  // overlay below. Both are best-effort and wrapped so an unsupported browser
+  // simply keeps the overlay.
+  const enterFullscreen = async () => {
+    setIsFullscreen(true);
+    try {
+      await fullscreenWrapRef.current?.requestFullscreen?.();
+    } catch {
+      /* no native fullscreen (e.g. iOS Safari): the CSS overlay still applies */
+    }
+    try {
+      await (screen.orientation as unknown as { lock?: (o: string) => Promise<void> })?.lock?.("landscape");
+    } catch {
+      /* orientation lock unsupported / not permitted: leave rotation to the user */
+    }
+  };
+  const exitFullscreen = async () => {
+    try {
+      (screen.orientation as unknown as { unlock?: () => void })?.unlock?.();
+    } catch { /* ignore */ }
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+    } catch { /* ignore */ }
+    setIsFullscreen(false);
+  };
+
+  // Close fullscreen with Escape, and keep our state in sync when the viewer
+  // leaves native fullscreen with the system back gesture / button.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && isFullscreen) setIsFullscreen(false);
+      if (e.key === "Escape" && isFullscreen) {
+        try { (screen.orientation as unknown as { unlock?: () => void })?.unlock?.(); } catch { /* ignore */ }
+        try { if (document.fullscreenElement) document.exitFullscreen(); } catch { /* ignore */ }
+        setIsFullscreen(false);
+      }
+    }
+    function onFsChange() {
+      if (!document.fullscreenElement) {
+        try { (screen.orientation as unknown as { unlock?: () => void })?.unlock?.(); } catch { /* ignore */ }
+        setIsFullscreen(false);
+      }
     }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("fullscreenchange", onFsChange);
+    };
   }, [isFullscreen]);
 
   const token = useMemo(() => getToken(), []);
@@ -56,6 +104,14 @@ export default function StudentClassroomPage() {
   const studentName = useMemo(() => {
     return `${profile.first_name ?? "Student"} ${profile.last_name ?? ""}`.trim();
   }, [profile.first_name, profile.last_name]);
+
+  // "Share and earn" funnel: students can become admission marketers (agents)
+  // for their academy. Carry the tenant slug so the apply journey stays on the
+  // right academy instead of defaulting to the primary platform.
+  const agentHref = useMemo(() => {
+    const slug = getTenantSlug();
+    return slug ? `/become-an-agent?tenant=${encodeURIComponent(slug)}` : "/become-an-agent";
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -87,11 +143,15 @@ export default function StudentClassroomPage() {
 
   const activeClass = useMemo(() => {
     return sortedTimetable.find((item) => {
+      // Keep the class the student is currently inside pinned as active even
+      // once its scheduled end time passes: a live class ends when the teacher
+      // ends the meeting (the iframe posts jitsi-left), not on the clock.
+      if (isClassLive && liveClassId === item.id) return true;
       const date = new Date(item.starts_at);
       const now = new Date(currentTime);
       return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate() && !isClassEnded(item.starts_at, item.ends_at, currentTime);
     });
-  }, [sortedTimetable, currentTime]);
+  }, [sortedTimetable, currentTime, isClassLive, liveClassId]);
 
   const upcomingClasses = useMemo(() => {
     return sortedTimetable.filter((item) => new Date(item.starts_at).getTime() > currentTime);
@@ -122,6 +182,18 @@ export default function StudentClassroomPage() {
     }
   }, []);
 
+  // Single teardown path for leaving the embedded room (used by the Leave
+  // button's clean hang-up, the iframe's own jitsi-left, and the fallback
+  // timer). Closes out attendance and clears the live-class pin.
+  const teardownEmbed = useCallback(() => {
+    setIsClassLive(false);
+    setIframeUrl(null);
+    setLiveClassId(null);
+    const live = liveClassRef.current;
+    if (live) closeOutAttendance(live.id, live.classType);
+    liveClassRef.current = null;
+  }, [closeOutAttendance]);
+
   const handleMeetingMessage = useCallback((event: MessageEvent) => {
     if (event.origin !== window.location.origin) return;
     const { type, detail } = event.data || {};
@@ -135,32 +207,21 @@ export default function StudentClassroomPage() {
         setJoinMessage(detail || "Failed to join the class.");
         break;
       case "jitsi-left": {
-        setIsClassLive(false);
-        setIframeUrl(null);
         setJoinMessage("You left the classroom.");
-        const live = liveClassRef.current;
-        if (live) closeOutAttendance(live.id, live.classType);
-        liveClassRef.current = null;
+        teardownEmbed();
         break;
       }
     }
-  }, [closeOutAttendance]);
+  }, [teardownEmbed]);
 
   useEffect(() => {
     window.addEventListener("message", handleMeetingMessage);
     return () => window.removeEventListener("message", handleMeetingMessage);
   }, [handleMeetingMessage]);
 
-  useEffect(() => {
-    if (!isClassLive || !activeClass || !iframeUrl) return;
-    if (isClassEnded(activeClass.starts_at, activeClass.ends_at, currentTime)) {
-      setIsClassLive(false);
-      setIframeUrl(null);
-      setJoinMessage("Class time has ended.");
-      closeOutAttendance(activeClass.id, activeClass.class_type ?? "classroom");
-      liveClassRef.current = null;
-    }
-  }, [currentTime, activeClass?.ends_at, isClassLive, iframeUrl, closeOutAttendance]);
+  // NOTE: the live session is deliberately NOT torn down when the scheduled end
+  // time passes. A class ends when the teacher ends the meeting (the iframe
+  // posts jitsi-left) or the student leaves, never on the clock.
 
   async function joinClassroom(id: number) {
     setJoinMessage("");
@@ -204,10 +265,14 @@ export default function StudentClassroomPage() {
       url.searchParams.set("room", payload.room);
       url.searchParams.set("jwt", payload.jwt);
       url.searchParams.set("userName", payload.user_name ?? studentName);
+      // A clean class title for the call header instead of the raw room id.
+      if (activeClass?.title) url.searchParams.set("subject", activeClass.title);
 
-      // Track which class is live so the leave / class-ended / hangup paths can
-      // post attendance for it; reset the dedupe guard for this fresh session.
+      // Track which class is live so the leave / hangup paths can post
+      // attendance for it, and pin it as active so its scheduled end time can't
+      // tear the session down. Reset the dedupe guard for this fresh session.
       liveClassRef.current = { id: classroomId, classType };
+      setLiveClassId(classroomId);
       attendanceClosedRef.current = null;
       setIframeUrl(url.toString());
     } catch {
@@ -217,13 +282,24 @@ export default function StudentClassroomPage() {
     }
   }
 
-  function leaveEmbeddedClassroom() {
-    setIsClassLive(false);
-    setIframeUrl(null);
-    setJoinMessage("You left the classroom.");
-    const live = liveClassRef.current;
-    if (live) closeOutAttendance(live.id, live.classType);
-    liveClassRef.current = null;
+  // Leaving asks the embedded call to hang up cleanly FIRST (so the video
+  // bridge drops our endpoint right away and re-joining doesn't show a ghost
+  // duplicate of us), then tears down when the iframe confirms with jitsi-left.
+  // If it doesn't confirm within ~1.5s we tear down anyway as a fallback.
+  function requestLeave() {
+    const frame = iframeRef.current;
+    if (frame && frame.contentWindow) {
+      try {
+        frame.contentWindow.postMessage({ type: "jitsi-hangup" }, window.location.origin);
+      } catch {
+        /* fall through to the immediate teardown below */
+      }
+      window.setTimeout(() => {
+        if (liveClassRef.current) teardownEmbed();
+      }, 1500);
+    } else {
+      teardownEmbed();
+    }
   }
 
   if (loading) return <LoadingSpinner />;
@@ -280,9 +356,12 @@ export default function StudentClassroomPage() {
             ) : isScheduledClass && isClassLive ? (
               <>
                 <p className="mt-3 text-sm text-emerald-300">Live now. You are in the embedded session.</p>
-                <button type="button" onClick={leaveEmbeddedClassroom} className="mt-3 rounded-full border border-rose-300/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100">
+                <button type="button" onClick={requestLeave} className="mt-3 rounded-full border border-rose-300/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100">
                   Leave Class
                 </button>
+                <a href={agentHref} className="mt-3 block text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 hover:text-emerald-200">
+                  Share your course link and earn rewards
+                </a>
               </>
             ) : !isClassActiveWindow(activeClass.starts_at, activeClass.ends_at, currentTime) ? (
               <>
@@ -311,9 +390,12 @@ export default function StudentClassroomPage() {
             ) : (
               <>
                 <p className="mt-3 text-sm text-emerald-300">Live now. You are in the embedded session.</p>
-                <button type="button" onClick={leaveEmbeddedClassroom} className="mt-3 rounded-full border border-rose-300/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100">
+                <button type="button" onClick={requestLeave} className="mt-3 rounded-full border border-rose-300/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100">
                   Leave Class
                 </button>
+                <a href={agentHref} className="mt-3 block text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 hover:text-emerald-200">
+                  Share your course link and earn rewards
+                </a>
               </>
             )}
 
@@ -321,18 +403,20 @@ export default function StudentClassroomPage() {
               <>
                 {/* CSS pseudo-fullscreen overlay, keeps iframe in DOM so Jitsi re-layouts on resize */}
                 <div
+                  ref={fullscreenWrapRef}
                   className={isFullscreen
                     ? "fixed inset-0 z-[9999] bg-black w-screen h-screen"
                     : "relative mt-4 rounded-lg border border-white/15 w-full overflow-hidden"
                   }
                   style={!isFullscreen ? { height: "78vh", minHeight: "650px" } : undefined}
                 >
-                  {/* Fullscreen toggle button */}
+                  {/* Fullscreen toggle. Kept on the LEFT so it never sits on top
+                      of Jitsi's own panel close (x) button on the right. */}
                   <button
                     type="button"
-                    onClick={() => setIsFullscreen((f) => !f)}
+                    onClick={() => (isFullscreen ? exitFullscreen() : enterFullscreen())}
                     title={isFullscreen ? "Exit fullscreen (Esc)" : "Enter fullscreen"}
-                    className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80 transition-colors"
+                    className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/80 transition-colors"
                   >
                     {isFullscreen ? (
                       <>

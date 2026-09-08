@@ -28,6 +28,10 @@ type PaymentSettings = {
     account_name: string | null;
   };
   platform_commission_percent: number;
+  // The cut this academy pays its own admission agents per sale, and whether the
+  // agent programme is part of the plan at all (the card only shows when it is).
+  agent_commission_percent: number;
+  agent_program_enabled: boolean;
   gateway_ready: boolean;
   banks: Bank[];
 };
@@ -42,6 +46,13 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  // Agent commission. `agentRate` is the editable percent; `sample` is an example
+  // sale price the owner can change to preview their net per sale. Only meaningful
+  // when the plan includes the admission agent programme.
+  const [agentRate, setAgentRate] = useState("");
+  const [savingRate, setSavingRate] = useState(false);
+  const [sample, setSample] = useState("10000");
 
   // Link-a-subaccount form (bank-details path). We send the owner's legal first +
   // last name (not a free-text business name) as the subaccount name so it matches
@@ -71,6 +82,7 @@ export default function PaymentsPage() {
         setFirstName(json.payment.first_name ?? "");
         setLastName(json.payment.last_name ?? "");
         setBankCode(json.payment.bank_code ?? "");
+        setAgentRate(String(json.agent_commission_percent ?? ""));
       } else {
         setMsg({ kind: "err", text: `Could not load payment settings (HTTP ${res.status}).` });
       }
@@ -204,6 +216,41 @@ export default function PaymentsPage() {
     }
   };
 
+  // Save just the agent commission rate. The backend routes a request that carries
+  // agent_commission_percent and no bank fields straight to a rate-only update, so
+  // this never disturbs the linked payout account.
+  const saveAgentRate = async () => {
+    setMsg(null);
+    const rate = parseFloat(agentRate);
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+      setMsg({ kind: "err", text: "Enter a commission rate between 0 and 100." });
+      return;
+    }
+    setSavingRate(true);
+    try {
+      const res = await fetch(OWNER_API.paymentSettingsUpdate, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...ownerAuthHeaders() },
+        body: JSON.stringify({ agent_commission_percent: rate }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 401 || res.status === 403) {
+        router.replace(tenantLoginPath("owner"));
+        return;
+      }
+      if (!res.ok) {
+        setMsg({ kind: "err", text: json?.message || `Could not update agent commission (HTTP ${res.status}).` });
+        return;
+      }
+      setMsg({ kind: "ok", text: json?.message || "Agent commission updated." });
+      await load();
+    } catch (err) {
+      setMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setSavingRate(false);
+    }
+  };
+
   const configured = data?.payment.configured;
   const commission = data?.platform_commission_percent ?? 0;
   const managed = data?.payment.managed ?? false;
@@ -214,6 +261,18 @@ export default function PaymentsPage() {
   const pastedCode = !!configured && !managed;
   // This academy's configurable noun, read synchronously from the shell cookie.
   const label = academyLabel(readOwnerBranding()).singular;
+
+  // Agent commission derived figures for the net-per-sale preview. The agent cut
+  // only applies on a sale an agent referred or registered; a direct sale pays no
+  // commission, so we show both outcomes. Everything clamps to a sane range.
+  const agentProgramEnabled = data?.agent_program_enabled ?? false;
+  const agentRateNum = Math.max(0, Math.min(100, parseFloat(agentRate) || 0));
+  const sampleNum = Math.max(0, parseInt(sample || "0", 10) || 0);
+  const platformCut = (sampleNum * commission) / 100;
+  const agentCut = (sampleNum * agentRateNum) / 100;
+  const keepAgentSale = Math.max(0, sampleNum - platformCut - agentCut);
+  const keepDirectSale = Math.max(0, sampleNum - platformCut);
+  const fmtNaira = (n: number) => "₦" + Math.round(n).toLocaleString();
 
   return (
     <div className="space-y-6">
@@ -413,6 +472,87 @@ export default function PaymentsPage() {
           >
             {saving ? "Linking…" : "Link payout account"}
           </button>
+        </div>
+      )}
+
+      {/* AGENT COMMISSION, only when the plan includes the admission agent programme */}
+      {!loading && data && agentProgramEnabled && (
+        <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-6">
+          <h2 className="text-lg font-semibold text-white">Agent commission</h2>
+          <p className="mt-1 max-w-2xl text-sm text-site-muted">
+            What you pay an admission agent for each sale they bring in. It comes out of your own
+            earnings on that sale, separately from the platform fee. A direct sale with no agent
+            involved pays no commission.
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <div className="w-44">
+              <label className="mb-1.5 block text-sm text-white/80">Commission rate</label>
+              <div className="relative">
+                <input
+                  className={`${inputClass} pr-8`}
+                  value={agentRate}
+                  inputMode="decimal"
+                  placeholder="5"
+                  onChange={(e) => setAgentRate(e.target.value.replace(/[^\d.]/g, "").slice(0, 6))}
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-site-muted">
+                  %
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={saveAgentRate}
+              disabled={savingRate}
+              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+            >
+              {savingRate ? "Saving…" : "Save rate"}
+            </button>
+          </div>
+
+          {/* Net-per-sale preview */}
+          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs uppercase tracking-wide text-site-muted">Example on a sale of</span>
+              <div className="relative w-36">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-site-muted">
+                  ₦
+                </span>
+                <input
+                  className="w-full rounded-lg border border-white/15 bg-white/5 py-1.5 pl-7 pr-3 text-right text-sm text-white outline-none transition focus:border-white/30 focus:bg-white/10"
+                  value={sample}
+                  inputMode="numeric"
+                  onChange={(e) => setSample(e.target.value.replace(/[^\d]/g, "").slice(0, 9))}
+                />
+              </div>
+            </div>
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-site-muted">Sale price</dt>
+                <dd className="font-medium text-white">{fmtNaira(sampleNum)}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-site-muted">Platform fee ({commission}%)</dt>
+                <dd className="text-white">{fmtNaira(platformCut)}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-site-muted">Agent commission ({agentRateNum}%)</dt>
+                <dd className="text-white">{fmtNaira(agentCut)}</dd>
+              </div>
+              <div className="flex items-center justify-between border-t border-white/10 pt-2">
+                <dt className="font-semibold text-white">You keep on an agent sale</dt>
+                <dd className="font-semibold text-emerald-300">{fmtNaira(keepAgentSale)}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-site-muted">You keep on a direct sale</dt>
+                <dd className="text-white">{fmtNaira(keepDirectSale)}</dd>
+              </div>
+            </dl>
+            <p className="mt-3 text-xs text-site-muted">
+              Commission is recorded when an agent refers or registers a paid student, and settles from
+              your agent payouts. Changing the rate affects new sales only.
+            </p>
+          </div>
         </div>
       )}
     </div>

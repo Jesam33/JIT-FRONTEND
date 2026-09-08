@@ -12,6 +12,7 @@ import { OWNER_API } from "@/lib/api";
 import { getOwnerToken, ownerAuthHeaders, readOwnerBranding } from "@/lib/owner-client";
 import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { type InstituteProfile } from "@/lib/institute-profile";
+import { ACADEMY_NICHES, OTHER_NICHE, isKnownNiche } from "@/lib/niches";
 import StorefrontPreview from "@/components/institute/StorefrontPreview";
 
 // Normalise a value coming back from the API (null/undefined) into a controlled
@@ -45,6 +46,10 @@ export default function PublicPageEditor() {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [tagline, setTagline] = useState("");
   const [about, setAbout] = useState("");
+  // The academy's teaching category, drives the public Campuses directory
+  // filter. "Other" swaps the dropdown for the free-text field beside it.
+  const [niche, setNiche] = useState("");
+  const [nicheOther, setNicheOther] = useState("");
   const [contact, setContact] = useState<Contact>({ email: "", phone: "", whatsapp: "", address: "" });
   const [socials, setSocials] = useState<Socials>({
     website: "",
@@ -58,6 +63,16 @@ export default function PublicPageEditor() {
     setCoverUrl(p.cover_url ?? null);
     setTagline(s(p.tagline));
     setAbout(s(p.about));
+    // A stored niche that isn't one of the predefined options is a custom value
+    // the owner typed, so preselect "Other" and drop it into the free-text field.
+    const storedNiche = s(p.niche);
+    if (storedNiche && !isKnownNiche(storedNiche)) {
+      setNiche(OTHER_NICHE);
+      setNicheOther(storedNiche);
+    } else {
+      setNiche(storedNiche);
+      setNicheOther("");
+    }
     setContact({
       email: s(p.contact?.email),
       phone: s(p.contact?.phone),
@@ -111,6 +126,8 @@ export default function PublicPageEditor() {
   const save = async () => {
     setSaving(true);
     setMsg(null);
+    // "Other" stores the typed value; a blank niche clears it (backend maps "" to null).
+    const resolvedNiche = (niche === OTHER_NICHE ? nicheOther : niche).trim();
     try {
       const res = await fetch(OWNER_API.profileUpdate, {
         method: "POST",
@@ -118,6 +135,7 @@ export default function PublicPageEditor() {
         body: JSON.stringify({
           tagline,
           about,
+          niche: resolvedNiche,
           contact,
           socials: {
             website: withScheme(socials.website),
@@ -208,6 +226,7 @@ export default function PublicPageEditor() {
     () => ({
       tagline: tagline || null,
       about: about || null,
+      niche: (niche === OTHER_NICHE ? nicheOther : niche).trim() || null,
       cover_url: coverUrl,
       contact: {
         email: contact.email || null,
@@ -223,7 +242,7 @@ export default function PublicPageEditor() {
         linkedin: withScheme(socials.linkedin) || null,
       },
     }),
-    [tagline, about, coverUrl, contact, socials],
+    [tagline, about, niche, nicheOther, coverUrl, contact, socials],
   );
 
   if (loading) {
@@ -346,6 +365,42 @@ export default function PublicPageEditor() {
               className={`${inputClass} resize-y`}
             />
           </div>
+        </div>
+      </section>
+
+      {/* Category (niche), powers the public Campuses directory filter */}
+      <section className={cardClass}>
+        <h2 className="text-lg font-semibold text-white">Category</h2>
+        <p className="mt-1 text-sm text-site-muted">
+          What your {label.toLowerCase()} teaches. This is how prospective students find you when they browse academies
+          by category on Jorsas. Choose the closest match, or pick Other to enter your own.
+        </p>
+        <div className="mt-4 space-y-3">
+          <select
+            value={niche}
+            onChange={(e) => setNiche(e.target.value)}
+            className={inputClass}
+            aria-label="What your academy teaches"
+          >
+            <option value="">Not set</option>
+            {ACADEMY_NICHES.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+            <option value={OTHER_NICHE}>Other (type your own)</option>
+          </select>
+          {niche === OTHER_NICHE && (
+            <input
+              type="text"
+              value={nicheOther}
+              maxLength={80}
+              onChange={(e) => setNicheOther(e.target.value)}
+              placeholder="e.g. Aviation training"
+              className={inputClass}
+              aria-label="Your academy category"
+            />
+          )}
         </div>
       </section>
 

@@ -52,23 +52,14 @@ export default function OwnerTopbar({
     .slice(0, 2)
     .toUpperCase();
 
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [menu, setMenu] = useState<"none" | "notifications" | "account">("none");
   const [items, setItems] = useState<OwnerNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  // Sync the toggle with whatever the pre-paint theme script already applied.
-  useEffect(() => {
-    setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("theme", next);
-    document.documentElement.classList.toggle("light", next === "light");
-  };
+  // Theme toggle is intentionally hidden for now: the portal runs in a single
+  // dark theme while the light theme is being finished. Restore the theme
+  // state, the sync effect, toggleTheme and the toggle button to bring it back.
 
   // Poll institute activity for the bell. Unread = items newer than last seen.
   useEffect(() => {
@@ -156,19 +147,7 @@ export default function OwnerTopbar({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme toggle */}
-          <button type="button" onClick={toggleTheme} className={iconBtn} aria-label="Toggle theme">
-            {theme === "light" ? (
-              <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-              </svg>
-            ) : (
-              <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-              </svg>
-            )}
-          </button>
+          {/* Theme toggle intentionally hidden while light mode is being finished. */}
 
           {/* Notifications */}
           <button type="button" onClick={openNotifications} className={iconBtn} aria-label="Notifications">

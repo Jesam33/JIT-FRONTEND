@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { MaterialItem } from "../../../../lib/lms-types";
 import { getToken } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
@@ -108,7 +110,20 @@ function MaterialCard({ item }: { item: MaterialItem }) {
   );
 }
 
+// useSearchParams() must sit under a Suspense boundary in Next 16, so the page
+// is a thin wrapper around the real content.
 export default function StudentMaterialsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <MaterialsContent />
+    </Suspense>
+  );
+}
+
+function MaterialsContent() {
+  const searchParams = useSearchParams();
+  // Search term comes from the top navbar (it redirects here as ?search=).
+  const search = searchParams.get("search") ?? "";
   const [materials, setMaterials] = useState<MaterialItem[]>([]);
   const [materialsFilter, setMaterialsFilter] = useState<"all" | "file" | "link" | "image" | "video">("all");
   const [loading, setLoading] = useState(true);
@@ -141,9 +156,13 @@ export default function StudentMaterialsPage() {
   }, [materials]);
 
   const filteredMaterials = useMemo(() => {
-    if (materialsFilter === "all") return inferredMaterials;
-    return inferredMaterials.filter((item) => item.type === materialsFilter);
-  }, [inferredMaterials, materialsFilter]);
+    const q = search.trim().toLowerCase();
+    return inferredMaterials.filter((item) => {
+      const typeOk = materialsFilter === "all" || item.type === materialsFilter;
+      const searchOk = !q || item.title.toLowerCase().includes(q);
+      return typeOk && searchOk;
+    });
+  }, [inferredMaterials, materialsFilter, search]);
 
   if (loading) return <LoadingSpinner />;
 
@@ -159,9 +178,18 @@ export default function StudentMaterialsPage() {
         ))}
       </div>
 
+      {search.trim() ? (
+        <p className="mt-3 text-xs text-white/60">
+          Showing results for &ldquo;{search.trim()}&rdquo;{" "}
+          <Link href="/lms/app/materials" className="text-white underline underline-offset-2">Clear</Link>
+        </p>
+      ) : null}
+
       <div className="mt-4 space-y-2">
         {filteredMaterials.length === 0 ? (
-          <p className="text-sm text-white/70">No materials available for this filter.</p>
+          <p className="text-sm text-white/70">
+            {search.trim() ? `No materials match "${search.trim()}".` : "No materials available for this filter."}
+          </p>
         ) : (
           <ul className="space-y-2">
             {filteredMaterials.map((item) => (

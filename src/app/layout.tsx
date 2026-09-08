@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Inter } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
@@ -6,6 +6,7 @@ import "./globals.css";
 import AppChrome from "@/components/layout/AppChrome";
 import BrandingGuard from "@/components/BrandingGuard";
 import TopProgressBar from "@/components/TopProgressBar";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const dmSans = DM_Sans({
   variable: "--font-body",
@@ -22,6 +23,14 @@ export const metadata: Metadata = {
   title: "Jorsas Tech",
   description: "Jorsas Tech digital consulting and engineering",
   applicationName: "Jorsas Tech",
+  // Installed-app (PWA) presentation on iOS: open standalone (no Safari chrome)
+  // when added to the Home Screen, with a translucent status bar over the black
+  // app ground. The manifest (src/app/manifest.ts) covers Android and desktop.
+  appleWebApp: {
+    capable: true,
+    title: "Jorsas Tech",
+    statusBarStyle: "black-translucent",
+  },
   // Default browser-tab + search-result icon, driven through metadata (served from
   // public/) rather than the app/favicon.ico file convention. File-convention icons
   // have HIGHER priority than generateMetadata and are injected on EVERY route, so a
@@ -46,7 +55,10 @@ export const metadata: Metadata = {
       { url: "/images/jorsas-logo-light-mode.png", type: "image/png", sizes: "192x192" },
     ],
     shortcut: "/favicon.ico?v=5",
-    apple: "/images/jorsas-logo-light-mode.png",
+    // Home Screen icon on iOS. iOS paints a transparent PNG onto a black tile,
+    // which would hide the dark favicon mark, so this is a dedicated opaque
+    // brand tile (red ground, white mark) generated into public/icons.
+    apple: "/icons/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
@@ -56,6 +68,12 @@ export const metadata: Metadata = {
     url: "https://jorsastech.com",
     images: [{ url: "/images/jorsas-logo-light-mode.png" }],
   },
+};
+
+export const viewport: Viewport = {
+  // Browser UI tint (mobile address bar, task switcher) and PWA splash. Matches
+  // the black app ground; the product runs in dark mode.
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -73,12 +91,12 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('theme') || 'dark';
-                  if (theme === 'light') {
-                    document.documentElement.classList.add('light');
-                  } else {
-                    document.documentElement.classList.remove('light');
-                  }
+                  // Light mode is temporarily disabled while it is being finished:
+                  // force dark on every load regardless of any previously saved
+                  // preference, so a visitor who once switched to light is not
+                  // stranded there with the toggle now hidden. Restore the
+                  // stored-theme read (and the toggle buttons) to bring it back.
+                  document.documentElement.classList.remove('light');
                 } catch (e) {}
               })()
             `,
@@ -156,6 +174,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full bg-site-bg text-site-text">
+        <ServiceWorkerRegister />
         <Suspense fallback={null}>
           <TopProgressBar />
         </Suspense>

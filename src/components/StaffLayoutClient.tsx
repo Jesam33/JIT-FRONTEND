@@ -11,10 +11,8 @@ import DynamicFavicon from "./DynamicFavicon";
 import { STAFF_API, PUBLIC_API } from "@/lib/api";
 import { brandingStyle, storefrontBackgroundStyle } from "@/lib/owner-branding";
 import { usePortalBranding, isBranded } from "@/lib/use-portal-branding";
-import { tenantLoginPath, pinTenantFromLocation, getTenantSlug } from "@/lib/tenant-client";
+import { tenantLoginPath, pinTenantFromLocation } from "@/lib/tenant-client";
 import IdleLogout from "./IdleLogout";
-
-const PRIMARY = process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas";
 
 export default function StaffLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";

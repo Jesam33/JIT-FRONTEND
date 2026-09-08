@@ -38,7 +38,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
               <LmsNavbar
                 portalName="Admission Marketer Portal"
                 bellHref="/lms/agent/notifications"
-                placeholder="Search commissions or students..."
+                placeholder="Search your students..."
+                searchRedirectHref="/lms/agent/registrations"
               />
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>

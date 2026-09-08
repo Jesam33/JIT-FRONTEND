@@ -11,6 +11,11 @@ type Track = {
   course_id: number | null;
   instructor: string | null;
   instructor_id: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  registration_deadline: string | null;
+  registration_open?: boolean;
+  registration_closes_at?: string | null;
   created_at: string | null;
 };
 
@@ -45,6 +50,12 @@ function TracksContent() {
   const [name, setName] = useState("");
   const [courseId, setCourseId] = useState(courseFromQuery ?? "");
   const [instructorId, setInstructorId] = useState("");
+  // Cohort scheduling (all optional). The registration cutoff is the deadline
+  // when set, else the start date: once that day passes, students can no
+  // longer register into this cohort.
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [regDeadline, setRegDeadline] = useState("");
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   // Row whose instructor is being reassigned (disables just that select).
@@ -133,6 +144,14 @@ function TracksContent() {
       setCreateMsg({ kind: "err", text: "Pick which course this cohort belongs to." });
       return;
     }
+    if (startDate && endDate && endDate < startDate) {
+      setCreateMsg({ kind: "err", text: "The end date can't be before the start date." });
+      return;
+    }
+    if (regDeadline && startDate && regDeadline > startDate) {
+      setCreateMsg({ kind: "err", text: "The registration deadline can't be after the start date." });
+      return;
+    }
     setCreating(true);
     setCreateMsg(null);
     try {
@@ -143,6 +162,9 @@ function TracksContent() {
           name: trimmed,
           course_id: Number(courseId),
           instructor_id: instructorId ? Number(instructorId) : null,
+          start_date: startDate || null,
+          end_date: endDate || null,
+          registration_deadline: regDeadline || null,
         }),
       });
       if (res.status === 401 || res.status === 403) {
@@ -158,6 +180,9 @@ function TracksContent() {
       setName("");
       setCourseId("");
       setInstructorId("");
+      setStartDate("");
+      setEndDate("");
+      setRegDeadline("");
       load();
     } catch (err) {
       setCreateMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
@@ -343,6 +368,38 @@ function TracksContent() {
                 </select>
               </div>
             </div>
+            {/* Cohort dates (all optional). Registration closes at the deadline
+                when set, else the start date, so a cohort without a deadline
+                simply stops taking students once it begins. */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                  Start date <span className="text-white/30">(optional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                  End date <span className="text-white/30">(optional)</span>
+                </label>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                  Registration deadline <span className="text-white/30">(optional)</span>
+                </label>
+                <input type="date" value={regDeadline} onChange={(e) => setRegDeadline(e.target.value)} className={inputClass} />
+              </div>
+            </div>
+            <p className="text-xs text-site-muted">
+              After the registration deadline (or the start date, if no deadline is set) passes, students can no longer
+              register into this cohort. Leave the dates blank to keep registration always open.
+            </p>
             <div className="flex flex-wrap items-center gap-4">
               <button
                 type="submit"
@@ -373,12 +430,13 @@ function TracksContent() {
       {/* Table */}
       <div className="overflow-hidden rounded-[20px] border border-white/20 bg-white/[0.04]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-[11px] uppercase tracking-wide text-site-muted">
                 <th className="px-5 py-3 font-semibold">Cohort</th>
                 <th className="px-5 py-3 font-semibold">Course</th>
                 <th className="px-5 py-3 font-semibold">Instructor</th>
+                <th className="px-5 py-3 font-semibold">Schedule</th>
               </tr>
             </thead>
             <tbody>
@@ -411,11 +469,41 @@ function TracksContent() {
                     </select>
                     {savingId === t.id && <span className="ml-2 text-[11px] text-white/50">Saving…</span>}
                   </td>
+                  <td className="px-5 py-3">
+                    {t.start_date || t.end_date || t.registration_deadline ? (
+                      <div className="space-y-1">
+                        <div className="text-xs text-white/80">
+                          {t.start_date ?? "—"} → {t.end_date ?? "—"}
+                        </div>
+                        {t.registration_deadline ? (
+                          <div className="text-[11px] text-site-muted">
+                            Registration closes {t.registration_deadline}
+                          </div>
+                        ) : t.start_date ? (
+                          <div className="text-[11px] text-site-muted">
+                            Registration closes {t.start_date}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-site-muted">No dates set</span>
+                    )}
+                    {/* Registration state, straight from the backend's cutoff rule. */}
+                    <span
+                      className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        t.registration_open === false
+                          ? "border-red-400/30 bg-red-400/10 text-red-300"
+                          : "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                      }`}
+                    >
+                      {t.registration_open === false ? "Registration closed" : "Open"}
+                    </span>
+                  </td>
                 </tr>
               ))}
               {!loading && !tracks.length && (
                 <tr>
-                  <td colSpan={3} className="px-5 py-10 text-center text-sm text-site-muted">
+                  <td colSpan={4} className="px-5 py-10 text-center text-sm text-site-muted">
                     No cohorts yet. Create your first cohort above.
                   </td>
                 </tr>

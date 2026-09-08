@@ -23,6 +23,7 @@ export type InstituteSocials = {
 export type InstituteProfile = {
   tagline?: string | null;
   about?: string | null;
+  niche?: string | null;
   cover_url?: string | null;
   contact?: InstituteContact | null;
   socials?: InstituteSocials | null;
@@ -32,6 +33,7 @@ export type InstituteProfile = {
 export const DEFAULT_PROFILE: InstituteProfile = {
   tagline: null,
   about: null,
+  niche: null,
   cover_url: null,
   contact: { email: null, phone: null, whatsapp: null, address: null },
   socials: { website: null, facebook: null, instagram: null, twitter: null, linkedin: null },

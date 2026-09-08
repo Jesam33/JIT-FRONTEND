@@ -23,29 +23,16 @@ export default function LmsNavbar({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  // High-water mark of the unread count the student last dismissed by tapping
+  // the bell. The badge stays hidden while the live count is at or below it, so
+  // it only reappears when genuinely new activity arrives (item 13). Persisted
+  // per-portal so a refresh doesn't resurrect an already-seen badge.
+  const dismissedRef = useRef<number>(0);
 
-  // Initialize theme from localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark";
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    if (newTheme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
-  };
-
-  // Fetch unread count
+  // Fetch unread count. Student combines notifications + chat (group + dm) so a
+  // new chat message is visible on the always-on-screen bell, which matters on
+  // mobile where the chat tab badges aren't in view (item 12).
   useEffect(() => {
     const name = portalName.toLowerCase();
     const isStudent = name.includes("student");
@@ -56,6 +43,11 @@ export default function LmsNavbar({
     if (isStudent) { tokenKey = "lms_student_token"; apiEndpoint = STUDENT_API.chatUnread; }
     if (isAgent) { tokenKey = "lms_agent_token"; apiEndpoint = AGENT_API.notificationUnread; }
 
+    const dismissKey = `lms_bell_dismissed_${tokenKey}`;
+    try {
+      dismissedRef.current = Number(localStorage.getItem(dismissKey) ?? "0") || 0;
+    } catch { dismissedRef.current = 0; }
+
     const fetchUnread = () => {
       const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
       if (!token || document.hidden) return;
@@ -63,7 +55,15 @@ export default function LmsNavbar({
       fetch(apiEndpoint, { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.json())
         .then((p) => {
-          setUnreadCount(p.unread_notifications ?? 0);
+          const total = (p.unread_notifications ?? 0) + (p.unread_group ?? 0) + (p.unread_dm ?? 0);
+          // Nothing unread at all resets the dismiss mark so a future single
+          // message shows immediately.
+          if (total === 0) {
+            dismissedRef.current = 0;
+            try { localStorage.setItem(dismissKey, "0"); } catch { /* ignore */ }
+          }
+          // Hide while the count hasn't grown past what was already dismissed.
+          setUnreadCount(total > dismissedRef.current ? total : 0);
         })
         .catch(() => {});
     };
@@ -81,6 +81,19 @@ export default function LmsNavbar({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [portalName]);
+
+  // Tapping the bell dismisses the current badge (item 13): remember the count
+  // as the new high-water mark and hide it right away. It reappears only when a
+  // later poll sees a higher count.
+  const dismissBadge = () => {
+    const name = portalName.toLowerCase();
+    const isStudent = name.includes("student");
+    const isAgent = name.includes("marketer") || name.includes("agent");
+    const tokenKey = isStudent ? "lms_student_token" : isAgent ? "lms_agent_token" : "lms_staff_token";
+    dismissedRef.current = Math.max(dismissedRef.current, unreadCount);
+    try { localStorage.setItem(`lms_bell_dismissed_${tokenKey}`, String(dismissedRef.current)); } catch { /* ignore */ }
+    setUnreadCount(0);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,28 +142,14 @@ export default function LmsNavbar({
         {/* Vertical Divider */}
         <div className="h-6 w-px bg-white/10 [html.light_&]:bg-black/10" />
 
-        {/* Theme Switch Button */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-white/80 [html.light_&]:border-black/10 [html.light_&]:bg-black/5 [html.light_&]:hover:bg-black/[0.08] [html.light_&]:text-black/80"
-          aria-label="Toggle theme"
-        >
-          {theme === "light" ? (
-            <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-            </svg>
-          ) : (
-            <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            </svg>
-          )}
-        </button>
+        {/* Theme toggle is intentionally hidden for now: the portal runs in a
+            single dark theme while the light theme is being finished. Restore
+            this button (and the toggle logic) to bring the switcher back. */}
 
         {/* Bell Icon */}
         <Link
           href={bellHref}
+          onClick={dismissBadge}
           className="relative p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-white/80 [html.light_&]:border-black/10 [html.light_&]:bg-black/5 [html.light_&]:hover:bg-black/[0.08] [html.light_&]:text-black/80"
           aria-label="Notifications"
         >

@@ -20,6 +20,11 @@ export type DetailCourse = {
   is_full: boolean;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
+  // Cohort registration window (see LmsTrack::registrationOpen). False when
+  // every cohort's cutoff has passed; a no-cohort course stays true.
+  registration_open?: boolean;
+  registration_closes_at?: string | null;
+  next_cohort_starts_at?: string | null;
   // Localized DISPLAY pricing + the purchasable gate (see PublicInstituteController).
   // Optional so any older caller still type-checks; the backend always sends them.
   currency?: string;
@@ -219,9 +224,20 @@ export default function InstituteCourseDetail({
               </div>
             </div>
 
+            {/* Registration gate mirrors is_full: full and closed both hide the
+                form (the backend rejects a direct submit with the same message). */}
             {course.is_full ? (
               <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: "#d97706" }}>
                 This course is currently full. Check back later for available slots.
+              </div>
+            ) : course.registration_open === false ? (
+              <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: "#d97706" }}>
+                Registration for this course has closed. Please check back for the next cohort.
+                {course.next_cohort_starts_at ? (
+                  <span className="block mt-1">
+                    The next cohort starts {new Date(course.next_cohort_starts_at).toLocaleDateString()}.
+                  </span>
+                ) : null}
               </div>
             ) : (
               <CourseRegisterClient course={course} slug={registerSlug} branding={branding} />

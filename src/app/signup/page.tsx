@@ -1,61 +1,29 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
+import { ACADEMY_NICHES, OTHER_NICHE } from "@/lib/niches";
+import { isContactSalesPlan, type Plan } from "@/lib/plans";
+import PlanCardBody from "@/components/plans/PlanCardBody";
 
-// Registering an Online Academy is FREE. Owners can start on the free tier (no
-// payment, provisioned instantly) or pick a paid plan and pay via Paystack up
-// front. Feature lists are display-only (mirror the approved plan model in
-// config/saas.php) so owners understand what each tier includes before choosing.
-// Enterprise is contact-sales (see the tile below the grid), not self-serve here.
-const PLANS = [
-  {
-    slug: "free",
-    label: "Free",
-    price: "₦0",
-    note: "forever",
-    popular: false,
-    tagline: "Everything you need to launch your Online Academy, free.",
-    features: [
-      "Up to 3 courses, 1 student, 1 staff",
-      "Live classes on every plan",
-      "Full LMS: modules, tasks & grading",
-      "Branded academy page + student & staff portals",
-      "5% platform fee on course sales",
-    ],
-  },
-  {
-    slug: "basic",
-    label: "Basic",
-    price: "₦5,000",
-    note: "/month",
-    popular: true,
-    tagline: "For growing academies: chat, certificates & marketers.",
-    features: [
-      "Up to 10 courses, 100 students, 5 staff",
-      "In-app group chat & certificates",
-      "Pre-recorded video lessons",
-      "Admission-Marketer network + remove branding",
-      "3% platform fee on course sales",
-    ],
-  },
-  {
-    slug: "pro",
-    label: "Pro",
-    price: "₦15,000",
-    note: "/month",
-    popular: false,
-    tagline: "Scale with the lowest fees, AI and deep insight.",
-    features: [
-      "Up to 50 courses, 1,000 students, 25 staff",
-      "0% platform fee on course sales",
-      "Advanced analytics & reporting",
-      "AI materials with Gamma + custom domain",
-    ],
-  },
-];
+// The plan cards here are the SAME cards as the billing page (/lms/admin/billing):
+// both render the shared PlanCardBody from the shared lib/plans helpers, and the
+// data comes from the same backend source (App\Support\PlanCatalogue, served
+// publicly at /api/plans), so prices, limits, commission and the feature
+// checklist can never drift between the two surfaces. Registering is still free
+// to start: owners can pick the free tier (no payment, provisioned instantly)
+// or a paid plan and pay via Paystack up front.
 const DEFAULT_PLAN = "free";
+
+// Minimal offline fallback if /api/plans is unreachable, mirroring the config
+// defaults: enough shape for the shared card body (no feature checklist, the
+// backend normally supplies it).
+const FALLBACK_PLANS: Plan[] = [
+  { slug: "free", name: "Free", price: 0, commission_percent: 5, limits: { courses: 3, students: 1, staff: 1 } },
+  { slug: "basic", name: "Basic", price: 5000, commission_percent: 3, limits: { courses: 10, students: null, staff: 5 } },
+  { slug: "pro", name: "Pro", price: 15000, commission_percent: 0, limits: { courses: 50, students: null, staff: 25 } },
+];
 
 // The domain each institute's public page lives under. Used only to preview the
 // subdomain address on this form; the real front door is configured at deploy.
@@ -64,10 +32,16 @@ const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || "jorsastech.com";
 function SignupInner() {
   const params = useSearchParams();
   const requestedPlan = (params.get("plan") || DEFAULT_PLAN).toLowerCase();
-  const validPlan = PLANS.some((p) => p.slug === requestedPlan) ? requestedPlan : DEFAULT_PLAN;
 
-  const [plan, setPlan] = useState(validPlan);
+  const [plan, setPlan] = useState(requestedPlan);
+  // The plan catalogue from /api/plans (same source as the billing cards);
+  // falls back to the config-mirrored list if the fetch fails.
+  const [plans, setPlans] = useState<Plan[] | null>(null);
   const [subdomain, setSubdomain] = useState("");
+  // What the academy teaches, drives the public Campuses directory filter.
+  // "Other" swaps the dropdown for the free-text field below it.
+  const [niche, setNiche] = useState("");
+  const [nicheOther, setNicheOther] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Set on a successful FREE signup, the tenant is provisioned inline (no
@@ -77,10 +51,49 @@ function SignupInner() {
 
   const isFreePlan = plan === "free";
 
+  // Load the plan catalogue (public endpoint, no auth). Contact-sales tiers
+  // (Enterprise) are excluded from the selectable grid, they stay in the
+  // contact-sales tile below it. If the requested ?plan= slug isn't a
+  // selectable tier once the catalogue lands, fall back to free.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let loaded: Plan[] = FALLBACK_PLANS;
+      try {
+        const res = await fetch(OWNER_API.plans, { headers: { Accept: "application/json" } });
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json?.plans) && json.plans.length > 0) {
+            loaded = json.plans as Plan[];
+          }
+        }
+      } catch {
+        // Keep the mirrored fallback.
+      }
+      if (!cancelled) {
+        setPlans(loaded);
+        setPlan((current) =>
+          loaded.some((p) => p.slug === current && !isContactSalesPlan(p)) ? current : DEFAULT_PLAN,
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // Niche is required. "Other" swaps the dropdown for the free-text value.
+    const resolvedNiche = (niche === OTHER_NICHE ? nicheOther : niche).trim();
+    if (!resolvedNiche) {
+      setError("Please choose what your academy teaches.");
+      setLoading(false);
+      return;
+    }
 
     const form = new FormData(e.target as HTMLFormElement);
     const payload = {
@@ -90,6 +103,7 @@ function SignupInner() {
       admin_email: String(form.get("email") || "").trim(),
       // No password here, the owner sets it via the emailed setup link after payment.
       plan: String(form.get("plan") || DEFAULT_PLAN),
+      niche: resolvedNiche,
     };
 
     try {
@@ -206,64 +220,63 @@ function SignupInner() {
 
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm text-white/80">Choose your plan</label>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {PLANS.map((p) => {
-                const selected = plan === p.slug;
-                return (
-                  <button
-                    type="button"
-                    key={p.slug}
-                    onClick={() => setPlan(p.slug)}
-                    aria-pressed={selected}
-                    className={`flex flex-col rounded-[20px] border p-5 text-left transition ${
-                      selected
-                        ? "border-white/45 bg-white/[0.08] ring-1 ring-site-primary"
-                        : "border-white/20 bg-white/[0.04] hover:border-white/30"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold uppercase tracking-wide text-white">{p.label}</span>
-                      {p.popular && (
-                        <span className="rounded-full bg-site-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                          Most popular
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-white">{p.price}</span>
-                      <span className="text-xs text-site-muted">{p.note}</span>
-                    </div>
-                    <p className="mt-1 text-xs text-site-muted">{p.tagline}</p>
-                    <ul className="mt-4 space-y-1.5 text-xs text-white/80">
-                      {p.features.map((f) => (
-                        <li key={f} className="flex gap-2">
-                          <span className="mt-0.5 shrink-0 text-site-primary">✓</span>
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <span
-                      className={`mt-4 inline-flex items-center gap-2 text-xs font-semibold ${
-                        selected ? "text-white" : "text-site-muted"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                          selected ? "border-site-primary bg-site-primary" : "border-white/30"
+            {plans === null ? (
+              // Skeleton while the catalogue loads.
+              <div className="grid gap-4 sm:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-64 animate-pulse rounded-[20px] border border-white/10 bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid items-start gap-4 sm:grid-cols-3">
+                {plans
+                  .filter((p) => !isContactSalesPlan(p))
+                  .map((p) => {
+                    const selected = plan === p.slug;
+                    return (
+                      <button
+                        type="button"
+                        key={p.slug}
+                        onClick={() => setPlan(p.slug)}
+                        aria-pressed={selected}
+                        className={`relative flex w-full flex-col rounded-[22px] border p-6 text-left transition ${
+                          selected
+                            ? "border-white/45 bg-white/[0.08] ring-1 ring-site-primary"
+                            : "border-white/15 bg-white/[0.04] hover:border-white/25"
                         }`}
                       >
-                        {selected && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-white">
-                            <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </span>
-                      {selected ? "Selected" : "Select"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                        {p.slug === "basic" ? (
+                          <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white/90">
+                            Popular
+                          </span>
+                        ) : null}
+
+                        {/* Shared card body, identical to the billing plan cards. */}
+                        <PlanCardBody plan={p} />
+
+                        <span
+                          className={`mt-5 inline-flex items-center gap-2 text-xs font-semibold ${
+                            selected ? "text-white" : "text-site-muted"
+                          }`}
+                        >
+                          <span
+                            className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                              selected ? "border-site-primary bg-site-primary" : "border-white/30"
+                            }`}
+                          >
+                            {selected && (
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-white">
+                                <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </span>
+                          {selected ? "Selected" : "Select"}
+                        </span>
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
             <input type="hidden" name="plan" value={plan} />
             <p className="mt-3 text-xs text-site-muted">
               {isFreePlan
@@ -301,6 +314,41 @@ function SignupInner() {
           <div className="md:col-span-2">
             <label className="mb-2 block text-sm text-white/80">Online Academy name</label>
             <input name="tenant_name" required placeholder="e.g. Bright Future Academy" className={inputCls} />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm text-white/80">What does your academy teach?</label>
+            <select
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              className={inputCls}
+              aria-label="What your academy teaches"
+            >
+              <option value="" disabled>
+                Select a category
+              </option>
+              {ACADEMY_NICHES.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+              <option value={OTHER_NICHE}>Other (type your own)</option>
+            </select>
+            {niche === OTHER_NICHE && (
+              <input
+                type="text"
+                value={nicheOther}
+                onChange={(e) => setNicheOther(e.target.value)}
+                maxLength={80}
+                placeholder="e.g. Aviation training"
+                className={`${inputCls} mt-3`}
+                aria-label="Your academy category"
+              />
+            )}
+            <p className="mt-2 text-xs text-site-muted">
+              This is how students find your academy when they browse by category. Pick the closest match, or choose
+              Other to enter your own.
+            </p>
           </div>
 
           <div className="md:col-span-2">

@@ -28,6 +28,10 @@ type CourseDetail = {
   // costs; the backend re-derives the authoritative charge from learning_mode.
   prerecorded_price?: number | null;
   prerecorded_price_display?: number | null;
+  // Cohort registration window (see LmsTrack::registrationOpen). False hides
+  // the form (see InstituteCourseDetail); kept optional so any older caller
+  // still type-checks. The backend independently rejects a direct submit.
+  registration_open?: boolean;
 };
 
 const qualifications = [
@@ -189,6 +193,17 @@ export default function CourseRegisterClient({
       <div className="mt-6 rounded-lg border border-white/15 bg-white/5 p-4 text-sm text-white/70">
         Registration for this course isn&apos;t open yet. The {label} is finishing its payment
         setup. Please check back soon.
+      </div>
+    );
+  }
+
+  // Cohort registration window closed (every cohort's cutoff has passed).
+  // Defense in depth: InstituteCourseDetail normally hides this whole client,
+  // this catches a stale page or a direct render after the deadline passed.
+  if (course.registration_open === false) {
+    return (
+      <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+        Registration for this course has closed. Please check back for the next cohort.
       </div>
     );
   }

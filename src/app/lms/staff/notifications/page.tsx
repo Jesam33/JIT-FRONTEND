@@ -20,6 +20,7 @@ type TeacherNotification = {
 function notificationHref(n: TeacherNotification): string | null {
   if (n.reference_type === "task" || n.reference_type === "task_submission") return `/lms/staff/tasks`;
   if (n.reference_type === "group_chat") return "/lms/staff/chats";
+  if (n.reference_type === "dm_thread") return "/lms/staff/chats";
   if (n.reference_type === "scheduled_class") return "/lms/staff/timetable";
   return null;
 }

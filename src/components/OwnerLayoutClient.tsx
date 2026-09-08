@@ -8,6 +8,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import ToastProvider from "./ToastProvider";
 import DynamicFavicon from "./DynamicFavicon";
 import UpgradeModal from "./UpgradeModal";
+import OwnerFrozenScreen, { type FrozenInfo } from "./OwnerFrozenScreen";
 import { OWNER_API } from "@/lib/api";
 import { getOwnerToken, clearOwnerToken, ownerAuthHeaders, writeBrandingCookie, writeOwnerNameCookie } from "@/lib/owner-client";
 import { brandingStyle, storefrontBackgroundStyle, type OwnerBranding } from "@/lib/owner-branding";
@@ -33,6 +34,11 @@ export default function OwnerLayoutClient({
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   const [identity, setIdentity] = useState<OwnerIdentity | null>(null);
+  // Set when the owner API reports the subscription frozen (HTTP 402). While set
+  // the shell shows the freeze screen in place of every owner page except
+  // billing (kept reachable so the owner can renew). Stays null while the freeze
+  // feature is deployed dark, so nothing changes until it is switched on.
+  const [frozen, setFrozen] = useState<FrozenInfo | null>(null);
 
   // The customization page broadcasts saved branding so the shell (topbar logo,
   // colors, font) updates live without a reload, and we persist it to the
@@ -88,6 +94,18 @@ export default function OwnerLayoutClient({
         router.replace(tenantLoginPath("owner"));
         return;
       }
+      // Subscription frozen (past due): the owner API returns 402 across the
+      // board. Capture the message + contact so the freeze screen can show them,
+      // then stop, the shell renders the freeze screen instead of the page.
+      if (r.status === 402) {
+        try {
+          setFrozen((await r.json()) ?? { frozen: true });
+        } catch {
+          setFrozen({});
+        }
+        return;
+      }
+      setFrozen(null);
       if (!r.ok) return;
       const j = await r.json();
       setIdentity({
@@ -148,6 +166,42 @@ export default function OwnerLayoutClient({
   // interrupt the client-side navigation (that was the old "clicks bounce to
   // dashboard" bug).
   const branding = identity?.branding ?? initialBranding;
+
+  // Subscription freeze: when the owner API reports past due (402), block the
+  // portal but keep the billing page reachable so the owner can renew. Every
+  // other owner page shows the focused "contact management services" screen.
+  // (frozen is only ever set when backend enforcement is switched on, so this
+  // branch stays dormant while the feature is deployed dark.)
+  const onBilling = pathname.startsWith("/lms/admin/billing");
+  if (frozen && !onBilling) {
+    const doLogout = () => {
+      clearOwnerToken();
+      router.replace(tenantLoginPath("owner"));
+    };
+    return (
+      <ToastProvider>
+        <div
+          className="section-divider pt-6"
+          style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }}
+        >
+          <DynamicFavicon
+            href={branding?.logo_url ?? null}
+            fallbackColor={branding?.primary_color ?? null}
+            isPrimary={branding?.is_primary ?? null}
+            markText={identity?.name ?? branding?.name ?? null}
+          />
+          <div className="container-wide">
+            <OwnerFrozenScreen
+              info={frozen}
+              brandName={identity?.name ?? branding?.name ?? null}
+              onLogout={doLogout}
+            />
+          </div>
+        </div>
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
     <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }}>

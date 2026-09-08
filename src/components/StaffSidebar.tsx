@@ -266,8 +266,8 @@ export default function StaffSidebar() {
 
   return (
     <>
-      {/* DESKTOP SIDEBAR */}
-      <aside className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col rounded-2xl border border-white/20 bg-[#0b0b0b]/95 p-5 max-md:hidden lg:min-h-[760px]">
+      {/* DESKTOP SIDEBAR (lg and up: tablets get the slide-out menu below) */}
+      <aside className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col rounded-2xl border border-white/20 bg-[#0b0b0b]/95 p-5 max-lg:hidden lg:min-h-[760px]">
         <div className="mb-5">
           <AccountDropdown
             teacher={teacher}
@@ -320,8 +320,8 @@ export default function StaffSidebar() {
         </div>
       </aside>
 
-      {/* MOBILE */}
-      <div className="md:hidden">
+      {/* MOBILE + TABLET (below lg) */}
+      <div className="lg:hidden">
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
           <div className="flex items-center gap-2.5">
             {teacher?.profile_photo_url ? (

@@ -258,8 +258,8 @@ export default function StudentSidebar() {
 
   return (
     <>
-      {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:sticky md:top-6 md:flex md:max-h-[calc(100vh-4rem)] md:flex-col md:self-start md:overflow-y-auto rounded-2xl border border-white/20 bg-white/[0.04] p-5">
+      {/* DESKTOP SIDEBAR (lg and up: tablets get the slide-out menu below) */}
+      <aside className="hidden lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100vh-4rem)] lg:flex-col lg:self-start lg:overflow-y-auto rounded-2xl border border-white/20 bg-white/[0.04] p-5">
         <div className="mb-6">
           <AccountDropdown
             student={student}
@@ -282,8 +282,8 @@ export default function StudentSidebar() {
         </div>
       </aside>
 
-      {/* MOBILE */}
-      <div className="md:hidden">
+      {/* MOBILE + TABLET (below lg) */}
+      <div className="lg:hidden">
         <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
           <div className="flex items-center gap-2.5">
             {student?.profile_photo_url ? (
