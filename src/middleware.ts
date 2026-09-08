@@ -73,13 +73,16 @@ export async function middleware(req: NextRequest) {
   }
 
   // 2) Otherwise, hostname subdomain.
+  let fromSubdomain = false;
   if (!tenantSlug) {
     tenantSlug = subdomainFor(host);
+    fromSubdomain = !!tenantSlug;
   }
 
   // Never resolve a reserved slug as a tenant.
   if (tenantSlug && RESERVED.has(tenantSlug.toLowerCase())) {
     tenantSlug = null;
+    fromSubdomain = false;
   }
 
   if (tenantSlug) {
@@ -90,6 +93,21 @@ export async function middleware(req: NextRequest) {
       if (res.ok) {
         const json = await res.json();
         const cookieVal = json?.tenant?.slug ?? tenantSlug;
+
+        // A visitor on {academy}.domain asking for the ROOT should see that
+        // academy's storefront, not the platform's marketing homepage — the
+        // owner dashboard shares exactly this URL (tenantStorefrontUrl).
+        // Rewrite (not redirect) to the path-based storefront route so the
+        // browser URL stays https://{academy}.domain/ while the /i/{slug}
+        // page renders. Other paths (e.g. /lms/login) pass through untouched.
+        if (fromSubdomain && url.pathname === "/") {
+          const rewritten = req.nextUrl.clone();
+          rewritten.pathname = `/i/${cookieVal}`;
+          const response = NextResponse.rewrite(rewritten);
+          response.cookies.set("tenant", cookieVal, { path: "/" });
+          return decorate(response);
+        }
+
         const response = NextResponse.next();
         response.cookies.set("tenant", cookieVal, { path: "/" });
         return decorate(response);
