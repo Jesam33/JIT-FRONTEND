@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import InnerPageHero from "@/components/layout/InnerPageHero";
 import { policies, type Policy, type PolicyBlock } from "@/lib/policies-content";
 
@@ -142,7 +143,32 @@ function PolicyBody({ policy }: { policy: Policy }) {
 }
 
 export default function PoliciesPage() {
-  const [activeId, setActiveId] = useState(policies[0]?.id ?? "");
+  // useSearchParams() must sit under a Suspense boundary in Next 16.
+  return (
+    <Suspense fallback={<section className="section-pad section-divider" />}>
+      <PoliciesContent />
+    </Suspense>
+  );
+}
+
+function PoliciesContent() {
+  const searchParams = useSearchParams();
+  // Deep-link support: /policies?policy={id} opens that policy directly (the
+  // footer's Privacy / Trademarks links and the old /privacy + /terms
+  // redirects rely on it). An unknown/absent id falls back to the first.
+  const paramId = searchParams.get("policy");
+  const [activeId, setActiveId] = useState(
+    policies.some((p) => p.id === paramId) ? (paramId as string) : (policies[0]?.id ?? ""),
+  );
+
+  // Follow the param when it changes (another deep link tapped while already
+  // on the page), so every footer link always lands on its policy.
+  useEffect(() => {
+    if (paramId && paramId !== activeId && policies.some((p) => p.id === paramId)) {
+      setActiveId(paramId);
+    }
+  }, [paramId, activeId]);
+
   const active = policies.find((p) => p.id === activeId) ?? policies[0];
 
   return (

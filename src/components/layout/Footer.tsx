@@ -97,9 +97,10 @@ export default function Footer() {
           <div>
             <h4 className="mb-3 text-sm uppercase tracking-[0.2em] text-site-text/70">Company</h4>
             <ul className="space-y-2 text-sm text-site-text/85">
-              <li><Link href="/testimonials" className="underline underline-offset-4 transition hover:text-site-primary">Privacy Policy</Link></li>
-              <li><Link href="/portfolio" className="underline underline-offset-4 transition hover:text-site-primary">Trademarks</Link></li>
-              {/* <li><Link href="/portfolio">Cookies Policies</Link></li> */}
+              <li><Link href="/policies?policy=privacy-policy" className="underline underline-offset-4 transition hover:text-site-primary">Privacy Policy</Link></li>
+              <li><Link href="/policies?policy=intellectual-property" className="underline underline-offset-4 transition hover:text-site-primary">Trademarks</Link></li>
+              <li><Link href="/policies?policy=terms-and-conditions" className="underline underline-offset-4 transition hover:text-site-primary">Terms &amp; Conditions</Link></li>
+              {/* <li><Link href="/policies">Cookies Policies</Link></li> */}
             </ul>
           </div>
         </div>
