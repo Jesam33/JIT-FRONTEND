@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import InnerPageHero from "@/components/layout/InnerPageHero";
 import { PUBLIC_API } from "@/lib/api";
 import { tenantStorefrontUrl } from "@/lib/tenant-client";
@@ -20,6 +20,14 @@ type Campus = {
   course_count: number;
 };
 
+// Category-chip row scaling: up to this many niches the filter renders as a
+// plain row of chips (best for scanning a small set, one tap, nothing hidden).
+// Beyond it the row becomes a searchable dropdown instead, so a platform with
+// hundreds of distinct niches never floods the page with pills. The dropdown's
+// own search box appears once the list passes SEARCHABLE_NICHE_CHIPS.
+const VISIBLE_NICHE_CHIPS = 8;
+const SEARCHABLE_NICHE_CHIPS = 24;
+
 // The two initials we render inside the avatar when an academy has no logo, 
 // derived from its name so each circle still reads as that specific brand.
 function initials(name: string): string {
@@ -38,6 +46,11 @@ export default function CampusesPage() {
   // The selected category filter (null = All). Only categories actually present
   // are offered, so a selection always matches at least one academy.
   const [activeNiche, setActiveNiche] = useState<string | null>(null);
+  // The main directory search: live-filters the GRID (not the category list) as
+  // the visitor types, matching academy names, their course titles, and category.
+  // This is the page's primary discovery control; the category chips/dropdown is
+  // the facet filter beside it.
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -73,12 +86,29 @@ export default function CampusesPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [campuses]);
 
-  // The grid after the active category filter (null = show every academy).
+  // A small set renders as chips; a big set becomes a dropdown.
+  const manyNiches = niches.length > VISIBLE_NICHE_CHIPS;
+
+  // The grid after the category facet + the search query (either can be empty).
+  // The query matches an academy's name, its course titles, or its category, so
+  // typing a category name works too without needing to open the dropdown.
   const filtered = useMemo(() => {
     if (!campuses) return [];
-    if (!activeNiche) return campuses;
-    return campuses.filter((c) => (c.niche ?? "").trim() === activeNiche);
-  }, [campuses, activeNiche]);
+    let list = campuses;
+    if (activeNiche) {
+      list = list.filter((c) => (c.niche ?? "").trim() === activeNiche);
+    }
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.niche ?? "").toLowerCase().includes(q) ||
+          c.course_titles.some((t) => t.toLowerCase().includes(q)),
+      );
+    }
+    return list;
+  }, [campuses, activeNiche, query]);
 
   return (
     <section>
@@ -117,22 +147,75 @@ export default function CampusesPage() {
           </div>
         ) : (
           <>
-            {/* Category filter, shown only once at least one academy has set a
-                category. "All" resets to the full directory. */}
-            {niches.length > 0 ? (
-              <div className="mb-8 flex flex-wrap gap-2">
-                <FilterChip active={activeNiche === null} onClick={() => setActiveNiche(null)}>
-                  All
-                </FilterChip>
-                {niches.map((n) => (
-                  <FilterChip key={n} active={activeNiche === n} onClick={() => setActiveNiche(n)}>
-                    {n}
-                  </FilterChip>
-                ))}
+            {/* Search + category facet, one row. The search box is the primary
+                discovery control and live-filters the grid as the visitor types
+                (it matches academy names, their course titles, and category, so
+                typing a category name works too). The category control beside it
+                narrows by facet: a small list renders as chips, a long list
+                becomes a dropdown (with its own search once huge). Either can be
+                used alone, or both together. */}
+            <div className="mb-8 flex flex-wrap items-center gap-3">
+              <div className="relative w-full sm:w-auto sm:min-w-[240px] sm:max-w-sm sm:flex-1">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-site-text/40"
+                >
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                  <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search academies or courses…"
+                  aria-label="Search academies"
+                  className="w-full rounded-full border border-site-border/40 bg-site-surface-soft py-1.5 pl-10 pr-4 text-sm text-site-text outline-none transition placeholder:text-site-text/40 focus:border-site-primary/60"
+                />
               </div>
-            ) : null}
+              {niches.length > 0 ? (
+                manyNiches ? (
+                  <NicheDropdown niches={niches} active={activeNiche} onSelect={setActiveNiche} />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <FilterChip active={activeNiche === null} onClick={() => setActiveNiche(null)}>
+                      All
+                    </FilterChip>
+                    {niches.map((n) => (
+                      <FilterChip key={n} active={activeNiche === n} onClick={() => setActiveNiche(n)}>
+                        {n}
+                      </FilterChip>
+                    ))}
+                  </div>
+                )
+              ) : null}
+            </div>
 
-            <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+            {filtered.length === 0 ? (
+              // Some academies exist but the current search + category combo
+              // matches none. Distinct from the "No campuses yet" case above.
+              <div className="rounded-xl border border-site-border/30 bg-site-surface-soft p-10 text-center">
+                <p className="text-lg font-semibold text-site-text">No matching academies</p>
+                <p className="mt-2 text-sm text-site-text/70">
+                  Nothing matches your search or category. Try a different word, or clear the
+                  filters to see every campus.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setActiveNiche(null);
+                  }}
+                  className="mt-4 rounded-full border border-site-border/40 bg-site-surface px-5 py-2 text-sm font-semibold text-site-text/80 transition hover:bg-white/10"
+                >
+                  Clear search and filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
               {filtered.map((c) => (
                 <button
                   key={c.slug}
@@ -163,7 +246,8 @@ export default function CampusesPage() {
                   </span>
                 </button>
               ))}
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -277,6 +361,150 @@ function FilterChip({
       }`}
     >
       {children}
+    </button>
+  );
+}
+
+// The category filter for LONG niche lists: a pill-shaped trigger that opens a
+// panel with (optionally) a name search and a scrollable list. Used instead of
+// the chip row once there are more niches than comfortably fit, so hundreds of
+// categories stay one click + a keystroke away instead of flooding the page.
+// A native <select> was considered and rejected: it can't carry the search box
+// reliably across platforms and wouldn't match the site's pill styling.
+function NicheDropdown({
+  niches,
+  active,
+  onSelect,
+}: {
+  niches: string[];
+  active: string | null;
+  onSelect: (niche: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const searchable = niches.length > SEARCHABLE_NICHE_CHIPS;
+
+  // Close on outside click / Escape while open. The mousedown listener is on
+  // document so a click on the backdrop or anywhere else on the page dismisses.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Focus the search as soon as the panel opens with one, so typing narrows
+  // immediately (the whole point of the dropdown at this scale).
+  useEffect(() => {
+    if (open && searchable) searchRef.current?.focus();
+  }, [open, searchable]);
+
+  const q = query.trim().toLowerCase();
+  const list = q ? niches.filter((n) => n.toLowerCase().includes(q)) : niches;
+
+  const pick = (n: string | null) => {
+    onSelect(n);
+    setOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div className="relative inline-block" ref={rootRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+          active
+            ? "border-site-primary bg-site-primary text-white"
+            : "border-site-border/40 bg-site-surface-soft text-site-text/70 hover:border-site-primary/60 hover:text-site-text"
+        }`}
+      >
+        {active ?? "All categories"}
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open ? (
+        <div className="absolute left-0 z-30 mt-2 w-72 rounded-xl border border-site-border/40 bg-site-surface p-2 shadow-2xl">
+          {searchable ? (
+            <input
+              ref={searchRef}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search categories…"
+              aria-label="Search categories"
+              className="mb-2 w-full rounded-lg border border-site-border/40 bg-site-surface-soft px-3 py-2 text-sm text-site-text outline-none transition placeholder:text-site-text/40 focus:border-site-primary/60"
+            />
+          ) : null}
+          <div role="listbox" aria-label="Categories" className="max-h-72 overflow-y-auto">
+            <DropdownRow active={!active} onClick={() => pick(null)}>
+              All categories
+            </DropdownRow>
+            {list.map((n) => (
+              <DropdownRow key={n} active={active === n} onClick={() => pick(n)}>
+                {n}
+              </DropdownRow>
+            ))}
+            {list.length === 0 ? (
+              <p className="px-3 py-4 text-center text-sm text-site-text/50">No matching category.</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DropdownRow({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={active}
+      onClick={onClick}
+      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
+        active
+          ? "bg-site-primary/15 font-semibold text-site-text"
+          : "text-site-text/75 hover:bg-white/5 hover:text-site-text"
+      }`}
+    >
+      {children}
+      {active ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-site-primary">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
     </button>
   );
 }

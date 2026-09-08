@@ -130,6 +130,22 @@ export default function AuthLayout({
 }) {
   const branding = usePublicInstituteBranding();
 
+  // Swap the browser tab's title to the academy's name. The public auth screens
+  // (student/staff login, password setup + reset) sit OUTSIDE every portal
+  // shell, so none of the shells' own title swaps run here and the inherited
+  // root "Jorsas Tech" would stay in the tab on a customised academy's portal.
+  // Gated on the backend's authoritative is_primary flag (NOT the tenant
+  // cookie, which can be stale/fallen-back to the primary slug), exactly like
+  // StudentLayoutClient/StaffLayoutClient. No generateMetadata exists anywhere
+  // in this route chain, so nothing streams a title in after hydration to
+  // clobber this write (the /lms/admin trap).
+  useEffect(() => {
+    const name = branding?.name?.trim();
+    if (name && branding && branding.is_primary === false) {
+      document.title = name;
+    }
+  }, [branding]);
+
   // Pin the institute from an emailed link's ?tenant= so a reset/invite → login
   // journey stays on the right portal instead of defaulting to the primary slug.
   useEffect(() => {

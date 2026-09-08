@@ -65,9 +65,11 @@ const groups: SidebarGroup[] = [
     label: "Settings",
     items: [
       { href: "/lms/admin/branding", label: "Customisation" },
-      { href: "/lms/admin/payments", label: "Course payments" },
       { href: "/lms/admin/domains", label: "Custom domain", badge: "Pro", gatedFeature: "custom_domain" },
       { href: "/lms/admin/billing", label: "Billing & Plan" },
+      // The owner's own account (personal details + payout setup). The payout
+      // tab absorbed the old "Course payments" sidebar entry.
+      { href: "/lms/admin/profile", label: "Profile" },
     ],
   },
 ];

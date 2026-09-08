@@ -7,7 +7,7 @@
 //   • Public page, cover image, intro, contact details, social links
 // Each tab is its own self-contained editor component (with its own load/save);
 // this page only owns the heading and the tab switcher. The "Public page" entry
-// was removed from the sidebar, /lms/admin/profile now redirects here.
+// was removed from the sidebar (the old standalone route now redirects here).
 
 import { useState } from "react";
 import BrandingEditor from "@/components/owner/BrandingEditor";

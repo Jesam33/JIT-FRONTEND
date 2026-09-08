@@ -74,6 +74,12 @@ export const OWNER_API = {
   profile: api("/api/frontend/lms/owner/profile"),
   profileUpdate: api("/api/frontend/lms/owner/profile"),
   profileCover: api("/api/frontend/lms/owner/profile/cover"),
+  // The owner's own LOGIN account (Profile page → Personal details): name,
+  // email, password of the users-table row behind the owner session. Distinct
+  // from `profile` above, which is storefront content.
+  account: api("/api/frontend/lms/owner/account"),
+  accountUpdate: api("/api/frontend/lms/owner/account"),
+  accountPassword: api("/api/frontend/lms/owner/account/password"),
   // Course-fee payout: link the institute's own Paystack subaccount so fees
   // settle to its bank (institute collects, not the platform). GET + POST share.
   paymentSettings: api("/api/frontend/lms/owner/payment-settings"),
