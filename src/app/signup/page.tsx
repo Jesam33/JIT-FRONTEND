@@ -46,8 +46,13 @@ function SignupInner() {
   const [error, setError] = useState<string | null>(null);
   // Set on a successful FREE signup, the tenant is provisioned inline (no
   // payment), so we show an inline "check your email" panel instead of
-  // redirecting to Paystack.
-  const [done, setDone] = useState<{ message: string; email: string } | null>(null);
+  // redirecting to Paystack. Carries the new academy's slug so the sign-in
+  // link can pin it: without ?tenant= the owner login resolves branding, the
+  // tab title AND the prefilled "Organisation" field from the browser's tenant
+  // cookie, which may still be pinned to a DIFFERENT academy the person
+  // visited earlier (they'd see that academy's branding on their brand-new
+  // one, or worse, sign into the wrong one with a shared email).
+  const [done, setDone] = useState<{ message: string; email: string; slug: string | null } | null>(null);
 
   const isFreePlan = plan === "free";
 
@@ -133,6 +138,7 @@ function SignupInner() {
         setDone({
           message: json?.message || "Your Online Academy is ready. Check your email for your setup link.",
           email: payload.admin_email,
+          slug: typeof json?.tenant?.slug === "string" ? json.tenant.slug : null,
         });
         setLoading(false);
         return;
@@ -173,7 +179,7 @@ function SignupInner() {
             choose your password and sign in. Don&apos;t see it? Check your spam folder.
           </p>
           <Link
-            href="/lms/admin/login"
+            href={done.slug ? `/lms/admin/login?tenant=${encodeURIComponent(done.slug)}` : "/lms/admin/login"}
             className="inline-flex rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110"
           >
             Go to sign in
