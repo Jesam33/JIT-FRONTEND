@@ -30,6 +30,12 @@ const groups: SidebarGroup[] = [
     items: [
       { href: "/lms/staff/modules", label: "Modules" },
       { href: "/lms/staff/materials", label: "Materials" },
+      // AI materials (Gamma, Pro+): teachers author the content, so the
+      // generator lives here too (the owner keeps theirs for solo academies).
+      // Server-side every save target is scoped to the teacher's assigned
+      // courses; the link itself is dropped below when the academy's plan
+      // doesn't include the feature.
+      { href: "/lms/staff/ai-materials", label: "Create with AI" },
       { href: "/lms/staff/tasks", label: "Tasks" },
     ],
   },
@@ -175,6 +181,10 @@ export default function StaffSidebar() {
   const [teacher, setTeacher] = useState<{ name: string; role: string; profile_photo_url?: string | null } | null>(null);
   const [chatEnabled, setChatEnabled] = useState(true);
   const chatEnabledRef = useRef(true);
+  // AI materials is a Pro+ feature (chat is Basic+): both flags come from the
+  // same /staff/me payload and default to visible until it answers, so a slow
+  // profile load never hides a paid feature the academy actually has.
+  const [aiEnabled, setAiEnabled] = useState(true);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -196,6 +206,8 @@ export default function StaffSidebar() {
           const enabled = (p.plan ?? "free") !== "free";
           chatEnabledRef.current = enabled;
           setChatEnabled(enabled);
+          const ai = p.ai_materials !== false;
+          setAiEnabled(ai);
         }
       })
       .catch(() => {});
@@ -256,13 +268,16 @@ export default function StaffSidebar() {
     return pathname.startsWith(href);
   }
 
-  // Chat is a paid-plan feature, drop the Chats link on the free plan.
-  const visibleGroups = chatEnabled
-    ? groups
-    : groups.map((g) => ({
-        ...g,
-        items: g.items.filter((i) => i.href !== "/lms/staff/chats"),
-      }));
+  // Chat (Basic+) and AI materials (Pro+) are paid-plan features, drop their
+  // links when the academy's plan doesn't include them.
+  const visibleGroups = groups.map((g) => ({
+    ...g,
+    items: g.items.filter(
+      (i) =>
+        (chatEnabled || i.href !== "/lms/staff/chats") &&
+        (aiEnabled || i.href !== "/lms/staff/ai-materials"),
+    ),
+  }));
 
   return (
     <>

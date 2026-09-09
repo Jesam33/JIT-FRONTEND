@@ -40,7 +40,6 @@
     var room = params.get('room') || '';
     var jwt = params.get('jwt') || '';
     var userName = params.get('userName') || 'Student';
-    var subject = params.get('subject') || '';
 
     // Hoisted to module scope so the parent-window message handler (clean
     // hang-up on leave) can reach the live conference created in initJitsi().
@@ -86,16 +85,18 @@
           height: '100%',
           userInfo: { displayName: userName },
           configOverwrite: {
-            // Show the pre-join screen so students pick the name they join with
-            // (and check camera/mic) first, the same first step staff get.
-            prejoinConfig: { enabled: true },
+            // NO Jitsi pre-join screen: the student picks their display name in
+            // the portal's own pre-join step (which mints it into the JWT),
+            // and this overlay only clears on videoConferenceJoined — a Jitsi
+            // pre-join behind it would hide Jitsi's own "Join now" button and
+            // deadlock the join forever (the "stuck on Joining classroom" bug).
+            prejoinConfig: { enabled: false },
             disableDeepLinking: true,
             startWithAudioMuted: false,
             startWithVideoMuted: false,
-            // Hide the room-name label at the top of the call (the "jit-..."
-            // text). A clean class title is shown instead when one is passed.
-            hideConferenceSubject: !subject,
-            subject: subject
+            // Remove the room-name/subject label Jitsi shows at the top of the
+            // call (the "jit-..." text that reads like a recording file name).
+            hideConferenceSubject: true
           },
           interfaceConfigOverwrite: {
             SHOW_JITSI_WATERMARK: false,

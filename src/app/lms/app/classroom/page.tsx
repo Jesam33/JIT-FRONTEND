@@ -47,6 +47,12 @@ export default function StudentClassroomPage() {
   // dedupes the close-out when both the button and the iframe's own leave fire.
   const liveClassRef = useRef<{ id: number; classType: string } | null>(null);
   const attendanceClosedRef = useRef<number | null>(null);
+  // Pre-join step: the student types the name they want on the call BEFORE
+  // joining. The chosen name is sent to the signature endpoint, which mints it
+  // into the Jitsi JWT (the token's name is what the call actually displays).
+  const [showPrejoin, setShowPrejoin] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [nameEdited, setNameEdited] = useState(false);
 
   // Fullscreen: on phones we request TRUE fullscreen and lock landscape for a
   // usable call (auto-rotate no longer required); desktop falls back to the CSS
@@ -104,6 +110,13 @@ export default function StudentClassroomPage() {
   const studentName = useMemo(() => {
     return `${profile.first_name ?? "Student"} ${profile.last_name ?? ""}`.trim();
   }, [profile.first_name, profile.last_name]);
+
+  // Prefill the pre-join name field with the profile name, but only until the
+  // student edits it themselves (a late-arriving profile fetch must never
+  // overwrite what they typed).
+  useEffect(() => {
+    if (!nameEdited && studentName) setDisplayName(studentName);
+  }, [studentName, nameEdited]);
 
   // "Share and earn" funnel: students can become admission marketers (agents)
   // for their academy. Carry the tenant slug so the apply journey stays on the
@@ -250,12 +263,14 @@ export default function StudentClassroomPage() {
       const response = await apiFetch(STUDENT_API.classroomSdkSignature(classroomId), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ class_type: classType }),
+        body: JSON.stringify({ class_type: classType, display_name: displayName.trim() }),
       });
       const payload = (await response.json()) as Partial<MeetingTokenPayload> & { message?: string };
 
       if (!response.ok || !payload.jwt || !payload.room || !payload.domain || !payload.app_id) {
         setJoinMessage(payload.message ?? "Could not initialize the live class session.");
+        // Close the panel so the error message at the top of the page shows.
+        setShowPrejoin(false);
         return;
       }
 
@@ -265,8 +280,8 @@ export default function StudentClassroomPage() {
       url.searchParams.set("room", payload.room);
       url.searchParams.set("jwt", payload.jwt);
       url.searchParams.set("userName", payload.user_name ?? studentName);
-      // A clean class title for the call header instead of the raw room id.
-      if (activeClass?.title) url.searchParams.set("subject", activeClass.title);
+      // No subject/room label on the call: the iframe sets
+      // hideConferenceSubject:true so the raw "jit-..." room name never shows.
 
       // Track which class is live so the leave / hangup paths can post
       // attendance for it, and pin it as active so its scheduled end time can't
@@ -274,8 +289,10 @@ export default function StudentClassroomPage() {
       liveClassRef.current = { id: classroomId, classType };
       setLiveClassId(classroomId);
       attendanceClosedRef.current = null;
+      setShowPrejoin(false);
       setIframeUrl(url.toString());
     } catch {
+      setShowPrejoin(false);
       setJoinMessage("Failed to start live session. Please try again.");
     } finally {
       setIsJoiningEmbeddedClass(false);
@@ -345,7 +362,7 @@ export default function StudentClassroomPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => joinEmbeddedClassroom(activeClass.id)}
+                    onClick={() => setShowPrejoin(true)}
                     disabled={isJoiningEmbeddedClass}
                     className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -360,7 +377,7 @@ export default function StudentClassroomPage() {
                   Leave Class
                 </button>
                 <a href={agentHref} className="mt-3 block text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 hover:text-emerald-200">
-                  Share your course link and earn rewards
+                  Share academy link to earn
                 </a>
               </>
             ) : !isClassActiveWindow(activeClass.starts_at, activeClass.ends_at, currentTime) ? (
@@ -376,7 +393,7 @@ export default function StudentClassroomPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => joinEmbeddedClassroom(activeClass.id)}
+                    onClick={() => setShowPrejoin(true)}
                     disabled={isJoiningEmbeddedClass}
                     className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -394,7 +411,7 @@ export default function StudentClassroomPage() {
                   Leave Class
                 </button>
                 <a href={agentHref} className="mt-3 block text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 hover:text-emerald-200">
-                  Share your course link and earn rewards
+                  Share academy link to earn
                 </a>
               </>
             )}
@@ -475,6 +492,56 @@ export default function StudentClassroomPage() {
           <h3 className="font-semibold">No upcoming classes scheduled</h3>
         </article>
       )}
+
+      {/* Pre-join step: the student picks the name the class will see before
+          the room opens. The choice is minted into the Jitsi JWT server-side,
+          so this is the one place their call identity is decided. */}
+      {showPrejoin && activeClass && !isClassLive ? (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-site-surface p-5 shadow-2xl">
+            <h3 className="text-base font-semibold">Join {activeClass.title}</h3>
+            <label htmlFor="join-display-name" className="mt-4 block text-xs font-medium text-white/70">
+              Your display name (how the class will see you)
+            </label>
+            <input
+              id="join-display-name"
+              type="text"
+              value={displayName}
+              maxLength={60}
+              autoComplete="name"
+              onChange={(e) => {
+                setNameEdited(true);
+                setDisplayName(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && displayName.trim() && !isJoiningEmbeddedClass) {
+                  joinEmbeddedClassroom(activeClass.id);
+                }
+              }}
+              className="mt-1.5 w-full rounded-xl border border-white/20 bg-black/40 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/45"
+              placeholder="e.g. Jude O."
+            />
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPrejoin(false)}
+                disabled={isJoiningEmbeddedClass}
+                className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => joinEmbeddedClassroom(activeClass.id)}
+                disabled={isJoiningEmbeddedClass || !displayName.trim()}
+                className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isJoiningEmbeddedClass ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Joining...</span> : "Join now"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

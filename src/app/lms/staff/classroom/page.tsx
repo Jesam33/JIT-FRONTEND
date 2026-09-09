@@ -160,7 +160,10 @@ export default function StaffClassroomPage() {
         setMessage(p?.message ?? "Could not start the live class.");
         return;
       }
-      const url = `https://${p.domain}/${p.app_id}/${p.room}?jwt=${encodeURIComponent(p.jwt)}`;
+      // The URL fragment is the only config channel on the plain JaaS page (no
+      // external_api.js there): hideConferenceSubject removes the raw "jit-..."
+      // room-name label Jitsi shows at the top of the call.
+      const url = `https://${p.domain}/${p.app_id}/${p.room}?jwt=${encodeURIComponent(p.jwt)}#config.hideConferenceSubject=true`;
       if (win) win.location.href = url;
       else window.open(url, "_blank", "noopener,noreferrer");
     } catch {

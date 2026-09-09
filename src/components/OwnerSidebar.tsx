@@ -55,7 +55,13 @@ const groups: SidebarGroup[] = [
   },
   {
     label: "Staff operations",
-    items: [{ href: "/lms/admin/staff", label: "Staff Accounts" }],
+    items: [
+      { href: "/lms/admin/staff", label: "Staff Accounts" },
+      // Admission Marketer network (Basic+): every agent advertising the academy,
+      // their referrals and payout balance. Stays visible on every plan (402 →
+      // UpgradeModal), the badge drops once the plan includes it.
+      { href: "/lms/admin/agents", label: "Agents", badge: "Basic", gatedFeature: "admission_marketer" },
+    ],
   },
   {
     label: "Community",

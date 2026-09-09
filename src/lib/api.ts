@@ -46,6 +46,13 @@ export const OWNER_API = {
   deleteStaff: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}`),
   resendStaffInvite: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/resend-invite`),
   setStaffActive: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/active`),
+  // Owner Admission Marketer (agent) management: everyone advertising the
+  // academy, their referral numbers + payout balance, and approve/reject.
+  // Basic+ feature: a lower plan gets 402, which maybeUpgrade() turns into the
+  // UpgradeModal.
+  agents: api("/api/frontend/lms/owner/agents"),
+  approveAgent: (id: string | number) => api(`/api/frontend/lms/owner/agents/${id}/approve`),
+  rejectAgent: (id: string | number) => api(`/api/frontend/lms/owner/agents/${id}/reject`),
   courses: api("/api/frontend/lms/owner/courses"),
   tracks: api("/api/frontend/lms/owner/tracks"),
   // Owner course management (create/edit/delete, set description, price, capacity).
@@ -180,6 +187,16 @@ export const STAFF_API = {
   students: api("/api/frontend/lms/staff/students"),
   assignedCourses: api("/api/frontend/lms/staff/courses"),
   assignedTracks: api("/api/frontend/lms/staff/tracks"),
+  // AI training materials (Gamma, Pro+) — the staff twin of the owner flow:
+  // generate → poll aiStatus → aiSave, scoped server-side to the teacher's
+  // assigned courses. A non-Pro academy gets 402, which the staff page shows
+  // inline as "ask your academy owner to upgrade" (staff can't upgrade).
+  aiGenerate: api("/api/frontend/lms/staff/ai/materials/generate"),
+  aiStatus: (id: string) => api(`/api/frontend/lms/staff/ai/materials/${encodeURIComponent(id)}`),
+  aiSave: api("/api/frontend/lms/staff/ai/materials/save"),
+  // Modules of one assigned course, populates the AI-materials "save into
+  // module" picker (assigned-course-scoped inside the controller).
+  courseModules: (id: string | number) => api(`/api/frontend/lms/staff/courses/${id}/modules`),
   modules: api("/api/frontend/lms/staff/modules"),
   module: (id: string | number) => api(`/api/frontend/lms/staff/modules/${id}`),
   moduleContents: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/contents`),
