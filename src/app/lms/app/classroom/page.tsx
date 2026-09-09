@@ -111,6 +111,16 @@ export default function StudentClassroomPage() {
     return `${profile.first_name ?? "Student"} ${profile.last_name ?? ""}`.trim();
   }, [profile.first_name, profile.last_name]);
 
+  // The scheduled window of the active/upcoming class: "12 Sep 2026, 4:00 PM –
+  // 6:00 PM". The end time is when joining closes, NOT when the call drops —
+  // a live call runs until the teacher ends it.
+  const classWindow = (c: TimetableItem) => {
+    const start = formatLocalDateTime(c.starts_at);
+    return c.ends_at
+      ? `${start} – ${new Date(c.ends_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+      : start;
+  };
+
   // Prefill the pre-join name field with the profile name, but only until the
   // student edits it themselves (a late-arriving profile fetch must never
   // overwrite what they typed).
@@ -338,7 +348,7 @@ export default function StudentClassroomPage() {
           <div className="p-4">
             <h3 className="text-lg font-semibold">{activeClass.title}</h3>
             <p className="mt-1 text-sm text-white/70">
-              {formatLocalDateTime(activeClass.starts_at)}
+              {classWindow(activeClass)}
               {isScheduledClass ? <span className="ml-2 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
             </p>
 
@@ -373,11 +383,18 @@ export default function StudentClassroomPage() {
             ) : isScheduledClass && isClassLive ? (
               <>
                 <p className="mt-3 text-sm text-emerald-300">Live now. You are in the embedded session.</p>
+                <p className="mt-1 text-xs text-white/55">This class stays open until your teacher ends it, even past the scheduled end time.</p>
                 <button type="button" onClick={requestLeave} className="mt-3 rounded-full border border-rose-300/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100">
                   Leave Class
                 </button>
-                <a href={agentHref} className="mt-3 block text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 hover:text-emerald-200">
+                <a
+                  href={agentHref}
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300 underline decoration-emerald-300 decoration-2 underline-offset-4 transition hover:text-emerald-200"
+                >
                   Share academy link to earn
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9m8 0v8" />
+                  </svg>
                 </a>
               </>
             ) : !isClassActiveWindow(activeClass.starts_at, activeClass.ends_at, currentTime) ? (
@@ -407,11 +424,18 @@ export default function StudentClassroomPage() {
             ) : (
               <>
                 <p className="mt-3 text-sm text-emerald-300">Live now. You are in the embedded session.</p>
+                <p className="mt-1 text-xs text-white/55">This class stays open until your teacher ends it, even past the scheduled end time.</p>
                 <button type="button" onClick={requestLeave} className="mt-3 rounded-full border border-rose-300/40 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-100">
                   Leave Class
                 </button>
-                <a href={agentHref} className="mt-3 block text-xs font-medium text-emerald-300 underline decoration-emerald-300/40 underline-offset-2 hover:text-emerald-200">
+                <a
+                  href={agentHref}
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300 underline decoration-emerald-300 decoration-2 underline-offset-4 transition hover:text-emerald-200"
+                >
                   Share academy link to earn
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9m8 0v8" />
+                  </svg>
                 </a>
               </>
             )}
@@ -476,7 +500,7 @@ export default function StudentClassroomPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-semibold">{c.title}</h3>
-                    <p className="mt-1 text-sm text-white/70">{formatLocalDateTime(c.starts_at)}</p>
+                    <p className="mt-1 text-sm text-white/70">{classWindow(c)}</p>
                     {c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
                   </div>
                   {/* Upcoming classes are info-only, the live room opens (in-portal) once the

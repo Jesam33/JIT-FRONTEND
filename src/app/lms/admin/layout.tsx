@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import OwnerLayoutClient from "@/components/OwnerLayoutClient";
 import { OWNER_BRANDING_COOKIE, OWNER_NAME_COOKIE, parseBrandingCookie, parseOwnerNameCookie } from "@/lib/owner-branding";
+import { tenantAuthMetadata } from "@/lib/auth-share-metadata";
 
 // Server-side per-tenant browser-tab metadata for the whole /lms/admin subtree.
 //
@@ -33,12 +34,19 @@ import { OWNER_BRANDING_COOKIE, OWNER_NAME_COOKIE, parseBrandingCookie, parseOwn
 // inherit the root's value until the next load writes the cookie. The stored
 // logo_url is absolute (App\Support\MediaUrl), so Next uses it as-is rather than
 // resolving it against metadataBase.
+// In addition to TITLE + ICON, the layout now also ships the academy's SHARE
+// metadata (og:title / og:image / twitter card) via tenantAuthMetadata, so a
+// shared https://{academy}.domain/lms/admin/login link shows the academy's
+// thumbnail in WhatsApp/social previews instead of the generic Jorsas card.
+// Link-preview crawlers never run the client JS that swaps the favicon, so
+// this has to be server-rendered. On the primary domain it returns {} and the
+// root metadata applies untouched.
 export async function generateMetadata(): Promise<Metadata> {
   const store = await cookies();
   const branding = parseBrandingCookie(store.get(OWNER_BRANDING_COOKIE)?.value);
   const name = parseOwnerNameCookie(store.get(OWNER_NAME_COOKIE)?.value);
 
-  const meta: Metadata = {};
+  const meta: Metadata = await tenantAuthMetadata("owner");
   if (name) meta.title = name;
   if (branding?.logo_url) meta.icons = { icon: branding.logo_url };
   return meta;

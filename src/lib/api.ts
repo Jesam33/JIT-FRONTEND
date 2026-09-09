@@ -51,6 +51,9 @@ export const OWNER_API = {
   // Basic+ feature: a lower plan gets 402, which maybeUpgrade() turns into the
   // UpgradeModal.
   agents: api("/api/frontend/lms/owner/agents"),
+  // One agent's analytics drill-down: profile, wallet stats, referrals,
+  // registrations (payment + commission state) and the payout ledger.
+  agent: (id: string | number) => api(`/api/frontend/lms/owner/agents/${id}`),
   approveAgent: (id: string | number) => api(`/api/frontend/lms/owner/agents/${id}/approve`),
   rejectAgent: (id: string | number) => api(`/api/frontend/lms/owner/agents/${id}/reject`),
   courses: api("/api/frontend/lms/owner/courses"),

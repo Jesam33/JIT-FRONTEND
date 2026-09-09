@@ -12,6 +12,13 @@ function toLocalDatetimeString(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+/** "12 Sep 2026, 4:00 pm – 6:00 pm" — the scheduled window of a class. */
+function formatClassWindow(startsAt: string, endsAt: string | null | undefined): string {
+  const start = new Date(startsAt).toLocaleString();
+  if (!endsAt) return start;
+  return `${start} – ${new Date(endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 type Classroom = {
   id: number;
   course_id: number;
@@ -235,7 +242,7 @@ export default function StaffClassroomPage() {
                 <div key={c.id} className="flex items-center justify-between rounded-xl border border-emerald-500/25 bg-black/40 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium">{c.title}</p>
-                    <p className="text-xs text-white/60">{new Date(c.starts_at).toLocaleString()}{c.module ? ` - ${c.module.title}` : ""}</p>
+                    <p className="text-xs text-white/60">{formatClassWindow(c.starts_at, c.ends_at)}{c.module ? ` - ${c.module.title}` : ""}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
@@ -259,7 +266,7 @@ export default function StaffClassroomPage() {
                 <div key={c.id} className="flex items-center justify-between rounded-xl border border-emerald-500/15 bg-black/30 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium">{c.title}</p>
-                    <p className="text-xs text-white/60">{new Date(c.starts_at).toLocaleString()}{c.module ? ` - ${c.module.title}` : ""}</p>
+                    <p className="text-xs text-white/60">{formatClassWindow(c.starts_at, c.ends_at)}{c.module ? ` - ${c.module.title}` : ""}</p>
                   </div>
                   <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
                 </div>
@@ -307,10 +314,12 @@ export default function StaffClassroomPage() {
 
           <input
             type="datetime-local"
+            required
             value={form.ends_at}
             onChange={(e) => setForm({ ...form, ends_at: e.target.value })}
             className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none"
-            placeholder="Ends at (optional)"
+            placeholder="Ends at"
+            title="Scheduled end of the class. The call itself stays open until you end it."
           />
 
           <input
@@ -345,6 +354,11 @@ export default function StaffClassroomPage() {
               Cancel
             </button>
           ) : null}
+          {!form.ends_at ? (
+            <p className="self-center text-xs text-white/55">
+              Pick a start and an end time. The call itself stays open until you end it.
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -356,7 +370,7 @@ export default function StaffClassroomPage() {
               <div>
                 <h3 className="font-semibold">{c.title}</h3>
                 <p className="mt-1 text-xs text-white/60">{c.course?.title ?? "Unknown course"}</p>
-                <p className="mt-1 text-xs text-white/60">{new Date(c.starts_at).toLocaleString()}</p>
+                <p className="mt-1 text-xs text-white/60">{formatClassWindow(c.starts_at, c.ends_at)}</p>
               </div>
               <div className="flex gap-2">
                 {isClassEnded(c.starts_at, c.ends_at, currentTime) ? (
