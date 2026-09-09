@@ -15,7 +15,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-black/55 [html.light_&]:bg-site-bg/75 backdrop-blur-md">
+      <header className="global-marketing-header sticky top-0 z-40 bg-black/55 [html.light_&]:bg-site-bg/75 backdrop-blur-md">
         <div className="container-wide flex items-center justify-between gap-6 py-5 md:py-6">
           <Link href="/" className="inline-flex items-center" aria-label="Jorsas home">
             <img src="/images/jorsas-logo-white.png" alt="Jorsas" className="h-7 w-auto sm:h-9 [html.light_&]:hidden" />

@@ -361,3 +361,18 @@ html.light {
   filter: brightness(0.92) !important;
 }
 
+/* ── Tenant subdomain origins: no Jorsas marketing chrome ───────────────────
+   On {academy}.jorsastech.com (or {academy}.localhost in dev) the whole origin
+   is that institute's mini-site: the middleware rewrites the root to /i/{slug}
+   while the browser URL stays "/", so AppChrome's usePathname() check returns
+   "/" there and its SSR/hydration render still contains the marketing
+   header/footer. The branding-init pre-paint script (app/layout.tsx) stamps
+   html[data-tenant-subdomain] before first paint; this rule hides the Jorsas
+   chrome from that first frame (no flash), and AppChrome removes it from the
+   DOM entirely after mount. Keep the class names in sync with the root
+   elements of components/layout/Header.tsx and Footer.tsx. */
+html[data-tenant-subdomain] .global-marketing-header,
+html[data-tenant-subdomain] .global-marketing-footer {
+  display: none !important;
+}
+

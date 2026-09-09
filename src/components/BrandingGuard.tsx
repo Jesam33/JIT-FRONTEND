@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { resetBrandingToDefault } from "@/lib/branding-cache";
+import { tenantSubdomainForHost } from "@/lib/tenant-subdomain";
 
 // The global `branding-init` pre-paint (app/layout.tsx) writes the active
 // institute's palette onto :root to kill the portal flash-of-default-theme.
@@ -33,11 +34,24 @@ const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffec
 export default function BrandingGuard() {
   const pathname = usePathname() ?? "";
 
+  // A tenant subdomain origin is a branded area even though usePathname() is
+  // "/" there (the middleware rewrites {academy}.domain/ to /i/{slug}, and a
+  // rewrite never changes the browser URL — see AppChrome.tsx). This component
+  // renders null in every state, so a lazy window read cannot cause a hydration
+  // mismatch; initializing it (rather than flipping it in an effect) means the
+  // FIRST layout-effect pass already knows, so it never wrongly resets an
+  // academy's palette while its storefront is on screen.
+  const [tenantHost] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      tenantSubdomainForHost(window.location.hostname) !== null,
+  );
+
   useIsomorphicLayoutEffect(() => {
     const branded =
-      pathname.startsWith("/lms") || pathname === "/i" || pathname.startsWith("/i/");
+      tenantHost || pathname.startsWith("/lms") || pathname === "/i" || pathname.startsWith("/i/");
     if (!branded) resetBrandingToDefault();
-  }, [pathname]);
+  }, [pathname, tenantHost]);
 
   return null;
 }

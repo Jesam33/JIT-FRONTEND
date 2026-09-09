@@ -109,13 +109,43 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
+                  // Tenant-subdomain detection, mirroring lib/tenant-subdomain.ts
+                  // (raw JS here, before hydration, so it cannot import it).
+                  // On {academy}.domain the middleware rewrites the root to
+                  // /i/{slug} while the browser URL stays "/", so pathname alone
+                  // can't recognise the branded area — the HOST is the signal.
+                  var host = location.hostname.split(':')[0];
+                  var sub = null;
+                  var APP_DOMAIN = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_DOMAIN ?? "")};
+                  var RESERVED = ["www","api","app","admin","mail","smtp","ftp","static","assets","cdn","img","images","media","dashboard","billing","signup","login","onboarding","support","help","docs","blog","status","default"];
+                  if (!/^\\d{1,3}(\\.\\d{1,3}){3}$/.test(host)) {
+                    if (APP_DOMAIN) {
+                      if (host !== APP_DOMAIN && host !== 'www.' + APP_DOMAIN && host.endsWith('.' + APP_DOMAIN)) {
+                        var pfx = host.slice(0, -(APP_DOMAIN.length + 1));
+                        sub = (pfx && pfx.indexOf('.') === -1) ? pfx : null;
+                      }
+                    } else {
+                      var parts = host.split('.');
+                      if (parts.length >= 3) sub = parts[0];
+                      else if (parts.length === 2 && host.endsWith('.localhost')) sub = parts[0];
+                    }
+                    if (sub && RESERVED.indexOf(sub.toLowerCase()) !== -1) sub = null;
+                  }
+                  if (sub) {
+                    // The whole origin is this academy's mini-site: hide the
+                    // Jorsas marketing chrome BEFORE first paint (globals.css
+                    // gates on this attribute; AppChrome drops the chrome from
+                    // the DOM after mount).
+                    document.documentElement.setAttribute('data-tenant-subdomain', sub);
+                  }
+
                   // Only the /lms portals and /i institute mini-sites wear an
                   // institute palette; every other route is the primary Jorsas
                   // marketing site and must stay on the default theme, so a stale
                   // 'tenant' cookie can't bleed institute colors onto the landing
                   // page. Mirrors the branded-area check in AppChrome.tsx.
                   var path = location.pathname;
-                  if (!(path.startsWith('/lms') || path === '/i' || path.startsWith('/i/'))) return;
+                  if (!(sub || path.startsWith('/lms') || path === '/i' || path.startsWith('/i/'))) return;
                   var PRIMARY = ${JSON.stringify(process.env.NEXT_PUBLIC_PRIMARY_TENANT_SLUG ?? "jorsas")};
                   var m = document.cookie.match(/(?:^|;\\s*)tenant=([^;]*)/);
                   var slug = (m && m[1]) ? decodeURIComponent(m[1]) : PRIMARY;

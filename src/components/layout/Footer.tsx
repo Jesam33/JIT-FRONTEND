@@ -5,7 +5,7 @@ import { navLinks } from "@/lib/content";
 
 export default function Footer() {
   return (
-    <footer className="py-14">
+    <footer className="global-marketing-footer py-14">
       <div className="container-wide space-y-9">
         <div className="grid gap-4 border-y border-site-border/30 py-8 md:grid-cols-3">
           <div>

@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { tenantSubdomainForHost } from "@/lib/tenant-subdomain";
 
 type AppChromeProps = {
   children: React.ReactNode;
@@ -21,7 +22,23 @@ export default function AppChrome({ children }: AppChromeProps) {
   // academy storefront carrying ?tenant={slug}, so it must NOT wear the Jorsas
   // navbar/footer/logo. It renders its own academy-branded shell inside the page
   // (no separate layout), so we simply drop the global chrome here.
+  //
+  // A tenant SUBDOMAIN origin is also chrome-less: the middleware rewrites
+  // {academy}.domain/ to the /i/{slug} storefront, but a rewrite never changes
+  // the browser URL, so usePathname() returns "/" there (server-side and after
+  // hydration alike) and the pathname checks above can't see it. The hostname is
+  // the only signal, and it is readable only after mount (no window during SSR),
+  // so this starts false and flips in an effect: the SSR HTML and the first
+  // client render agree (no hydration mismatch), globals.css hides the chrome
+  // pre-paint via html[data-tenant-subdomain] (stamped by the branding-init
+  // script in app/layout.tsx), and this effect then drops it from the DOM.
+  const [tenantHost, setTenantHost] = useState(false);
+  useEffect(() => {
+    setTenantHost(tenantSubdomainForHost(window.location.hostname) !== null);
+  }, []);
+
   const hideGlobalChrome =
+    tenantHost ||
     pathname.startsWith("/lms") ||
     pathname === "/i" ||
     pathname.startsWith("/i/") ||

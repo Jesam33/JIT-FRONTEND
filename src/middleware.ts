@@ -1,43 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { subdomainForHost, RESERVED_SUBDOMAINS } from "@/lib/tenant-subdomain";
 
 const BACKEND = process.env.LARAVEL_BACKEND_URL || "http://127.0.0.1:8000";
-const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || "";
-
-// Kept in sync with config/saas.php `reserved_slugs`. These never resolve as a
-// tenant subdomain (they collide with infra hosts or app-level routes).
-const RESERVED = new Set([
-  "www", "api", "app", "admin", "mail", "smtp", "ftp",
-  "static", "assets", "cdn", "img", "images", "media",
-  "dashboard", "billing", "signup", "login", "onboarding",
-  "support", "help", "docs", "blog", "status", "default",
-]);
-
-function subdomainFor(host: string): string | null {
-  const hostOnly = host.split(":")[0];
-
-  // A raw IPv4 address (e.g. 127.0.0.1) has no subdomain, never treat its
-  // first octet ("127") as a tenant slug. Without this guard, browsing on
-  // http://127.0.0.1:3000 fires /api/tenant/resolve?slug=127 on every request
-  // (a harmless but noisy 404). Use http://localhost:3000 or a real subdomain.
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostOnly)) return null;
-
-  // With APP_DOMAIN set, a true subdomain is any single label in front of it.
-  if (APP_DOMAIN) {
-    if (hostOnly === APP_DOMAIN || hostOnly === `www.${APP_DOMAIN}`) return null;
-    if (hostOnly.endsWith(`.${APP_DOMAIN}`)) {
-      const prefix = hostOnly.slice(0, -(APP_DOMAIN.length + 1));
-      return prefix.split(".")[0] || null;
-    }
-    return null;
-  }
-
-  // Local dev / no APP_DOMAIN: fall back to the label heuristic
-  // (tenant.localhost, or sub.example.com with 3+ labels).
-  const hostParts = hostOnly.split(".");
-  if (hostParts.length >= 3) return hostParts[0];
-  if (hostParts.length === 2 && hostOnly.endsWith("localhost")) return hostParts[0];
-  return null;
-}
 
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
@@ -75,12 +39,12 @@ export async function middleware(req: NextRequest) {
   // 2) Otherwise, hostname subdomain.
   let fromSubdomain = false;
   if (!tenantSlug) {
-    tenantSlug = subdomainFor(host);
+    tenantSlug = subdomainForHost(host);
     fromSubdomain = !!tenantSlug;
   }
 
   // Never resolve a reserved slug as a tenant.
-  if (tenantSlug && RESERVED.has(tenantSlug.toLowerCase())) {
+  if (tenantSlug && RESERVED_SUBDOMAINS.has(tenantSlug.toLowerCase())) {
     tenantSlug = null;
     fromSubdomain = false;
   }
