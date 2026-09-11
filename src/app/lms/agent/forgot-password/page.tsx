@@ -34,7 +34,7 @@ export default function AgentForgotPasswordPage() {
         <p className="mt-2 text-center text-sm text-white/70">Enter your Admission Marketer email to receive a reset link.</p>
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required className="w-full rounded-xl border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text outline-none focus:border-site-text/30" />
-          <button type="submit" disabled={submitting} className="w-full rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
+          <button type="submit" disabled={submitting} className="w-full rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-50">
             {submitting ? ( <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Sending...</span> ) : "Send Reset Link"}
           </button>
           {message ? <p className="text-sm text-white/80 text-center">{message}</p> : null}

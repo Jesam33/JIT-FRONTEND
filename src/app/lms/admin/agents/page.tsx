@@ -75,7 +75,7 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
     return <img src={url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-white/20" />;
   }
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-xs font-bold text-white ring-1 ring-white/20">
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-xs font-bold text-[#fff] ring-1 ring-white/20">
       {initialsOf(name)}
     </span>
   );
@@ -293,7 +293,7 @@ export default function OwnerAgentsPage() {
                     type="button"
                     onClick={() => act(a, "approve")}
                     disabled={actingId === a.id}
-                    className="rounded-full bg-site-primary px-4 py-2 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                    className="rounded-full bg-site-primary px-4 py-2 text-xs font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
                   >
                     {actingId === a.id ? "Approving…" : "Approve"}
                   </button>
@@ -527,7 +527,7 @@ export default function OwnerAgentsPage() {
                             type="button"
                             onClick={() => act(a, "approve")}
                             disabled={actingId === a.id}
-                            className="rounded-full bg-site-primary px-3.5 py-1.5 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                            className="rounded-full bg-site-primary px-3.5 py-1.5 text-xs font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
                           >
                             {actingId === a.id ? "Approving…" : "Approve"}
                           </button>

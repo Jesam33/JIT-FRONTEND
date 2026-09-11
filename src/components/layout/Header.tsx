@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/lib/content";
@@ -9,9 +9,24 @@ export default function Header() {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  // Theme toggle is hidden for now while light mode is being finished; the app
-  // runs dark-only (see the force-dark theme-init in app/layout.tsx). Restore
-  // the theme state, effect, toggleTheme and the toggle button to bring it back.
+  // Light/dark follows the saved 'theme' key (written here and read by the
+  // theme-init pre-paint script in app/layout.tsx).
+  const [isLight, setIsLight] = useState(false);
+
+  useEffect(() => {
+    setIsLight(document.documentElement.classList.contains("light"));
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isLight;
+    document.documentElement.classList.toggle("light", next);
+    try {
+      localStorage.setItem("theme", next ? "light" : "dark");
+    } catch {
+      // Private mode / blocked storage — the class toggle above still applies.
+    }
+    setIsLight(next);
+  };
 
   return (
     <>
@@ -22,14 +37,18 @@ export default function Header() {
             <img src="/images/jorsas-logo-light-mode.png" alt="Jorsas" className="hidden h-7 w-auto sm:h-9 [html.light_&]:block" />
           </Link>
 
-          <nav className="hidden items-center gap-14 text-sm text-white lg:flex [html.light_&]:text-site-text">
+          <nav className="hidden items-center gap-12 text-[13px] text-white lg:flex [html.light_&]:text-site-text">
             {navLinks.map((link) => {
               const active = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={active ? "font-bold text-white [html.light_&]:text-site-text" : "text-white/75 transition hover:text-white [html.light_&]:text-site-text/75 [html.light_&]:hover:text-site-text"}
+                  className={`nav-link transition hover:text-white [html.light_&]:hover:text-site-text ${
+                    active
+                      ? "nav-link-active font-semibold text-white [html.light_&]:text-site-text"
+                      : "text-white/75 [html.light_&]:text-site-text/75"
+                  }`}
                 >
                   {link.label}
                 </Link>
@@ -41,9 +60,9 @@ export default function Header() {
             <div className="hidden items-center gap-3 md:flex">
               <Link
                 href="/qoute"
-                className="inline-flex items-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                className="inline-flex items-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110"
               >
-                Request a Qoute
+                Request a Quote
               </Link>
 
               <button
@@ -59,6 +78,26 @@ export default function Header() {
                 </svg>
               </button>
             </div>
+
+            <button
+              type="button"
+              aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
+              onClick={toggleTheme}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/35 text-white transition hover:bg-white/10 [html.light_&]:border-site-border/35 [html.light_&]:text-site-text [html.light_&]:hover:bg-site-text/10"
+            >
+              {isLight ? (
+                /* Moon — current theme is light, clicking goes dark */
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              ) : (
+                /* Sun — current theme is dark, clicking goes light */
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                </svg>
+              )}
+            </button>
 
             <button
               type="button"
@@ -129,9 +168,9 @@ export default function Header() {
               <Link
                 href="/qoute"
                 onClick={() => setMobileNavOpen(false)}
-                className="flex w-full items-center justify-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                className="flex w-full items-center justify-center rounded-full bg-[#ed180d] px-5 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110"
               >
-                Request a Qoute
+                Request a Quote
               </Link>
             </div>
           </aside>

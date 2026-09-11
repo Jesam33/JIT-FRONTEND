@@ -15,14 +15,16 @@ import { useToast } from "@/components/ToastProvider";
 // presented — the owner sees the UpgradeModal, staff get an inline "ask your
 // academy owner to upgrade" note since they can't upgrade the plan themselves).
 //
-// Describe a topic → an async Gamma generation starts → poll to completion →
-// save the finished material. Two save targets:
-//  • Into a MODULE → the backend stores a real downloadable copy (PDF/PPTX
-//    export) as a module material AND keeps the editable Gamma link, so
-//    students open the file directly while staff can still edit the source.
-//  • Into the whole COURSE → the durable, editable Gamma link only.
-// Gamma's export links expire (~1 week), which is exactly why the module path
-// downloads the bytes now and serves our own copy rather than saving that link.
+// Describe a topic → an async generation starts → poll to completion → save
+// the finished material. Both save targets behave the same way:
+//  • Into a MODULE → the backend stores the downloadable copy (PDF/PPTX
+//    export) as a module content item.
+//  • Into the whole COURSE → the same downloadable copy as a course material.
+// The export links expire (~1 week), which is exactly why the backend
+// downloads the bytes at save time and serves our own copy. The editable
+// vendor doc link is kept server-side (provider/external_id) but is NEVER
+// shown to students, or to anyone else: the platform is white-labeled, end
+// users must not learn which AI vendor powers this.
 
 type Course = { id: number; title: string };
 type Module = { id: number; title: string };
@@ -30,7 +32,7 @@ type Module = { id: number; title: string };
 export type AiVariant = "owner" | "staff";
 
 // The generation lifecycle. `starting` = the create POST is in flight; `pending`
-// = we're polling Gamma; then it resolves to completed / failed.
+// = we're polling for the result; then it resolves to completed / failed.
 type Phase = "idle" | "starting" | "pending" | "completed" | "failed";
 
 const FORMATS: { value: string; label: string }[] = [
@@ -40,10 +42,16 @@ const FORMATS: { value: string; label: string }[] = [
   { value: "webpage", label: "Web page" },
 ];
 
+// The file format students will download. An export is ALWAYS requested (the
+// backend defaults an omitted one to PDF) because the stored file is the
+// student-facing artifact, not an optional extra. Pick Word or PowerPoint when
+// you want to edit the file yourself (download, tweak, re-upload); PDF is
+// read-only but opens anywhere. Word has no native vendor export — the backend
+// converts the PowerPoint master into a .docx on save/download.
 const EXPORTS: { value: string; label: string }[] = [
-  { value: "", label: "None, just the editable Gamma doc" },
-  { value: "pdf", label: "PDF" },
-  { value: "pptx", label: "PowerPoint (.pptx)" },
+  { value: "pdf", label: "PDF (read-only, opens anywhere)" },
+  { value: "docx", label: "Word (.docx, editable)" },
+  { value: "pptx", label: "PowerPoint (.pptx, editable)" },
 ];
 
 const emptyForm = {
@@ -53,7 +61,7 @@ const emptyForm = {
   audience: "",
   tone: "",
   instructions: "",
-  exportAs: "",
+  exportAs: "pdf",
 };
 
 export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }) {
@@ -68,6 +76,8 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
     aiGenerate: isOwner ? OWNER_API.aiGenerate : STAFF_API.aiGenerate,
     aiStatus: isOwner ? OWNER_API.aiStatus : STAFF_API.aiStatus,
     aiSave: isOwner ? OWNER_API.aiSave : STAFF_API.aiSave,
+    // One-off Word download: converts the pptx export and streams the .docx.
+    aiDocx: isOwner ? OWNER_API.aiDocxDownload : STAFF_API.aiDocxDownload,
     courseModules: isOwner ? OWNER_API.courseModules : STAFF_API.courseModules,
 
     // The staff transport is apiFetchStaff (bearer lms_staff_token + timeout +
@@ -120,8 +130,8 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
   };
 
   // Courses power the "save into" dropdown; picking a course then loads its
-  // modules, so the user can target a specific module (which stores the
-  // downloadable file) or the course as a whole (the editable link only).
+  // modules, so the user can target a specific module (the file lands inside
+  // the module's content) or the course as a whole (its materials page).
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
 
@@ -133,8 +143,9 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
   // The export format actually requested for THIS generation (captured at kick-off,
   // not read from the live form at save time, the user may edit the brief after).
   // The backend defaults an omitted export to PDF, so a downloadable copy always
-  // exists; "pptx" only when they explicitly picked PowerPoint.
-  const [resultFormat, setResultFormat] = useState<"pdf" | "pptx">("pdf");
+  // exists; "docx"/"pptx" only when explicitly picked (a Word choice is served
+  // from the pptx master, converted server-side).
+  const [resultFormat, setResultFormat] = useState<"pdf" | "docx" | "pptx">("pdf");
 
   // Save-into block: a course (required) and, within it, an optional module.
   const [saveTitle, setSaveTitle] = useState("");
@@ -144,6 +155,9 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
   const [modulesLoading, setModulesLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  // True while the Word copy is being converted server-side (the pptx export is
+  // fetched + converted, then streamed back as a .docx attachment).
+  const [docxBusy, setDocxBusy] = useState(false);
 
   // Recursive setTimeout (not setInterval) so a slow status call never overlaps
   // the next poll. Cleared on unmount and whenever a new job starts.
@@ -225,8 +239,12 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
   }, [loadCourses, router, variant]);
 
   // Poll one generation to a terminal state, re-scheduling itself while pending.
+  // exportWaits counts the extra polls done after "completed" while the export
+  // file is still missing — the export finishes slightly AFTER the doc flips to
+  // completed, and the save needs it, so we keep waiting (up to ~1 minute)
+  // instead of landing in a state that can only fail.
   const poll = useCallback(
-    async (id: string) => {
+    async (id: string, exportWaits = 0) => {
       try {
         const res = await config.send(config.aiStatus(id));
         if (res.status === 401 || res.status === 403) {
@@ -248,6 +266,10 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
         if (status === "completed") {
           setResultUrl(j.url || null);
           setExportUrl(j.export_url || null);
+          if (!j.export_url && exportWaits < 12) {
+            pollRef.current = window.setTimeout(() => poll(id, exportWaits + 1), 5000);
+            return;
+          }
           setPhase("completed");
           return;
         }
@@ -280,10 +302,11 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
     setGenError(null);
     setResultUrl(null);
     setExportUrl(null);
-    // Lock in the export format for this run (PDF unless PowerPoint was chosen) so
-    // the eventual save stores the file with the right type even if the brief is
-    // edited afterwards. Mirrors the backend's "default an omitted export to PDF".
-    setResultFormat(form.exportAs === "pptx" ? "pptx" : "pdf");
+    // Lock in the export format for this run (PDF unless Word/PowerPoint was
+    // chosen) so the eventual save stores the file with the right type even if
+    // the brief is edited afterwards. Mirrors the backend's "default an omitted
+    // export to PDF".
+    setResultFormat(form.exportAs === "docx" || form.exportAs === "pptx" ? form.exportAs : "pdf");
     setSaveMsg(null);
     setPhase("starting");
 
@@ -341,6 +364,47 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
     setSaveMsg(null);
   };
 
+  // "Download copy" when Word was chosen: the backend fetches the pptx export
+  // (the editable master), converts it to .docx and streams it back. The vendor
+  // only offers pdf/pptx, so the Word file is produced by us, on demand.
+  const downloadWordCopy = async () => {
+    if (!exportUrl || docxBusy) return;
+    setDocxBusy(true);
+    try {
+      const res = await config.send(config.aiDocx, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/octet-stream, application/json" },
+        body: JSON.stringify({ export_url: exportUrl, title: saveTitle.trim() || undefined }),
+      });
+      if (res.status === 401 || res.status === 403) {
+        config.sessionExpired();
+        return;
+      }
+      if (await config.planGate(res, (msg) => setSaveMsg({ kind: "err", text: msg }))) return;
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        toast(j?.message || "Could not prepare the Word copy. Please try again.", "error");
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download =
+        (saveTitle.trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "ai-materials") +
+        ".docx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Could not prepare the Word copy. Please try again.", "error");
+    } finally {
+      setDocxBusy(false);
+    }
+  };
+
   const save = async () => {
     const title = saveTitle.trim();
     if (!title) {
@@ -362,16 +426,16 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
     setSaving(true);
     setSaveMsg(null);
     try {
-      // Into a module → send the export URL + format so the backend downloads a
-      // real file (and keeps the editable link). Into the course as a whole →
-      // just the editable Gamma link, as before.
+      // Both targets get the export URL + format so the backend downloads and
+      // stores a real file (module contents and course materials alike); `url`
+      // is the vendor doc link the backend keeps server-side for recovery.
       const body: Record<string, unknown> = { title, url: resultUrl };
+      if (exportUrl) {
+        body.export_url = exportUrl;
+        body.format = resultFormat;
+      }
       if (saveModuleId) {
         body.module_id = Number(saveModuleId);
-        if (exportUrl) {
-          body.export_url = exportUrl;
-          body.format = resultFormat;
-        }
       } else {
         body.course_id = Number(saveCourseId);
       }
@@ -397,19 +461,17 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
       const courseTitle = courses.find((c) => String(c.id) === String(saveCourseId))?.title || "your course";
       if (saveModuleId) {
         const moduleTitle = modules.find((m) => String(m.id) === String(saveModuleId))?.title || "the module";
-        // `downloaded` reflects whether the backend actually stored a file (vs.
-        // falling back to the editable link if the export couldn't be fetched).
-        const asFile = j?.downloaded === true;
         toast(`Saved “${title}” to ${moduleTitle}.`, "success");
         setSaveMsg({
           kind: "ok",
-          text: asFile
-            ? `Saved to ${moduleTitle} as a downloadable file, students will find it in the module, and the editable Gamma copy is kept too.`
-            : `Saved to ${moduleTitle} as an editable Gamma link (the downloadable copy couldn't be fetched this time).`,
+          text: `Saved to ${moduleTitle} as a downloadable file, students will find it inside the module.`,
         });
       } else {
         toast(`Saved “${title}” to ${courseTitle}.`, "success");
-        setSaveMsg({ kind: "ok", text: `Saved to ${courseTitle}. Students will find it under the course's materials.` });
+        setSaveMsg({
+          kind: "ok",
+          text: `Saved to ${courseTitle} as a downloadable file, students will find it under the course's materials.`,
+        });
       }
     } catch (err) {
       setSaveMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
@@ -431,12 +493,12 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
           {isOwner ? (
             <>
               Describe a topic and generate a polished presentation or document with AI, then save it straight into one of
-              your courses as a material. Powered by Gamma, available on the Pro plan and above.
+              your courses as a material. Available on the Pro plan and above.
             </>
           ) : (
             <>
               Describe a topic and generate a polished presentation or document with AI, then save it straight into one of
-              the courses you teach. Powered by Gamma, available on the Pro plan and above.
+              the courses you teach. Available on the Pro plan and above.
             </>
           )}
         </p>
@@ -513,7 +575,7 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Downloadable copy (optional)</label>
+            <label className={labelClass}>File format students download</label>
             <select value={form.exportAs} onChange={(e) => setField("exportAs", e.target.value)} className={inputClass}>
               {EXPORTS.map((x) => (
                 <option key={x.value} value={x.value} className="bg-[#0b0b0b]">
@@ -528,7 +590,7 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
           <button
             type="submit"
             disabled={busy}
-            className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+            className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
           >
             {phase === "starting" ? "Starting…" : phase === "pending" ? "Generating…" : "Generate with AI"}
           </button>
@@ -574,7 +636,7 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
                 <div>
                   <p className="text-sm font-semibold text-emerald-300">Your material is ready</p>
                   <p className="mt-0.5 text-sm text-site-muted">
-                    Open it in Gamma to review or edit, then save it into a course or a specific module below.
+                    Download a copy to review or edit it, then save it into a course or a specific module below.
                   </p>
                 </div>
                 <button
@@ -587,36 +649,36 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
               </div>
 
               <div className="flex flex-wrap gap-3">
-                {resultUrl ? (
-                  <a
-                    href={resultUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-                  >
-                    Open in Gamma
-                  </a>
-                ) : null}
                 {exportUrl ? (
-                  <a
-                    href={exportUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white/85 transition hover:bg-white/10"
-                  >
-                    Download copy
-                  </a>
+                  resultFormat === "docx" ? (
+                    <button
+                      type="button"
+                      onClick={downloadWordCopy}
+                      disabled={docxBusy}
+                      className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
+                    >
+                      {docxBusy ? "Preparing Word file…" : "Download copy"}
+                    </button>
+                  ) : (
+                    <a
+                      href={exportUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110"
+                    >
+                      Download copy
+                    </a>
+                  )
                 ) : null}
               </div>
 
-              {/* Save into a course (editable link) or a specific module (a real
-                  downloadable file + the editable link). */}
+              {/* Save into a course or a specific module; both store a real
+                  downloadable file students open directly. */}
               <div className="rounded-2xl border border-white/12 bg-black/20 p-5">
                 <p className="text-sm font-semibold text-white">Save to {isOwner ? "your course" : "a course you teach"}</p>
                 <p className="mt-0.5 text-xs text-site-muted">
-                  Choose a course, and optionally a module. Saving into a module stores a downloadable copy students
-                  can open right away and keeps the editable Gamma link too. Make sure the document&apos;s share
-                  setting in Gamma lets your students view it.
+                  Choose a course, and optionally a module. A downloadable copy is saved that students can open right
+                  away.
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
@@ -662,7 +724,7 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
                     className={inputClass}
                   >
                     <option value="" className="bg-[#0b0b0b]">
-                      Whole course, editable link only
+                      Whole course (its materials page)
                     </option>
                     {modules.map((m) => (
                       <option key={m.id} value={String(m.id)} className="bg-[#0b0b0b]">
@@ -674,10 +736,10 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
                     {modulesLoading
                       ? "Loading modules…"
                       : saveModuleId
-                        ? "A downloadable copy will be added to this module, plus the editable Gamma link."
+                        ? "A downloadable copy will be added to this module's content."
                         : modules.length
-                          ? "Pick a module to save a downloadable file into it, or leave as the whole course."
-                          : "This course has no modules yet, it'll be saved to the course as a link."}
+                          ? "Pick a module to save the file inside it, or leave as the whole course."
+                          : "This course has no modules yet, it'll be saved to the course's materials."}
                   </p>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -685,7 +747,7 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
                     type="button"
                     onClick={save}
                     disabled={saving || !courses.length || !resultUrl}
-                    className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                    className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
                   >
                     {saving ? "Saving…" : saveModuleId ? "Save to module" : "Save to course"}
                   </button>

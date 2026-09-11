@@ -58,7 +58,7 @@ export default function AgentLoginPage() {
           </div>
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
           <div className="flex items-center justify-between">
-            <button type="submit" disabled={loading} className="rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
+            <button type="submit" disabled={loading} className="rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-50">
               {loading ? "Logging in..." : "Login"}
             </button>
             <a href="/lms/agent/forgot-password" className="text-sm text-site-primary underline transition hover:brightness-110">Forgot Password?</a>

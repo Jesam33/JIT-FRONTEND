@@ -35,9 +35,24 @@ export function tenantHeaders(): Record<string, string> {
 // a customised institute's user landing on a `?tenant=jorsas` login that then
 // rejects their (correct) credentials. Safe with an empty/undefined slug, 
 // it simply no-ops rather than writing a blank cookie.
+// Best-effort notice that the active institute was just (re)pinned, so client
+// code keyed on the slug can re-apply itself. The portal guards re-pin the
+// cookie from the authenticated session a moment after load; without this
+// event, anything that captured the stale slug at mount (e.g. the install
+// identity swap in AppInstallPrompt) keeps pointing at the wrong academy until
+// its own props change. Purely advisory: listeners re-read the cookie anyway.
+function announceTenantPinned(slug: string): void {
+  try {
+    document.dispatchEvent(new CustomEvent("lms-tenant-pinned", { detail: { slug } }));
+  } catch {
+    /* non-DOM context: nothing is listening anyway */
+  }
+}
+
 export function setTenantCookie(slug?: string | null): void {
   if (typeof document !== "undefined" && slug) {
     document.cookie = `tenant=${encodeURIComponent(slug)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+    announceTenantPinned(slug);
   }
 }
 
@@ -56,6 +71,7 @@ export function pinTenantFromLocation(): string {
     const tenant = new URL(window.location.href).searchParams.get("tenant");
     if (tenant) {
       document.cookie = `tenant=${encodeURIComponent(tenant)}; path=/; max-age=${60 * 60 * 24 * 7}`;
+      announceTenantPinned(tenant);
     }
   }
   return getTenantSlug();

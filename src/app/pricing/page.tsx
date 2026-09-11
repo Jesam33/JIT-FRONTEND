@@ -26,7 +26,7 @@ export default function PricingPage() {
               }`}
             >
               {plan.popular && (
-                <span className="mb-3 inline-block w-fit rounded-full bg-[#ed180d] px-3 py-1 text-xs font-semibold text-white">
+                <span className="mb-3 inline-block w-fit rounded-full bg-[#ed180d] px-3 py-1 text-xs font-semibold text-[#fff]">
                   Most popular
                 </span>
               )}
@@ -48,7 +48,7 @@ export default function PricingPage() {
               ) : (
                 <Link
                   href={`/signup?plan=${plan.slug}`}
-                  className="mt-6 inline-flex justify-center rounded-full bg-[#ed180d] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="mt-6 inline-flex justify-center rounded-full bg-[#ed180d] px-5 py-2 text-sm font-semibold text-[#fff] transition hover:brightness-110"
                 >
                   Choose {plan.name}
                 </Link>

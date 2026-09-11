@@ -66,13 +66,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
   **503** ("Live classes are not configured yet.") — no crash, buttons degrade gracefully.
 
 ### Attendance
-- `LmsAttendance`: Tracks student joins/leaves per classroom. Fields: student_id, classroom_id, joined_at, first_joined_at, last_left_at, total_seconds, status, calculated_at
-- `LmsAttendanceRecord`: Detailed computed records
-- Attendance is **client-side**: only classroom-type classes track it. On join, `sdkSignature()`
-  first-creates the attendance row; when the embedded room tears down, the frontend POSTs
-  `/api/frontend/lms/classrooms/{id}/attendance-leave`, which computes `total_seconds`/`status`
-  (present/partial/absent from the 75%-of-duration threshold). `LmsScheduledClass` never tracked
-  attendance and still does not. (This replaces the old Zoom `meeting.ended` webhook.)
+- `LmsAttendance`: Tracks student joins/leaves per class. Fields: student_id, class_type ('classroom'|'scheduled'), classroom_id (nullable), scheduled_class_id (nullable), joined_at, first_joined_at, last_left_at, total_seconds, status, calculated_at. `LmsAttendanceRecord` mirrors this shape.
+- **Key on `class_type` + the matching id column** — ids are only unique within their type, and a classroom id can collide with a scheduled-class id. Dedupe is application-level (`firstOrCreate`/`updateOrCreate`), NOT a DB unique (composite uniques can't span the two nullable id columns — NULLs never collide in MySQL).
+- Attendance is **client-side** and tracks **both delivery types** (since 2026-09-11; before that only classroom-type did, which is why module classes never appeared). On join, `sdkSignature()` first-creates the attendance row; when the embedded room tears down, the frontend POSTs `/api/frontend/lms/classrooms/{id}/attendance-leave` with a `class_type` JSON body, which computes `total_seconds`/`status` (present/partial/absent from the 75%-of-class-duration threshold, default 60min for classes with no end time).
+- Dashboard `summary.classes_attended` counts delivered classes (started, not cancelled) of both types and excludes `status = 'absent'` rows; `attendance_rate = attended/delivered`.
 
 ### Notifications
 - Three tables, one per audience: `LmsNotification` (student), `LmsTeacherNotification` (staff), `AgentNotification` (agent). Shape: `{recipient}_id, type, title, body, reference_type, reference_id, is_read, emailed_at, email_attempts`.

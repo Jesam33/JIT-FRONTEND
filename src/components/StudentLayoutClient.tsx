@@ -6,6 +6,7 @@ import StudentSidebar from "./StudentSidebar";
 import StudentGuard from "./StudentGuard";
 import LmsNavbar from "./LmsNavbar";
 import DynamicFavicon from "./DynamicFavicon";
+import AppInstallPrompt from "./AppInstallPrompt";
 import { STUDENT_API, STUDENT_MODULE_API, PUBLIC_API } from "@/lib/api";
 import { apiFetch, okJson } from "@/lib/fetch-with-timeout";
 import type { NavbarSearchItem } from "@/components/NavbarSearch";
@@ -124,6 +125,11 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
         markText={branding?.name ?? null}
       />
       {!hideSidebar && <IdleLogout tokenKeys={["lms_student_token"]} redirectTo={() => tenantLoginPath("student")} />}
+      {/* Offer the per-academy app install only on the logged-in portal, never
+          on the public auth screens (see AppInstallPrompt). */}
+      {!hideSidebar && (
+        <AppInstallPrompt role="student" name={branding?.name ?? null} logoUrl={branding?.logo_url ?? null} />
+      )}
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
          <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
           {!hideSidebar && <StudentSidebar />}

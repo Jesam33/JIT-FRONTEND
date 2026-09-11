@@ -61,6 +61,26 @@ const typeLabels: Record<string, string> = {
   text: "Text", code: "Code", file: "File", doc: "Doc",
 };
 
+// File extensions the backend's module-content upload accepts (mirrors the
+// mimes rule in StaffModuleController::uploadContentFile). Kept in sync so the
+// picker only offers what the server will take.
+const DOC_ACCEPT =
+  ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.rtf,.zip,.png,.jpg,.jpeg,.webp,.gif,.mp3,.wav,.m4a";
+
+// Content types that make sense with an uploaded file (everything except the
+// Bunny video path and the body-based text/code/link kinds).
+const FILE_TYPES = ["pdf", "slides", "doc", "file"];
+
+// Best-effort content-type suggestion from a picked file's extension, so
+// choosing "lecture.pdf" flips the type select to PDF by itself.
+function typeForContentFile(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf") return "pdf";
+  if (["ppt", "pptx"].includes(ext)) return "slides";
+  if (["doc", "docx", "rtf", "txt", "csv"].includes(ext)) return "doc";
+  return "file";
+}
+
 export default function StaffModulesPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
 
@@ -89,6 +109,14 @@ export default function StaffModulesPage() {
   const [contentVideoFile, setContentVideoFile] = useState<File | null>(null);
   const [contentUploadPct, setContentUploadPct] = useState<number | null>(null);
   const contentFileRef = useRef<HTMLInputElement | null>(null);
+  // Non-video file upload (PDF/document/slides): picked from the staffer's PC
+  // and stored on the platform's own disk. When set, it wins over the pasted
+  // URL. Used both to add new content and to replace an existing item's file
+  // (the download → edit locally → re-upload loop).
+  const [contentDocFile, setContentDocFile] = useState<File | null>(null);
+  const contentDocRef = useRef<HTMLInputElement | null>(null);
+  const [editDocFile, setEditDocFile] = useState<File | null>(null);
+  const editDocRef = useRef<HTMLInputElement | null>(null);
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedDesc, setSchedDesc] = useState("");
@@ -232,6 +260,26 @@ export default function StaffModulesPage() {
         };
       }
 
+      // Non-video content: either a picked file (stored on our disk) or a
+      // pasted link. A picked file wins; the upload endpoint returns the hosted
+      // URL + storage path (the path rides along so deleting the content
+      // deletes the file).
+      let filePath: string | null = null;
+      if (newContentType !== "video" && contentDocFile) {
+        const fd = new FormData();
+        fd.append("file", contentDocFile);
+        const upRes = await apiFetchStaff(STAFF_API.moduleContentUpload(moduleId), { method: "POST", body: fd });
+        if (!upRes.ok) {
+          showToast(upRes.status === 422
+            ? "That file type isn't supported. Use a PDF, document, slides, spreadsheet, archive, image or audio file."
+            : `Could not upload the file (HTTP ${upRes.status}).`, "error");
+          return;
+        }
+        const up = await upRes.json() as { url: string; path: string };
+        contentUrl = up.url;
+        filePath = up.path;
+      }
+
       const res = await apiFetchStaff(STAFF_API.moduleContents(moduleId), {
         method: "POST",
         headers: jsonHeaders,
@@ -240,14 +288,16 @@ export default function StaffModulesPage() {
           type: newContentType,
           content_url: contentUrl,
           content_body: newContentBody || null,
+          file_path: filePath,
           ...bunnyFields,
         }),
       });
       if (!res.ok) { showToast("Failed to add content", "error"); return; }
       showToast("Content added", "success");
       setNewContentTitle(""); setNewContentType("text"); setNewContentUrl(""); setNewContentBody("");
-      setContentVideoFile(null);
+      setContentVideoFile(null); setContentDocFile(null);
       if (contentFileRef.current) contentFileRef.current.value = "";
+      if (contentDocRef.current) contentDocRef.current.value = "";
       await load();
     } catch (e) { showToast(e instanceof Error ? e.message : "Failed to add content", "error"); }
     finally { setSaving(false); setContentUploadPct(null); }
@@ -305,20 +355,46 @@ export default function StaffModulesPage() {
     setEditFormType(c.type);
     setEditFormUrl(c.content_url ?? "");
     setEditFormBody(c.content_body ?? "");
+    setEditDocFile(null);
+    if (editDocRef.current) editDocRef.current.value = "";
   }
 
   async function saveContentEdit(contentId: number) {
     if (!selectedId || !editFormTitle.trim()) return;
     setSaving(true);
     try {
+      // A picked replacement file wins over the URL field: upload it, then
+      // point the content at the fresh copy. The backend deletes the file it
+      // supersedes, so re-uploading an edited document doesn't orphan the old
+      // one on disk.
+      let url = editFormUrl || null;
+      let filePath: string | null = null;
+      if (editDocFile) {
+        const fd = new FormData();
+        fd.append("file", editDocFile);
+        const upRes = await apiFetchStaff(STAFF_API.moduleContentUpload(selectedId), { method: "POST", body: fd });
+        if (!upRes.ok) {
+          showToast(upRes.status === 422
+            ? "That file type isn't supported. Use a PDF, document, slides, spreadsheet, archive, image or audio file."
+            : `Could not upload the file (HTTP ${upRes.status}).`, "error");
+          return;
+        }
+        const up = await upRes.json() as { url: string; path: string };
+        url = up.url;
+        filePath = up.path;
+      }
+
       const res = await apiFetchStaff(STAFF_API.moduleContent(selectedId, contentId), {
         method: "PUT",
         headers: jsonHeaders,
         body: JSON.stringify({
           title: editFormTitle.trim(),
           type: editFormType,
-          content_url: editFormUrl || null,
+          content_url: url,
           content_body: editFormBody || null,
+          // Only sent when a replacement file was uploaded, never null (the
+          // backend would otherwise read it as "clear the stored path").
+          ...(filePath ? { file_path: filePath } : {}),
         }),
       });
       if (!res.ok) { showToast("Failed to update content", "error"); return; }
@@ -515,10 +591,26 @@ export default function StaffModulesPage() {
                         {editing ? (
                           <div className="flex flex-col gap-2">
                             <input value={editFormTitle} onChange={(e) => setEditFormTitle(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
-                            <select value={editFormType} onChange={(e) => setEditFormType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
+                            <select value={editFormType} onChange={(e) => { setEditFormType(e.target.value); if (!FILE_TYPES.includes(e.target.value)) { setEditDocFile(null); if (editDocRef.current) editDocRef.current.value = ""; } }} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
                               {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
-                            <input value={editFormUrl} onChange={(e) => setEditFormUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs placeholder:text-white/30 focus:outline-none" />
+                            <input value={editFormUrl} onChange={(e) => setEditFormUrl(e.target.value)} type="url" inputMode="url" disabled={!!editDocFile} placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs placeholder:text-white/30 focus:outline-none disabled:opacity-40" />
+                            {FILE_TYPES.includes(editFormType) ? (
+                              <div>
+                                <input
+                                  ref={editDocRef}
+                                  type="file"
+                                  accept={DOC_ACCEPT}
+                                  onChange={(e) => setEditDocFile(e.target.files?.[0] ?? null)}
+                                  className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white"
+                                />
+                                <p className="mt-1 text-[11px] text-white/40">
+                                  {editDocFile
+                                    ? <>Replacing with <span className="text-white/70">{editDocFile.name}</span> — it uploads from your device, the link field is ignored.</>
+                                    : "Pick a file to replace the current one (e.g. an edited copy you downloaded)."}
+                                </p>
+                              </div>
+                            ) : null}
                             <textarea value={editFormBody} onChange={(e) => setEditFormBody(e.target.value)} placeholder="Body" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs resize-none focus:outline-none" rows={3} />
                             <div className="flex gap-2">
                               <button onClick={() => saveContentEdit(c.id)} disabled={saving} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
@@ -555,7 +647,7 @@ export default function StaffModulesPage() {
                   <h4 className="text-sm font-semibold">Add Content</h4>
                   <div className="mt-3 flex flex-col gap-2.5">
                     <input value={newContentTitle} onChange={(e) => setNewContentTitle(e.target.value)} placeholder="Content title" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
-                    <select value={newContentType} onChange={(e) => setNewContentType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
+                    <select value={newContentType} onChange={(e) => { setNewContentType(e.target.value); if (!FILE_TYPES.includes(e.target.value)) { setContentDocFile(null); if (contentDocRef.current) contentDocRef.current.value = ""; } }} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
                       {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                     {newContentType === "video" ? (
@@ -579,8 +671,31 @@ export default function StaffModulesPage() {
                       </div>
                     ) : (
                       <div>
-                        <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
-                        <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link, no file uploads. Leave blank for text/code content.</p>
+                        <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" disabled={!!contentDocFile} placeholder={FILE_TYPES.includes(newContentType) ? "Paste a link (https://…), or pick a file below" : "Content link (Google Drive, YouTube, or any URL)"} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-40" />
+                        {FILE_TYPES.includes(newContentType) ? (
+                          <>
+                            <input
+                              ref={contentDocRef}
+                              type="file"
+                              accept={DOC_ACCEPT}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0] ?? null;
+                                setContentDocFile(f);
+                                // Suggest the matching content type from the
+                                // file's extension (pdf/slides/doc/file).
+                                if (f) setNewContentType(typeForContentFile(f.name));
+                              }}
+                              className="mt-2.5 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                            />
+                            <p className="mt-1 text-[11px] text-white/40">
+                              {contentDocFile
+                                ? <>Attaching <span className="text-white/70">{contentDocFile.name}</span> — it uploads from your device, the link field is ignored.</>
+                                : "PDF, document, slides, spreadsheet, archive, image or audio (max 50MB) — or paste a link above."}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link. Leave blank for text/code content.</p>
+                        )}
                       </div>
                     )}
                     <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={4} />

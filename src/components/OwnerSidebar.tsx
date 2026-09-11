@@ -101,7 +101,7 @@ function IdentityCard({ identity }: { identity: OwnerIdentity | null }) {
           className="h-9 w-9 shrink-0 rounded-full object-contain ring-1 ring-white/20"
         />
       ) : (
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-sm font-bold text-white ring-1 ring-white/20">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-sm font-bold text-[#fff] ring-1 ring-white/20">
           {initials}
         </span>
       )}

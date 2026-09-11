@@ -70,7 +70,7 @@ function CopyButton({ url }: { url: string }) {
   return (
     <button
       onClick={copy}
-      className="rounded-full bg-site-primary px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+      className="rounded-full bg-site-primary px-4 py-2 text-sm font-semibold text-[#fff] transition hover:brightness-110"
     >
       {copied ? "Copied" : "Copy link"}
     </button>
@@ -405,7 +405,7 @@ export default function OwnerDashboardPage() {
                     </p>
                     <Link
                       href="/lms/admin/billing"
-                      className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                      className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110"
                     >
                       Upgrade to Pro
                     </Link>
@@ -449,7 +449,7 @@ export default function OwnerDashboardPage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/lms/admin/billing"
-                  className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110"
                 >
                   {isPaid ? "Manage billing" : "Upgrade plan"}
                 </Link>

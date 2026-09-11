@@ -347,7 +347,7 @@ export default function BrandingEditor() {
                 type="button"
                 onClick={saveLabel}
                 disabled={savingLabel}
-                className="shrink-0 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                className="shrink-0 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
               >
                 {savingLabel ? "Saving..." : "Save label"}
               </button>
@@ -383,7 +383,7 @@ export default function BrandingEditor() {
                 type="button"
                 onClick={saveName}
                 disabled={savingName}
-                className="shrink-0 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                className="shrink-0 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
               >
                 {savingName ? "Saving..." : "Save name"}
               </button>
@@ -411,7 +411,7 @@ export default function BrandingEditor() {
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                  className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
                 >
                   {uploading ? "Uploading..." : logoUrl ? "Replace logo" : "Upload logo"}
                 </button>
@@ -504,7 +504,7 @@ export default function BrandingEditor() {
               type="button"
               onClick={saveColors}
               disabled={saving}
-              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save changes"}
             </button>

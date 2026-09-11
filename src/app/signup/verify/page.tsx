@@ -100,7 +100,7 @@ function PageContent() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <Link
                   href={ownerLoginHref}
-                  className="rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110"
                 >
                   Owner sign in
                 </Link>
@@ -126,7 +126,7 @@ function PageContent() {
                 <button
                   type="button"
                   onClick={verify}
-                  className="rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110"
                 >
                   Check again
                 </button>

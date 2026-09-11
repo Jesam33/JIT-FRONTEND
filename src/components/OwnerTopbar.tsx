@@ -132,7 +132,7 @@ export default function OwnerTopbar({
               className="h-9 w-9 shrink-0 rounded-full object-contain ring-1 ring-white/20"
             />
           ) : (
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-sm font-bold text-white ring-1 ring-white/20">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-site-primary text-sm font-bold text-[#fff] ring-1 ring-white/20">
               {initials}
             </span>
           )}
@@ -168,7 +168,7 @@ export default function OwnerTopbar({
             className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 pr-3 text-white/80 transition hover:bg-white/10 [html.light_&]:border-black/10 [html.light_&]:bg-black/5 [html.light_&]:text-black/80 [html.light_&]:hover:bg-black/[0.08]"
             aria-label="Account menu"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-site-primary text-[11px] font-bold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-site-primary text-[11px] font-bold text-[#fff]">
               {initials}
             </span>
             <svg className="h-3.5 w-3.5 opacity-70" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

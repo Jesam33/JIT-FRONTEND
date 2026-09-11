@@ -185,7 +185,7 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
         <div
           className={`w-full break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed border ${
             isMe
-              ? "rounded-br-md border-site-primary bg-site-primary text-white"
+              ? "rounded-br-md border-site-primary bg-site-primary text-[#fff]"
               : "rounded-bl-md border-site-border bg-site-surface-soft text-site-text"
           }`}
         >
@@ -488,7 +488,7 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
           type="button"
           onClick={onSend}
           disabled={sending || !value.trim()}
-          className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-site-primary text-white transition hover:opacity-90 disabled:opacity-40"
+          className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-site-primary text-[#fff] transition hover:opacity-90 disabled:opacity-40"
         >
           {sending ? (
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -568,7 +568,7 @@ export default function ChatLayout(props: AnyObj) {
                     #track
                   </p>
                   {unreadGroup > 0 && chatTab !== "track" ? (
-                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-white">
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-[#fff]">
                       {unreadGroup > 99 ? "99+" : unreadGroup}
                     </span>
                   ) : null}
@@ -590,7 +590,7 @@ export default function ChatLayout(props: AnyObj) {
                     @instructor
                   </p>
                   {unreadDm > 0 && chatTab !== "dm" ? (
-                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-white">
+                    <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-[#fff]">
                       {unreadDm > 99 ? "99+" : unreadDm}
                     </span>
                   ) : null}

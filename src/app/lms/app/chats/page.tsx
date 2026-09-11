@@ -406,7 +406,7 @@ export default function StudentChatsPage() {
         >
           Class Group
           {unreadGroup > 0 && chatTab !== "track" ? (
-            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-white">
+            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-[#fff]">
               {unreadGroup > 99 ? "99+" : unreadGroup}
             </span>
           ) : null}
@@ -417,7 +417,7 @@ export default function StudentChatsPage() {
         >
           Instructor
           {unreadDm > 0 && chatTab !== "dm" ? (
-            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-white">
+            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-[#fff]">
               {unreadDm > 99 ? "99+" : unreadDm}
             </span>
           ) : null}

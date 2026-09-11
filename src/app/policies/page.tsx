@@ -200,7 +200,7 @@ function PoliciesContent() {
                     aria-current={isActive ? "true" : undefined}
                     className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition lg:whitespace-normal lg:text-left ${
                       isActive
-                        ? "bg-[#ed180d] text-white"
+                        ? "bg-[#ed180d] text-[#fff]"
                         : "border border-site-border/30 text-site-text/70 hover:border-site-border/60 hover:text-site-text"
                     }`}
                   >

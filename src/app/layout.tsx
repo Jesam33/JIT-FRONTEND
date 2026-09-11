@@ -91,12 +91,13 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  // Light mode is temporarily disabled while it is being finished:
-                  // force dark on every load regardless of any previously saved
-                  // preference, so a visitor who once switched to light is not
-                  // stranded there with the toggle now hidden. Restore the
-                  // stored-theme read (and the toggle buttons) to bring it back.
-                  document.documentElement.classList.remove('light');
+                  // Light/dark follows the visitor's saved choice (written by
+                  // the Header theme toggle); dark is the default. Stamped
+                  // before first paint so there is no theme flash.
+                  var t = null;
+                  try { t = localStorage.getItem('theme'); } catch (e) {}
+                  if (t === 'light') document.documentElement.classList.add('light');
+                  else document.documentElement.classList.remove('light');
                 } catch (e) {}
               })()
             `,

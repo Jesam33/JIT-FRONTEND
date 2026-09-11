@@ -466,7 +466,7 @@ export default function PayoutSettings() {
           <button
             onClick={link}
             disabled={saving}
-            className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+            className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
           >
             {saving ? "Linking…" : "Link payout account"}
           </button>
@@ -502,7 +502,7 @@ export default function PayoutSettings() {
             <button
               onClick={saveAgentRate}
               disabled={savingRate}
-              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
             >
               {savingRate ? "Saving…" : "Save rate"}
             </button>

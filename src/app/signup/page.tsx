@@ -180,7 +180,7 @@ function SignupInner() {
           </p>
           <Link
             href={done.slug ? `/lms/admin/login?tenant=${encodeURIComponent(done.slug)}` : "/lms/admin/login"}
-            className="inline-flex rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+            className="inline-flex rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110"
           >
             Go to sign in
           </Link>
@@ -389,7 +389,7 @@ function SignupInner() {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-full bg-[#ed180d] px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
             >
               {loading
                 ? isFreePlan

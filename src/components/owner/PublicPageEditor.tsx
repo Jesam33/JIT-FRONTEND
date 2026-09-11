@@ -302,7 +302,7 @@ export default function PublicPageEditor() {
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-full bg-site-primary px-5 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
             >
               {uploading ? "Uploading..." : coverUrl ? "Replace cover" : "Upload cover"}
             </button>
@@ -387,7 +387,7 @@ export default function PublicPageEditor() {
           type="button"
           onClick={save}
           disabled={saving}
-          className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+          className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
         >
           {saving ? "Saving..." : "Save changes"}
         </button>

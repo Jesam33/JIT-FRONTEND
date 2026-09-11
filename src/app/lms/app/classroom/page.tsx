@@ -180,24 +180,46 @@ export default function StudentClassroomPage() {
     return sortedTimetable.filter((item) => new Date(item.starts_at).getTime() > currentTime);
   }, [sortedTimetable, currentTime]);
 
+  // Classes already delivered (past their end, or start + 2h when no end is
+  // set). Shown newest-first below the live/upcoming area so a student with
+  // no class today still sees their class history instead of an empty page.
+  const pastClasses = useMemo(() => {
+    return sortedTimetable.filter((item) => isClassEnded(item.starts_at, item.ends_at, currentTime)).reverse();
+  }, [sortedTimetable, currentTime]);
+
+  // A class's attendance record, if any. Keyed on class_type + class_id: ids
+  // only match within a delivery type.
+  const attendanceForClass = (c: TimetableItem) =>
+    attendanceItems.find((item) => item.class_type === (c.class_type ?? "classroom") && item.class_id === c.id) ?? null;
+
   const todayAttendance = useMemo(() => {
     if (!activeClass) return null;
-    return attendanceItems.find((item) => item.classroom_id === activeClass.id) ?? null;
+    // Key on class_type + class_id: ids only match within a delivery type.
+    return (
+      attendanceItems.find(
+        (item) => item.class_type === (activeClass.class_type ?? "classroom") && item.class_id === activeClass.id,
+      ) ?? null
+    );
   }, [activeClass, attendanceItems]);
 
   const isScheduledClass = activeClass?.class_type === "scheduled";
   const isClassroomType = activeClass?.class_type === "classroom" || !activeClass?.class_type;
 
-  // Post the client-side attendance close-out for a classroom-type class (the
-  // replacement for the old Zoom meeting.ended webhook). Scheduled classes never
-  // tracked attendance, so they're skipped. Best-effort + deduped; on success we
-  // refresh the attendance list so the page reflects the computed status.
+  // Post the client-side attendance close-out when the embedded room tears
+  // down (the replacement for the old Zoom meeting.ended webhook). Works for
+  // BOTH delivery types: legacy classrooms and module scheduled classes. The
+  // class_type tells the backend which table the id belongs to. Best-effort +
+  // deduped; on success we refresh the attendance list so the page reflects
+  // the computed status.
   const closeOutAttendance = useCallback(async (classId: number, classType: string) => {
-    if (classType === "scheduled") return;
     if (attendanceClosedRef.current === classId) return;
     attendanceClosedRef.current = classId;
     try {
-      await apiFetch(STUDENT_API.classroomAttendanceLeave(classId), { method: "POST" });
+      await apiFetch(STUDENT_API.classroomAttendanceLeave(classId), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ class_type: classType }),
+      });
       const items = await apiFetch(STUDENT_API.attendance).then((r) => r.json());
       setAttendanceItems(Array.isArray(items) ? items : []);
     } catch {
@@ -514,8 +536,37 @@ export default function StudentClassroomPage() {
       ) : (
         <article className="rounded-xl border border-white/15 bg-black/30 p-4">
           <h3 className="font-semibold">No upcoming classes scheduled</h3>
+          {pastClasses.length > 0 ? <p className="mt-1 text-sm text-white/60">Your past classes are listed below.</p> : null}
         </article>
       )}
+
+      {/* Past classes with their attendance status: the history this page used
+          to hide entirely (it only ever showed today's + future classes). */}
+      {pastClasses.length > 0 ? (
+        <section className="mt-6">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-white/60">Past classes</h3>
+          <div className="mt-3 space-y-3">
+            {pastClasses.map((c) => {
+              const att = attendanceForClass(c);
+              return (
+                <article key={`${c.class_type ?? "classroom"}-${c.id}`} className="rounded-xl border border-white/15 bg-black/30 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-semibold">{c.title}</h4>
+                      <p className="mt-1 text-sm text-white/70">{classWindow(c)}</p>
+                      {c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${att ? (att.status === "present" ? "bg-emerald-500/20 text-emerald-300" : "bg-orange-500/20 text-orange-300") : "border border-white/15 text-white/45"}`}>
+                      {att ? att.status : "No record"}
+                    </span>
+                  </div>
+                  {att ? <p className="mt-2 text-xs text-white/55">Attended {Math.floor(att.total_seconds / 60)} min{att.first_joined_at ? `, first joined ${formatLocalDateTime(att.first_joined_at)}` : ""}.</p> : null}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {/* Pre-join step: the student picks the name the class will see before
           the room opens. The choice is minted into the Jitsi JWT server-side,

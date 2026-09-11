@@ -404,7 +404,7 @@ function TracksContent() {
               <button
                 type="submit"
                 disabled={creating}
-                className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
               >
                 {creating ? "Creating…" : "Create cohort"}
               </button>

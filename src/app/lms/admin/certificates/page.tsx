@@ -268,7 +268,7 @@ export default function OwnerCertificatesPage() {
             <button
               type="submit"
               disabled={issuing || !studentId || !title.trim()}
-              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+              className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
             >
               {issuing ? "Issuing…" : "Issue certificate"}
             </button>

@@ -348,7 +348,7 @@ export const pricingPlans: PricingPlan[] = [
       "Up to 50 courses, 1,000 students, 25 staff",
       "0% platform fee on course sales",
       "Advanced analytics & reporting",
-      "AI materials with Gamma",
+      "AI training materials",
       "Custom domain & priority support",
     ],
   },

@@ -27,7 +27,7 @@ export default function AgentBanner({ tenantSlug }: { tenantSlug?: string }) {
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   href={applyHref}
-                  className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold !text-white transition hover:opacity-90"
+                  className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-[#fff] transition hover:opacity-90"
                   style={{ backgroundColor: "var(--color-primary)" }}
                 >
                   Apply Now

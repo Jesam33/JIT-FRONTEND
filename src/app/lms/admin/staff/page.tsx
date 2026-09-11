@@ -271,7 +271,7 @@ export default function OwnerStaffPage() {
           <button
             type="submit"
             disabled={inviting || !tenantId}
-            className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+            className="rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
           >
             {inviting ? "Sending…" : "Send invite"}
           </button>

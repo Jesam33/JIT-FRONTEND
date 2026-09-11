@@ -269,7 +269,7 @@ export default function PersonalDetailsEditor() {
         <button
           onClick={saveDetails}
           disabled={saving}
-          className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+          className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save details"}
         </button>
@@ -324,7 +324,7 @@ export default function PersonalDetailsEditor() {
         <button
           onClick={savePassword}
           disabled={savingPassword}
-          className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+          className="mt-6 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
         >
           {savingPassword ? "Updating…" : "Update password"}
         </button>

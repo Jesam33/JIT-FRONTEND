@@ -103,12 +103,16 @@ export const OWNER_API = {
   addDomain: api("/api/frontend/lms/owner/domains"),
   verifyDomain: (id: string | number) => api(`/api/frontend/lms/owner/domains/${id}/verify`),
   deleteDomain: (id: string | number) => api(`/api/frontend/lms/owner/domains/${id}`),
-  // AI training materials (Gamma, Pro+). generate → poll aiStatus(id) → aiSave the
-  // finished Gamma link into a course. A non-Pro academy gets 402 on generate/save,
+  // AI training materials (Gamma, Pro+). generate → poll aiStatus(id) → aiSave
+  // the finished export as a real file into a course/module. A non-Pro academy
+  // gets 402 on generate/save,
   // which maybeUpgrade() turns into the UpgradeModal.
   aiGenerate: api("/api/frontend/lms/owner/ai/materials/generate"),
   aiStatus: (id: string) => api(`/api/frontend/lms/owner/ai/materials/${encodeURIComponent(id)}`),
   aiSave: api("/api/frontend/lms/owner/ai/materials/save"),
+  // "Download copy" when Word was chosen: converts the pptx export server-side
+  // and streams the .docx back as an attachment (nothing is persisted).
+  aiDocxDownload: api("/api/frontend/lms/owner/ai/materials/docx"),
   // Modules of one owner course, populates the AI-materials "save into module"
   // picker. Saving into a module (vs. the course) stores the downloadable export.
   courseModules: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}/modules`),
@@ -182,6 +186,10 @@ export const STAFF_API = {
   profilePhoto: api("/api/frontend/lms/staff/profile/photo"),
   materials: api("/api/frontend/lms/staff/materials"),
   material: (id: string | number) => api(`/api/frontend/lms/staff/materials/${id}`),
+  // Non-video material file upload (PDF/document/…) to the platform's public
+  // disk; returns { url, path } which the materials page saves with the
+  // material. Videos use videoUpload (Bunny Stream) instead.
+  materialUpload: api("/api/frontend/lms/staff/materials/upload"),
   attendance: api("/api/frontend/lms/staff/attendance"),
   certificates: api("/api/frontend/lms/staff/certificates"),
   announcements: api("/api/frontend/lms/staff/announcements"),
@@ -197,12 +205,18 @@ export const STAFF_API = {
   aiGenerate: api("/api/frontend/lms/staff/ai/materials/generate"),
   aiStatus: (id: string) => api(`/api/frontend/lms/staff/ai/materials/${encodeURIComponent(id)}`),
   aiSave: api("/api/frontend/lms/staff/ai/materials/save"),
+  // Word (.docx) one-off download, the staff twin of the owner endpoint.
+  aiDocxDownload: api("/api/frontend/lms/staff/ai/materials/docx"),
   // Modules of one assigned course, populates the AI-materials "save into
   // module" picker (assigned-course-scoped inside the controller).
   courseModules: (id: string | number) => api(`/api/frontend/lms/staff/courses/${id}/modules`),
   modules: api("/api/frontend/lms/staff/modules"),
   module: (id: string | number) => api(`/api/frontend/lms/staff/modules/${id}`),
   moduleContents: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/contents`),
+  // Non-video module-content file upload (PDF/document/slides) to the platform's
+  // public disk; returns { url, path } which the modules page saves with the
+  // content. Videos use videoUpload (Bunny Stream) instead.
+  moduleContentUpload: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/contents/upload`),
   moduleContent: (moduleId: string | number, contentId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/contents/${contentId}`),
   scheduleClass: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/schedule`),
   scheduledClasses: api("/api/frontend/lms/staff/scheduled-classes"),

@@ -32,7 +32,7 @@ export default function StudentAttendancePage() {
       <div className="mt-4 space-y-3">
         {attendanceItems.length ? (
           attendanceItems.map((item) => (
-            <article key={`${item.classroom_id}-${item.calculated_at ?? "na"}`} className="rounded-xl border border-white/15 bg-black/30 p-4">
+            <article key={`${item.class_type}-${item.class_id}-${item.calculated_at ?? "na"}`} className="rounded-xl border border-white/15 bg-black/30 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h3 className="font-semibold">{item.class_title ?? "Class Session"}</h3>

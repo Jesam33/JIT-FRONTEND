@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* ── Editorial display face (marketing navbar/footer only) ─────────────
+   Used via the `font-editorial` utility. Bold-only face: no regular weight,
+   no en/em-dash glyph, no typographic apostrophe (avoid those in copy).
+   LICENSE STATUS UNCONFIRMED — verify a commercial license before launch. */
+@font-face {
+  font-family: "Seraphine";
+  src: url("/fonts/seraphine/Seraphine.otf") format("opentype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Dark UI by default. Without color-scheme the browser renders native
      controls (the <select> options popup, date pickers, scrollbars) in the OS
@@ -41,6 +53,7 @@ html.light {
   --color-site-secondary: var(--color-secondary);
   --color-site-border: var(--color-border);
   --font-sans: var(--font-body);
+  --font-editorial: "Seraphine", Georgia, "Times New Roman", serif;
 }
 
 * {
@@ -57,10 +70,13 @@ body {
   font-family: var(--brand-font, var(--font-body)), sans-serif;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+/* DO NOT add an unlayered `a { color: inherit; text-decoration: none; }` rule
+   here. Tailwind v4 puts its utilities in `@layer utilities`, and UNLAYERED CSS
+   beats ANY layered rule regardless of specificity — such a block silently
+   disables every text-color / underline utility on <a> and <Link> (the navbar's
+   red pill shows dark text, footer link colors and hovers die). Links get their
+   color from `color: inherit` via the body cascade and Tailwind's own preflight
+   already removes the default underline. */
 
 /* Embedded text links, links that sit INSIDE running prose (a paragraph or a
    list item) are almost always inline references ("Already have one? Sign in",
@@ -374,5 +390,26 @@ html.light {
 html[data-tenant-subdomain] .global-marketing-header,
 html[data-tenant-subdomain] .global-marketing-footer {
   display: none !important;
+}
+
+/* ── Navbar link underline sweep (marketing Header) ──────────────────
+   The red underline grows from the left on hover/active. Keep in sync with
+   the `.nav-link` / `.nav-link-active` classes in components/layout/Header.tsx. */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -6px;
+  height: 1px;
+  background: var(--color-primary);
+  transition: right 300ms ease;
+}
+.nav-link:hover::after,
+.nav-link.nav-link-active::after {
+  right: 0;
 }
 

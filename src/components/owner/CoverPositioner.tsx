@@ -140,7 +140,7 @@ export default function CoverPositioner({ file, aspect, busy, onCancel, onConfir
             type="button"
             onClick={confirm}
             disabled={working || busy || !url}
-            className="rounded-full bg-site-primary px-6 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+            className="rounded-full bg-site-primary px-6 py-2 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-60"
           >
             {working || busy ? "Working…" : "Use cover"}
           </button>

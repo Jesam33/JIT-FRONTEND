@@ -241,6 +241,9 @@ export default function CampusesPage() {
                   <span className="text-sm font-semibold text-site-text transition group-hover:text-site-primary">
                     {c.name}
                   </span>
+                  {c.niche ? (
+                    <span className="text-xs text-site-text/50">{c.niche}</span>
+                  ) : null}
                   <span className="text-xs text-site-text/60">
                     {c.course_count} {c.course_count === 1 ? "course" : "courses"}
                   </span>
@@ -356,7 +359,7 @@ function FilterChip({
       aria-pressed={active}
       className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
         active
-          ? "border-site-primary bg-site-primary text-white"
+          ? "border-site-primary bg-site-primary text-[#fff]"
           : "border-site-border/40 bg-site-surface-soft text-site-text/70 hover:border-site-primary/60 hover:text-site-text"
       }`}
     >
@@ -429,7 +432,7 @@ function NicheDropdown({
         aria-expanded={open}
         className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition ${
           active
-            ? "border-site-primary bg-site-primary text-white"
+            ? "border-site-primary bg-site-primary text-[#fff]"
             : "border-site-border/40 bg-site-surface-soft text-site-text/70 hover:border-site-primary/60 hover:text-site-text"
         }`}
       >

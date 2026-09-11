@@ -156,7 +156,7 @@ export default function QuoteRequestForm() {
       <button
         type="submit"
         disabled={state === "submitting"}
-        className="inline-flex items-center gap-3 rounded-[var(--radius-pill)] border border-transparent bg-site-primary px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-3 rounded-[var(--radius-pill)] border border-transparent bg-site-primary px-6 py-3 text-sm font-semibold tracking-wide text-[#fff] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {state === "submitting" ? "Sending..." : "Request a Quote"}
         <span aria-hidden="true">↗</span>

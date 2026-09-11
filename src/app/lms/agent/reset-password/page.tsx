@@ -85,7 +85,7 @@ function PageContent() {
             </button>
           </div>
 
-          <button type="submit" disabled={submitting} className="w-full rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50">
+          <button type="submit" disabled={submitting} className="w-full rounded-full bg-site-primary px-6 py-3 text-sm font-semibold text-[#fff] transition hover:brightness-110 disabled:opacity-50">
             {submitting ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Resetting...</span> : "Reset Password"}
           </button>
         </form>

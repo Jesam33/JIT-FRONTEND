@@ -44,7 +44,7 @@ function ProfilePageInner() {
             onClick={() => setTab(t.key)}
             className={`flex-1 rounded-full px-5 py-2 transition sm:flex-none ${
               tab === t.key
-                ? "bg-site-primary text-white"
+                ? "bg-site-primary text-[#fff]"
                 : "text-white/60 hover:text-white"
             }`}
           >

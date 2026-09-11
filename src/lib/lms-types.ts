@@ -109,7 +109,14 @@ export type ChatBootstrap = {
 };
 
 export type AttendanceItem = {
-  classroom_id: number;
+  // Which delivery type the attended class was, and its id in that table.
+  // Key on class_type + class_id: ids are only unique WITHIN a type, and a
+  // classroom id can collide with a scheduled-class id.
+  class_type: "classroom" | "scheduled";
+  class_id: number;
+  // Legacy shape kept for older consumers; exactly one is set per record.
+  classroom_id: number | null;
+  scheduled_class_id: number | null;
   class_title: string | null;
   starts_at: string | null;
   status: "present" | "late" | "partial" | "absent" | "made_up";

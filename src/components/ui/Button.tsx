@@ -11,8 +11,10 @@ type ButtonProps = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
+  // text-[#fff] (not text-white) so the light-mode .text-white override in
+  // globals.css can't flip button text to dark on the red/white grounds.
   primary:
-    "bg-site-primary text-white hover:brightness-110 border-transparent",
+    "bg-site-primary text-[#fff] hover:brightness-110 border-transparent",
   secondary:
     "bg-site-surface-soft text-site-text hover:brightness-105 border-site-border/30",
   outline:
