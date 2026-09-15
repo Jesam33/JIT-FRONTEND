@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AGENT_API } from "../../../../lib/api";
 import { tenantHeaders } from "../../../../lib/tenant-client";
+import { recordLogin } from "../../../../lib/saved-accounts";
 import InactivityNotice from "../../../../components/InactivityNotice";
 import InstitutePublicShell from "../../../../components/institute/InstitutePublicShell";
 
@@ -28,6 +29,8 @@ export default function AgentLoginPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.message ?? "Login failed."); return; }
       localStorage.setItem("lms_agent_token", data.token);
+      // Remember who signed in (never the password) for the account picker.
+      recordLogin("agent", email, data.token, data?.tenant);
       router.push("/lms/agent/dashboard");
     } catch { setError("Network error."); }
     setLoading(false);

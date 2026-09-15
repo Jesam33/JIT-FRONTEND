@@ -28,6 +28,12 @@ export type OwnerBranding = {
   // `tenant` cookie can be stale (a bare /lms URL with no ?tenant= falls it back
   // to the primary slug), so it must not decide branding, this flag does.
   is_primary?: boolean | null;
+  // Whether this academy's plan still carries the "Powered by Jorsastech"
+  // credit. False on paid plans with the remove_branding feature (Basic+),
+  // true on free (and on the primary-palette fallback). Same rule the public
+  // storefront footer uses; gates the credit on institute surfaces like the
+  // logged-out account picker.
+  show_powered_by?: boolean | null;
 };
 
 // Concrete defaults (the current red/blue theme). Typed with plain-string

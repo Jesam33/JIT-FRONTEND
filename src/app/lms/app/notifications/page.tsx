@@ -41,6 +41,11 @@ export default function NotificationsPage() {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
   }
 
+  async function markAllRead() {
+    await apiFetch(STUDENT_API.markAllNotificationsRead, { method: "POST" });
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+  }
+
   function handleClick(n: NotificationItem) {
     if (!n.is_read) markRead(n.id);
     const href = notificationHref(n);
@@ -49,11 +54,26 @@ export default function NotificationsPage() {
 
   if (loading) return <LoadingSpinner />;
 
+  const unread = notifications.filter((n) => !n.is_read);
+
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-white/15 bg-black/30 p-6">
-        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Notifications</h1>
-        <p className="mt-1 text-sm text-white/60">Alerts, mentions, and class reminders.</p>
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/15 bg-black/30 p-6">
+        <div>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>Notifications</h1>
+          <p className="mt-1 text-sm text-white/60">
+            {unread.length > 0 ? `${unread.length} unread` : "Alerts, mentions, and class reminders."}
+          </p>
+        </div>
+        {unread.length > 0 && (
+          <button
+            type="button"
+            onClick={markAllRead}
+            className="shrink-0 rounded-lg border border-white/15 bg-white/8 px-4 py-2 text-sm text-white/70 transition hover:bg-white/15"
+          >
+            Mark all read
+          </button>
+        )}
       </div>
 
       <div className="space-y-3">

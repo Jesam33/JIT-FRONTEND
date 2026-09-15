@@ -134,7 +134,11 @@ export const STUDENT_API = {
   taskDetail: (id: string | number) => api(`/api/frontend/lms/tasks/${id}`),
   submitTask: (id: string | number) => api(`/api/frontend/lms/tasks/${id}/submit`),
   notifications: api("/api/frontend/lms/notifications"),
+  // Notification-only unread count (chat unreads are NOT included; the bell
+  // badge shows this, chat badges live on the Chats sidebar item).
+  notificationUnread: api("/api/frontend/lms/notifications/unread"),
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/notifications/${id}/read`),
+  markAllNotificationsRead: api("/api/frontend/lms/notifications/read-all"),
   attendance: api("/api/frontend/lms/attendance"),
   courses: api("/api/frontend/lms/courses"),
   // Rate the course the student is enrolled in (1 to 5). One rating per student per

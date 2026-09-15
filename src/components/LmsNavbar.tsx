@@ -27,15 +27,13 @@ export default function LmsNavbar({
 }: LmsNavbarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  // High-water mark of the unread count the student last dismissed by tapping
-  // the bell. The badge stays hidden while the live count is at or below it, so
-  // it only reappears when genuinely new activity arrives (item 13). Persisted
-  // per-portal so a refresh doesn't resurrect an already-seen badge.
-  const dismissedRef = useRef<number>(0);
 
-  // Fetch unread count. Student combines notifications + chat (group + dm) so a
-  // new chat message is visible on the always-on-screen bell, which matters on
-  // mobile where the chat tab badges aren't in view (item 12).
+  // The badge is a live view of the SERVER's unread-notification count — one
+  // source of truth. It is NOT dismissable by tapping the bell (that old
+  // localStorage high-water mark disagreed with the dashboard's server-read
+  // count and confused users); it only drops when notifications are actually
+  // marked read, and chat unreads are deliberately excluded — they badge the
+  // Chats sidebar item instead, since tapping the bell can never clear them.
   useEffect(() => {
     const name = portalName.toLowerCase();
     const isStudent = name.includes("student");
@@ -43,13 +41,8 @@ export default function LmsNavbar({
     const isAgent = name.includes("marketer") || name.includes("agent");
     let tokenKey = "lms_staff_token";
     let apiEndpoint = STAFF_API.notificationUnread;
-    if (isStudent) { tokenKey = "lms_student_token"; apiEndpoint = STUDENT_API.chatUnread; }
+    if (isStudent) { tokenKey = "lms_student_token"; apiEndpoint = STUDENT_API.notificationUnread; }
     if (isAgent) { tokenKey = "lms_agent_token"; apiEndpoint = AGENT_API.notificationUnread; }
-
-    const dismissKey = `lms_bell_dismissed_${tokenKey}`;
-    try {
-      dismissedRef.current = Number(localStorage.getItem(dismissKey) ?? "0") || 0;
-    } catch { dismissedRef.current = 0; }
 
     const fetchUnread = () => {
       const token = typeof window !== "undefined" ? localStorage.getItem(tokenKey) : null;
@@ -58,15 +51,7 @@ export default function LmsNavbar({
       fetch(apiEndpoint, { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.json())
         .then((p) => {
-          const total = (p.unread_notifications ?? 0) + (p.unread_group ?? 0) + (p.unread_dm ?? 0);
-          // Nothing unread at all resets the dismiss mark so a future single
-          // message shows immediately.
-          if (total === 0) {
-            dismissedRef.current = 0;
-            try { localStorage.setItem(dismissKey, "0"); } catch { /* ignore */ }
-          }
-          // Hide while the count hasn't grown past what was already dismissed.
-          setUnreadCount(total > dismissedRef.current ? total : 0);
+          setUnreadCount((p.unread_notifications ?? 0) || 0);
         })
         .catch(() => {});
     };
@@ -84,19 +69,6 @@ export default function LmsNavbar({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [portalName]);
-
-  // Tapping the bell dismisses the current badge (item 13): remember the count
-  // as the new high-water mark and hide it right away. It reappears only when a
-  // later poll sees a higher count.
-  const dismissBadge = () => {
-    const name = portalName.toLowerCase();
-    const isStudent = name.includes("student");
-    const isAgent = name.includes("marketer") || name.includes("agent");
-    const tokenKey = isStudent ? "lms_student_token" : isAgent ? "lms_agent_token" : "lms_staff_token";
-    dismissedRef.current = Math.max(dismissedRef.current, unreadCount);
-    try { localStorage.setItem(`lms_bell_dismissed_${tokenKey}`, String(dismissedRef.current)); } catch { /* ignore */ }
-    setUnreadCount(0);
-  };
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-white/15 bg-black/30 p-4 mb-6 sm:flex-row sm:items-center sm:justify-between [html.light_&]:border-site-border [html.light_&]:bg-site-surface [html.light_&]:shadow-sm">
@@ -135,7 +107,6 @@ export default function LmsNavbar({
         {/* Bell Icon */}
         <Link
           href={bellHref}
-          onClick={dismissBadge}
           className="relative p-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-white/80 [html.light_&]:border-black/10 [html.light_&]:bg-black/5 [html.light_&]:hover:bg-black/[0.08] [html.light_&]:text-black/80"
           aria-label="Notifications"
         >

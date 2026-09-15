@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { STUDENT_API } from "@/lib/api";
 import { apiFetch } from "@/lib/fetch-with-timeout";
 import { tenantLoginPath } from "@/lib/tenant-client";
+import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
 
 type SidebarItem = {
   href: string;
@@ -137,27 +138,27 @@ function AccountDropdown({
               View Profile
             </Link>
 
-            <button
-              type="button"
-              onClick={() => { setOpen(false); onClose?.(); alert("Add account flow coming soon."); }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white"
+            <Link
+              href="/lms/accounts"
+              onClick={() => { setOpen(false); onClose?.(); }}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white"
             >
               <svg className="h-4 w-4 shrink-0 text-white/55" viewBox="0 0 24 24" fill="none">
                 <path d="M12 4v16M4 12h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
               Add Account
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => { setOpen(false); onClose?.(); alert("Switch account flow coming soon."); }}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white"
+            <Link
+              href="/lms/accounts"
+              onClick={() => { setOpen(false); onClose?.(); }}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 transition-colors hover:bg-white/[0.08] hover:text-white"
             >
               <svg className="h-4 w-4 shrink-0 text-white/55" viewBox="0 0 24 24" fill="none">
                 <path d="M17 3l4 4-4 4M7 7h14M7 21l-4-4 4-4M17 17H3" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               Switch Account
-            </button>
+            </Link>
           </div>
 
           {/* Logout */}
@@ -241,7 +242,9 @@ export default function StudentSidebar() {
 
   const handleLogout = () => {
     localStorage.removeItem("lms_student_token");
-    router.push(tenantLoginPath("student"));
+    // With saved accounts on this browser (and the picker's own checkbox not
+    // unchecked), land on the account picker so switching users is one tap.
+    router.push(savedAccounts().length > 0 && isPickerEnabled() ? "/lms/accounts" : tenantLoginPath("student"));
   };
 
   const items: SidebarItem[] = [

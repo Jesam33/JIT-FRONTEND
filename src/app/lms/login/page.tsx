@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
 import { tenantHeaders, setTenantCookie, isSafeNextPath, getTenantSlug, tenantStorefrontUrl } from "@/lib/tenant-client";
+import { recordLogin } from "@/lib/saved-accounts";
 import AuthLayout, { AuthField, AuthPasswordField, AuthSubmitButton, AuthMessage } from "@/components/auth/AuthLayout";
 
 function LoginForm() {
@@ -11,7 +12,9 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired") === "1";
   const nextParam = searchParams.get("next");
-  const [email, setEmail] = useState("");
+  // Pre-filled from the logged-out account picker (/lms/accounts) — the email
+  // is known, only the password is left to type.
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState(expired ? "Session expired. Please log in again." : "");
   // When the backend says the email isn't registered, we surface a prominent
@@ -37,6 +40,8 @@ function LoginForm() {
       return;
     }
     localStorage.setItem("lms_student_token", data.token);
+    // Remember who signed in (never the password) for the account picker.
+    recordLogin("student", email, data.token, data?.tenant);
     // Pin the institute the backend authenticated us into, so the whole session
     // (branding fetch, portal API calls, and any inactivity → login redirect)
     // stays on this institute instead of falling back to the primary slug.

@@ -5,13 +5,15 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
 import { tenantHeaders, setTenantCookie, isSafeNextPath } from "@/lib/tenant-client";
+import { recordLogin } from "@/lib/saved-accounts";
 import AuthLayout, { AuthField, AuthPasswordField, AuthSubmitButton, AuthMessage } from "@/components/auth/AuthLayout";
 
 function StaffLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
-  const [email, setEmail] = useState("");
+  // Pre-filled from the logged-out account picker (/lms/accounts).
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +37,8 @@ function StaffLoginForm() {
     }
 
     localStorage.setItem("lms_staff_token", data.token);
+    // Remember who signed in (never the password) for the account picker.
+    recordLogin("staff", email, data.token, data?.tenant);
     // Pin the institute the backend authenticated us into (see student login).
     setTenantCookie(data?.tenant?.slug);
     // Forward to an emailed deep link (?next=) when present + safe, else the dashboard.

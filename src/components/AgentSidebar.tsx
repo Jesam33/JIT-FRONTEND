@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAgent } from "@/components/AgentContext";
+import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
 
 type NavItem = { href: string; label: string };
 
@@ -124,7 +125,9 @@ export default function AgentSidebar() {
 
   const handleLogout = () => {
     localStorage.removeItem("lms_agent_token");
-    router.push("/lms/agent/login");
+    // With saved accounts on this browser (and the picker's own checkbox not
+    // unchecked), land on the account picker so switching users is one tap.
+    router.push(savedAccounts().length > 0 && isPickerEnabled() ? "/lms/accounts" : "/lms/agent/login");
   };
 
   function isActive(href: string) {
