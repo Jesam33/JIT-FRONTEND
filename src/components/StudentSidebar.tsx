@@ -252,6 +252,7 @@ export default function StudentSidebar() {
     { href: "/lms/app/modules", label: "Modules" },
     { href: "/lms/app/tasks", label: "Tasks" },
     { href: "/lms/app/materials", label: "Materials" },
+    { href: "/lms/app/certificates", label: "Certificates" },
     ...(chatEnabled ? [{ href: "/lms/app/chats", label: "Chats" }] : []),
     { href: "/lms/app/profile", label: "Profile" },
   ];

@@ -4,6 +4,7 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import StarRating from "@/components/ui/StarRating";
 import AgentBanner from "@/components/landing/AgentBanner";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
+import ShareAcademy from "@/components/institute/ShareAcademy";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
 import { brandingStyle, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { formatPrice } from "@/lib/currency";
@@ -131,7 +132,14 @@ export default function InstituteStorefront({
   showAgentBanner = false,
   showHeroLogo = true,
   agentTenantSlug,
-}: StorefrontData & { hrefBase: string; showAgentBanner?: boolean; showHeroLogo?: boolean; agentTenantSlug?: string }) {
+  shareUrl,
+}: StorefrontData & {
+  hrefBase: string;
+  showAgentBanner?: boolean;
+  showHeroLogo?: boolean;
+  agentTenantSlug?: string;
+  shareUrl?: string;
+}) {
   // When a cover photo backs the hero, its text sits on the dark scrim (see
   // heroOverlayStyle) and must be forced white in BOTH themes, otherwise light
   // mode paints the heading/body dark over the photo (the reported bug).
@@ -185,6 +193,14 @@ export default function InstituteStorefront({
       </section>
 
       <div className="container-wide py-14">
+        {/* Agent-program promo as a slim clickable link, placed ABOVE the
+            courses (the page's real content), not under the contact footer
+            where the old big banner lived and nobody scrolled to. */}
+        {showAgentBanner ? (
+          <div className="mb-6 flex justify-center md:justify-start">
+            <AgentBanner tenantSlug={agentTenantSlug} />
+          </div>
+        ) : null}
         {courses.some((c) => c.price > 0) ? (
           <div className="mb-6 flex items-center justify-end gap-2 text-sm text-site-text/70">
             <span>Prices in</span>
@@ -282,11 +298,18 @@ export default function InstituteStorefront({
             No courses available at the moment. Check back soon.
           </div>
         ) : null}
+
+        {/* Student word-of-mouth: share the academy straight to the visitor's
+            socials (WhatsApp/X/Facebook/native sheet/copy). Optional — only
+            rendered when the page passes its own public URL. */}
+        {shareUrl ? (
+          <div className="mt-10 flex justify-center border-t border-site-border/20 pt-8">
+            <ShareAcademy academyName={institute.name} url={shareUrl} />
+          </div>
+        ) : null}
       </div>
 
       <InstituteContactFooter profile={profile} instituteName={institute.name} />
-
-      {showAgentBanner ? <AgentBanner tenantSlug={agentTenantSlug} /> : null}
 
     </section>
   );

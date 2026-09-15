@@ -96,7 +96,6 @@ export default function ProfilePage() {
   }
 
   const initials = profile ? (profile.first_name?.[0] ?? "") + (profile.last_name?.[0] ?? "") : "??";
-  const referralCode = profile?.referral_code ?? "";
 
   if (loading) {
     return (
@@ -196,14 +195,6 @@ export default function ProfilePage() {
                     <label className="mb-1 block text-xs text-white/50">Phone Number</label>
                     <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08012345678" className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-white/50">Referred By</label>
-                    <input value="" disabled placeholder="Not referred" className="w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-sm text-white/40" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-white/50">Referral Code</label>
-                    <input value={referralCode} disabled className="w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-sm text-white/60" />
-                  </div>
                 </div>
               </div>
 
@@ -223,13 +214,6 @@ export default function ProfilePage() {
                     <input type="checkbox" checked={notifyAnnounce} onChange={(e) => setNotifyAnnounce(e.target.checked)} className="accent-white" />
                   </label>
                 </div>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
-                <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600/20 px-3 py-3 text-sm font-medium hover:bg-purple-600/30 transition md:justify-start" style={{ color: '#9333ea' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  View Certificate
-                </button>
               </div>
 
             </>
@@ -265,25 +249,6 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
-
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
-            <button className="flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600/20 px-3 py-3 text-sm font-medium hover:bg-purple-600/30 transition md:justify-start" style={{ color: '#9333ea' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              View Certificate
-            </button>
-          </div>
-
-          {referralCode ? (
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
-              <p className="text-[10px] uppercase tracking-wider text-white/40">Referral Code</p>
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-sm font-medium text-white/80">{referralCode}</span>
-                <button onClick={() => navigator.clipboard.writeText(referralCode)} className="text-white/40 hover:text-white/70 transition" title="Copy">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                </button>
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
     </section>

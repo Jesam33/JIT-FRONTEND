@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { REACTION_EMOJIS } from "../../lib/chat-reactions";
 import type { ChatReaction, ChatReplyPreview } from "../../lib/lms-types";
-
 // Small presentational building blocks shared by all three chat surfaces
 // (student chats, staff group chat, staff DM via ChatLayout). The backend
 // contract + state helpers live in ../../lib/chat-reactions.ts; this file is
@@ -219,5 +218,175 @@ export function ReplyingBanner({
         </svg>
       </button>
     </div>
+  );
+}
+
+// ─── Attachments ──────────────────────────────────────────────────────────
+// "Attach anything": the composer paperclip opens the OS file picker, uploads
+// the file straight away (the platform's public disk) and stages the returned
+// URL; sending the message attaches it. Shared by all three chat surfaces
+// (student chats, staff group inline, staff DM via ChatLayout) — only the
+// endpoint and the fetcher (token injection) differ.
+
+// A staged attachment: url "" while the upload is in flight.
+export type ChatPendingAttachment = { url: string; name: string } | null;
+
+export function ChatAttach({
+  tone,
+  endpoint,
+  fetcher,
+  value,
+  onChange,
+  disabled,
+}: {
+  tone: ChatTone;
+  // POST endpoint that accepts multipart {file} and returns {url}.
+  endpoint: string;
+  // apiFetch / apiFetchStaff — picks the right auth token.
+  fetcher: (url: string, options?: RequestInit) => Promise<Response>;
+  value: ChatPendingAttachment;
+  onChange: (v: ChatPendingAttachment) => void;
+  disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const uploading = !!value && value.url === "";
+
+  async function pick(file: File) {
+    setError(null);
+    if (file.size > 25 * 1024 * 1024) {
+      setError(`${file.name} is over 25MB.`);
+      return;
+    }
+    // Stage optimistically (empty url = upload in flight); Send is disabled
+    // until the real url arrives.
+    onChange({ url: "", name: file.name });
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetcher(endpoint, { method: "POST", body });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.message || `Upload failed (${res.status})`);
+      }
+      onChange({ url: json.url, name: file.name });
+    } catch (err) {
+      onChange(null);
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    }
+  }
+
+  const chipBase = "inline-flex max-w-[220px] items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs leading-none transition";
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) pick(file);
+          // Allow picking the same file again after clearing.
+          e.target.value = "";
+        }}
+      />
+      {value ? (
+        <span
+          className={`${chipBase} ${
+            uploading
+              ? "border-white/25 bg-white/10 text-white/70 [html.light_&]:border-neutral-300 [html.light_&]:bg-neutral-100 [html.light_&]:text-neutral-600"
+              : tone === "surface"
+                ? "border-site-primary/60 bg-site-primary/15 text-site-primary"
+                : "border-site-primary/60 bg-site-primary/25 text-white [html.light_&]:text-site-primary"
+          }`}
+          title={value.name}
+        >
+          <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+          </svg>
+          <span className="truncate">{uploading ? `Uploading ${value.name}…` : value.name}</span>
+          {!uploading && (
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              className="ml-0.5 shrink-0 rounded-full p-0.5 hover:bg-black/20"
+              aria-label={`Remove ${value.name}`}
+            >
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          )}
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={disabled}
+          className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl border transition disabled:opacity-40 ${
+            tone === "surface"
+              ? "border-site-border bg-site-surface text-site-muted hover:bg-site-surface-soft hover:text-site-text"
+              : "border-white/15 bg-black/30 text-white/60 hover:bg-white/10 hover:text-white [html.light_&]:border-neutral-300 [html.light_&]:bg-neutral-100 [html.light_&]:text-neutral-600 [html.light_&]:hover:bg-neutral-200"
+          }`}
+          title="Attach a file"
+          aria-label="Attach a file"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
+      )}
+      {error ? <span className="shrink-0 text-xs text-red-400">{error}</span> : null}
+    </div>
+  );
+}
+
+// Renders a message's attachment: images get an inline thumbnail (click to open
+// full size), anything else is a compact "file" chip. `mine` picks the palette
+// for chips on coloured own-bubbles.
+export function isChatImageUrl(url: string): boolean {
+  return /\.(png|jpe?g|webp|gif|bmp|heic)(\?.*)?$/i.test(url.split("#")[0]);
+}
+
+export function ChatAttachmentView({
+  tone,
+  url,
+  mine,
+  name,
+}: {
+  tone: ChatTone;
+  url: string;
+  mine?: boolean;
+  // Optional display name (only staged messages have one; history shows the type).
+  name?: string | null;
+}) {
+  if (isChatImageUrl(url)) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="mt-1 block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={name || "Attachment"}
+          className="max-h-48 max-w-full rounded-lg border border-white/25 object-contain"
+        />
+      </a>
+    );
+  }
+  const label = name || "Attachment";
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs leading-none transition ${chipClass(tone, !!mine)}`}
+      title={label}
+    >
+      <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+        <path d="M14 2v6h6" />
+      </svg>
+      <span className="truncate">{label}</span>
+    </a>
   );
 }

@@ -192,56 +192,81 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="space-y-6 pb-8 ">
-      <div className="rounded-2xl border border-white/15 bg-black/30 p-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-white/60">My Progress</p>
-        <div className="mt-5 flex flex-wrap items-center gap-6">
-          <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+      <div className="rounded-2xl border border-white/15 bg-black/30 p-5 sm:p-6">
+        <p className="text-center text-xs uppercase tracking-[0.2em] text-white/60 sm:text-left">My Progress</p>
+        {/* Stacked + centered on phones (the ring would otherwise squeeze the
+            text column into ~190px); side-by-side from sm: up. */}
+        <div className="mt-5 flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
+          {/* Overall ring — the average of module %, attendance % and task %. */}
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center sm:h-28 sm:w-28">
             <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
               <circle cx="50" cy="50" r="42" fill="none" stroke="url(#progressGrad)" strokeWidth="8" strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 42}`}
-                strokeDashoffset={`${2 * Math.PI * 42 * (1 - Math.min(((data.summary?.modules_completed ?? 0) / (data.summary?.modules_total ?? 1)), 1))}`}
+                strokeDashoffset={`${2 * Math.PI * 42 * (1 - Math.min((data.summary?.overall_progress ?? 0) / 100, 1))}`}
               />
               <defs><linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#34d399" /><stop offset="100%" stopColor="#10b981" /></linearGradient></defs>
             </svg>
-            <span className="text-2xl font-bold">{Math.round(((data.summary?.modules_completed ?? 0) / Math.max(data.summary?.modules_total ?? 1, 1)) * 100)}%</span>
+            <span className="text-xl font-bold sm:text-2xl">{data.summary?.overall_progress ?? 0}%</span>
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 w-full flex-1">
             <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>{data.profile?.course_title ?? "No course selected yet"}</h1>
-            <p className="mt-1 text-sm text-white/70">
-              {data.summary?.modules_completed ?? 0} of {data.summary?.modules_total ?? 0} modules completed
+            {/* Rating, inline: one star row + aggregate, no boxed section. */}
+            {data.rating ? (
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
+                <StarRating value={data.rating.your_rating ?? 0} size="md" onRate={submitRating} disabled={ratingBusy} />
+                <span className="text-xs text-white/50">
+                  {data.rating.count > 0
+                    ? `${data.rating.average.toFixed(1)} · ${data.rating.count} rating${data.rating.count === 1 ? "" : "s"}`
+                    : "Be the first to rate this course"}
+                </span>
+                {ratingMsg ? <span className="text-xs text-emerald-300">{ratingMsg}</span> : null}
+              </div>
+            ) : null}
+            <p className="mt-1 hidden text-sm text-white/70 sm:block">
+              Average of your modules, attendance and task scores
             </p>
-            <div className="mt-3 h-2 w-full max-w-xs overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
-                style={{ width: `${Math.round(((data.summary?.modules_completed ?? 0) / Math.max(data.summary?.modules_total ?? 1, 1)) * 100)}%` }} />
+
+            {/* The three components of the overall number. Squeezed into one
+                3-col row on phones (smaller text, thinner bars) so the card
+                doesn't grow tall; normal sizing from sm: up. */}
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="min-w-0">
+                <div className="flex items-baseline justify-between gap-1">
+                  <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-white/60 sm:text-xs">Modules</p>
+                  <p className="shrink-0 text-[10px] text-white/70 sm:text-xs">{data.summary?.modules_completed ?? 0}/{data.summary?.modules_total ?? 0}</p>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10 sm:h-2">
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                    style={{ width: `${Math.min(data.summary?.module_progress ?? 0, 100)}%` }} />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-baseline justify-between gap-1">
+                  <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-white/60 sm:text-xs">Attendance</p>
+                  <p className="shrink-0 text-[10px] text-white/70 sm:text-xs">{data.summary?.classes_attended ?? 0}/{data.summary?.classes_total ?? 0}</p>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10 sm:h-2">
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                    style={{ width: `${Math.min(data.summary?.attendance_rate ?? 0, 100)}%` }} />
+                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-baseline justify-between gap-1">
+                  <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-white/60 sm:text-xs">Tasks</p>
+                  <p className="shrink-0 text-[10px] text-white/70 sm:text-xs">{data.summary?.task_score_total ?? 0}/{(data.summary?.tasks_total ?? 0) * 100}</p>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10 sm:h-2">
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                    style={{ width: `${Math.min(data.summary?.task_progress ?? 0, 100)}%` }} />
+                </div>
+              </div>
             </div>
-            <p className="mt-3 text-sm text-white/50">Good day, {studentName} &middot; {new Date().toLocaleDateString([], { dateStyle: "full" })}</p>
+
+            <p className="mt-4 text-sm text-white/50">Good day, {studentName} &middot; {new Date().toLocaleDateString([], { dateStyle: "full" })}</p>
             {unreadNotifications.length ? <p className="mt-1 text-xs text-amber-200">You have {unreadNotifications.length} unread notification{unreadNotifications.length > 1 ? "s" : ""}.</p> : null}
           </div>
         </div>
-        {data.rating ? (
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">
-                {data.rating.your_rating ? "Your rating" : "Rate this course"}
-              </p>
-              <p className="mt-0.5 text-xs text-white/60">
-                {data.rating.count > 0
-                  ? `Course average ${data.rating.average.toFixed(1)} from ${data.rating.count} rating${data.rating.count === 1 ? "" : "s"}`
-                  : "Be the first to rate this course."}
-              </p>
-            </div>
-            <div className="flex flex-col items-start gap-1 sm:items-end">
-              <StarRating
-                value={data.rating.your_rating ?? 0}
-                size="lg"
-                onRate={submitRating}
-                disabled={ratingBusy}
-              />
-              {ratingMsg ? <span className="text-xs text-emerald-300">{ratingMsg}</span> : null}
-            </div>
-          </div>
-        ) : null}
         {joinMessage ? <p className="mt-4 rounded-xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">{joinMessage}</p> : null}
       </div>
 
@@ -333,33 +358,38 @@ export default function StudentDashboardPage() {
 
         <article className="rounded-2xl border border-white/15 bg-black/30 p-6 xl:col-span-7 xl:min-h-[220px]">
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">Learning Progress</p>
+          {/* Stat tiles: what each component is at right now, each linking to
+              its page. Task points are cumulative (70 + 50 = 120 of 200 on 2
+              tasks) and grow as the course adds tasks. */}
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs text-white/60">Classes Total</p>
-              <p className="mt-2 text-2xl font-semibold">{data.summary?.classes_total ?? 0}</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs text-white/60">Classes Attended</p>
-              <p className="mt-2 text-2xl font-semibold">{data.summary?.classes_attended ?? 0}</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+            <button
+              type="button"
+              onClick={() => router.push("/lms/app/modules")}
+              className="rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-white/25 hover:bg-white/10"
+            >
+              <p className="text-xs text-white/60">Modules Completed</p>
+              <p className="mt-2 text-2xl font-semibold">{data.summary?.modules_completed ?? 0}<span className="text-base font-normal text-white/50"> / {data.summary?.modules_total ?? 0}</span></p>
+              <p className="mt-1 text-xs text-white/50">{data.summary?.module_progress ?? 0}% of course</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/lms/app/attendance")}
+              className="rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-white/25 hover:bg-white/10"
+            >
               <p className="text-xs text-white/60">Attendance Rate</p>
               <p className="mt-2 text-2xl font-semibold">{data.summary?.attendance_rate ?? 0}%</p>
-            </div>
+              <p className="mt-1 text-xs text-white/50">{data.summary?.classes_attended ?? 0} of {data.summary?.classes_total ?? 0} classes</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/lms/app/tasks")}
+              className="rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-white/25 hover:bg-white/10"
+            >
+              <p className="text-xs text-white/60">Task Points</p>
+              <p className="mt-2 text-2xl font-semibold">{data.summary?.task_score_total ?? 0}<span className="text-base font-normal text-white/50"> / {(data.summary?.tasks_total ?? 0) * 100}</span></p>
+              <p className="mt-1 text-xs text-white/50">{data.summary?.task_progress ?? 0}% of total points</p>
+            </button>
           </div>
-          {(data.summary?.modules_total ?? 0) > 0 ? (
-            <div className="mt-4">
-              <p className="text-xs text-white/60">
-                Module Progress: {data.summary?.modules_completed ?? 0} / {data.summary?.modules_total ?? 0}
-              </p>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${Math.round(((data.summary?.modules_completed ?? 0) / (data.summary?.modules_total ?? 1)) * 100)}%` }}
-                />
-              </div>
-            </div>
-          ) : null}
         </article>
 
         <article className="rounded-2xl border border-white/15 bg-black/30 p-6 xl:col-span-8 xl:min-h-[220px]">
@@ -369,7 +399,7 @@ export default function StudentDashboardPage() {
               const href =
                 item.reference_type === "task" && item.reference_id ? `/lms/tasks/${item.reference_id}`
                 : item.reference_type === "group_chat" ? "/lms/app/chats"
-                : item.reference_type === "scheduled_class" ? "/lms/app/classroom"
+                : item.reference_type === "scheduled_class" || item.reference_type === "classroom" ? "/lms/app/classroom"
                 : item.reference_type === "module" ? (item.reference_id ? `/lms/app/modules/${item.reference_id}` : "/lms/app/modules")
                 : item.reference_type === "course" ? "/lms/app/modules"
                 : null;

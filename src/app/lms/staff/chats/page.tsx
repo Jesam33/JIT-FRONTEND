@@ -5,7 +5,7 @@ import ChatLayout from "../../../../components/chat/ChatLayout";
 import { STAFF_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
 import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
-import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner } from "../../../../components/chat/chat-extras";
+import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner, ChatAttach, ChatAttachmentView, type ChatPendingAttachment } from "../../../../components/chat/chat-extras";
 import { toggleReactionLocal, applyReactionsToList, applyReactionBroadcast } from "../../../../lib/chat-reactions";
 import type { ChatReaction, ChatReplyPreview } from "../../../../lib/lms-types";
 
@@ -74,13 +74,14 @@ export default function StaffChatsPage() {
 
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [groupBody, setGroupBody] = useState("");
-  const [groupAttachment, setGroupAttachment] = useState("");
+  // Staged composer attachments (paperclip file picker; url "" = upload in flight).
+  const [groupAttachment, setGroupAttachment] = useState<ChatPendingAttachment>(null);
   const [groupSending, setGroupSending] = useState(false);
 
   const [threads, setThreads] = useState<DmThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<number | null>(null);
   const [dmBody, setDmBody] = useState("");
-  const [dmAttachment, setDmAttachment] = useState("");
+  const [dmAttachment, setDmAttachment] = useState<ChatPendingAttachment>(null);
   const [dmSending, setDmSending] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [replyingToGroup, setReplyingToGroup] = useState<{ id: number; name: string; content: string } | null>(null);
@@ -382,11 +383,13 @@ export default function StaffChatsPage() {
   }, [token, activeThreadId]);
 
   async function sendGroupMessage() {
-    if (!groupBody.trim() && !groupAttachment.trim()) return;
+    // url === "" means an upload is still in flight; wait for it.
+    if (groupAttachment && groupAttachment.url === "") return;
+    if (!groupBody.trim() && !groupAttachment?.url) return;
     const bodyToSend = groupBody;
-    const attachmentToSend = groupAttachment;
+    const attachmentToSend = groupAttachment?.url ?? "";
     const replyToSend = replyingToGroup;
-    setGroupBody(""); setGroupAttachment(""); setReplyingToGroup(null);
+    setGroupBody(""); setGroupAttachment(null); setReplyingToGroup(null);
 
     const tempId = `temp-${Date.now()}`;
     const tempMsg: GroupMessage = {
@@ -418,11 +421,13 @@ export default function StaffChatsPage() {
   }
 
   async function sendDm() {
-    if (!activeThreadId || (!dmBody.trim() && !dmAttachment.trim())) return;
+    if (!activeThreadId) return;
+    if (dmAttachment && dmAttachment.url === "") return;
+    if (!dmBody.trim() && !dmAttachment?.url) return;
     const bodyToSend = dmBody;
-    const attachmentToSend = dmAttachment;
+    const attachmentToSend = dmAttachment?.url ?? "";
     const replyToSend = replyingToDm;
-    setDmBody(""); setDmAttachment(""); setFeedback(""); setReplyingToDm(null);
+    setDmBody(""); setDmAttachment(null); setFeedback(""); setReplyingToDm(null);
 
     const tempId = `temp-${Date.now()}`;
     const tempMsg: DmMessage = {
@@ -507,7 +512,7 @@ export default function StaffChatsPage() {
                               </p>
                             ) : null}
                             {msg.attachment_url ? (
-                              <a href={msg.attachment_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-blue-400 underline">View attachment</a>
+                              <ChatAttachmentView tone="glass" url={msg.attachment_url} mine={isOwn} />
                             ) : null}
                           </>
                         )}
@@ -604,8 +609,8 @@ export default function StaffChatsPage() {
                 if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendGroupMessage(); }
               }}
             />
-            <input value={groupAttachment} onChange={(e) => setGroupAttachment(e.target.value)} placeholder="Attachment URL" className="w-40 rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-            <button onClick={sendGroupMessage} disabled={groupSending || (!groupBody.trim() && !groupAttachment.trim())} className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50 hover:bg-white/90 transition">
+            <ChatAttach tone="glass" endpoint={STAFF_API.chatUpload} fetcher={apiFetchStaff} value={groupAttachment} onChange={setGroupAttachment} disabled={groupSending} />
+            <button onClick={sendGroupMessage} disabled={groupSending || (groupAttachment?.url === "") || (!groupBody.trim() && !groupAttachment?.url)} className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50 hover:bg-white/90 transition">
               Send
             </button>
             </div>

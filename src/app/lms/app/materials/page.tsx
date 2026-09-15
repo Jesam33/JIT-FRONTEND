@@ -113,12 +113,14 @@ function MaterialCard({ item }: { item: MaterialItem }) {
 // useSearchParams() must sit under a Suspense boundary in Next 16, so the page
 // is a thin wrapper around the real content.
 export default function StudentMaterialsPage() {
+  
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <MaterialsContent />
     </Suspense>
   );
 }
+
 
 function MaterialsContent() {
   const searchParams = useSearchParams();
@@ -171,11 +173,14 @@ function MaterialsContent() {
       <h2 className="text-xl font-semibold">Materials</h2>
       <p className="mt-2 text-sm text-white/70">All your learning materials with inline video player and download.</p>
       <div className="mt-4 flex flex-wrap gap-2">
-        {(["all", "file", "link", "image", "video"] as const).map((filter) => (
-          <button key={filter} type="button" onClick={() => setMaterialsFilter(filter)} className={`rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] ${materialsFilter === filter ? "border-white bg-white text-black" : "border-white/20 bg-white/5 text-white"}`}>
-            {filter}
-          </button>
-        ))}
+        {(["all", "file", "link", "image", "video"] as const).map((filter) => {
+          const label = filter === "all" ? "all" : `${filter}s`;
+          return (
+            <button key={filter} type="button" onClick={() => setMaterialsFilter(filter)} className={`rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] ${materialsFilter === filter ? "border-white bg-white text-black" : "border-white/20 bg-white/5 text-white"}`}>
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {search.trim() ? (

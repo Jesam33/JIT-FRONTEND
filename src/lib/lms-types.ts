@@ -12,6 +12,15 @@ export type DashboardPayload = {
     attendance_rate: number;
     modules_total?: number;
     modules_completed?: number;
+    // Module % = modules_completed / modules_total. Task progress is earned
+    // points over every task worth 100 (task_score_total / (tasks_total*100)),
+    // so it grows as the course goes. Overall averages the components that
+    // exist (module %, attendance %, task %).
+    module_progress?: number;
+    tasks_total?: number;
+    task_score_total?: number;
+    task_progress?: number;
+    overall_progress?: number;
   };
   upcoming_class?: {
     id: number;
@@ -134,6 +143,12 @@ export type MeetingTokenPayload = {
   moderator: boolean;
 };
 
+export type TaskAttachment = {
+  name: string;
+  url: string;
+  size?: number | null;
+};
+
 export type TaskItem = {
   id: number;
   module_id?: number | null;
@@ -142,6 +157,7 @@ export type TaskItem = {
   instructions: string | null;
   due_at: string;
   submission_type: "link" | "file_upload";
+  attachments?: TaskAttachment[];
   status: "pending" | "submitted" | "graded";
   submitted_at: string | null;
   score: number | null;
@@ -176,9 +192,17 @@ export type StudentProfile = {
   notify_announcements: boolean;
 };
 
+// A certificate issued to this student. Auto-issued (ended-cohort) ones carry
+// the cohort's track_name + start/end dates + serial; hand-issued ones may only
+// have title + file_url (an external link the owner pasted).
 export type StudentCertificate = {
   id: number;
   title: string;
+  course_title?: string | null;
+  track_name?: string | null;
+  serial?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
   file_url: string | null;
   issued_at: string | null;
 };

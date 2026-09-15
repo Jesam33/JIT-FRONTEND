@@ -36,6 +36,7 @@ export default async function InstitutePage() {
       courses={view.courses}
       hrefBase="/institute"
       showAgentBanner
+      shareUrl="/institute"
     />
   );
 }

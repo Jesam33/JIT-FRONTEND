@@ -132,6 +132,16 @@ html.light .site-shell {
   animation: slideUp 250ms ease-out forwards;
 }
 
+/* Overlay fade for modals — pairs with .animate-slide-up on the panel. */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 200ms ease-out forwards;
+}
+
 .display-gradient {
   font-family: var(--font-display);
   background-image: linear-gradient(180deg, #ffffff 0%, #9e9e9e 113%);

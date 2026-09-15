@@ -58,7 +58,7 @@ type Course = {
 
 const typeLabels: Record<string, string> = {
   slides: "Slides", pdf: "PDF", video: "Video", link: "Link",
-  text: "Text", code: "Code", file: "File", doc: "Doc",
+  text: "Text", code: "Code", file: "File", doc: "Doc", image: "Image",
 };
 
 // File extensions the backend's module-content upload accepts (mirrors the
@@ -67,10 +67,6 @@ const typeLabels: Record<string, string> = {
 const DOC_ACCEPT =
   ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.rtf,.zip,.png,.jpg,.jpeg,.webp,.gif,.mp3,.wav,.m4a";
 
-// Content types that make sense with an uploaded file (everything except the
-// Bunny video path and the body-based text/code/link kinds).
-const FILE_TYPES = ["pdf", "slides", "doc", "file"];
-
 // Best-effort content-type suggestion from a picked file's extension, so
 // choosing "lecture.pdf" flips the type select to PDF by itself.
 function typeForContentFile(name: string): string {
@@ -78,7 +74,143 @@ function typeForContentFile(name: string): string {
   if (ext === "pdf") return "pdf";
   if (["ppt", "pptx"].includes(ext)) return "slides";
   if (["doc", "docx", "rtf", "txt", "csv"].includes(ext)) return "doc";
+  if (["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) return "image";
   return "file";
+}
+
+// A staged module-content upload: url/path are "" while the upload is in
+// flight (the same sentinel the chat attachment picker uses).
+type ContentUpload = { name: string; url: string; path: string } | null;
+
+// The content-link field: a URL text box with an attach (paperclip) icon that
+// opens the OS file picker. A picked file uploads straight away to the
+// module-content upload endpoint and shows as a removable chip; while staged
+// it wins over the URL box (which is disabled). Mirrors the chat attach UX.
+function ContentUrlField({
+  moduleId,
+  size = "md",
+  url,
+  onUrlChange,
+  upload,
+  onUploadChange,
+  onFileType,
+  placeholder,
+  hint,
+}: {
+  moduleId: number;
+  // "md" for the Add Content form, "sm" for the compact edit form.
+  size?: "md" | "sm";
+  url: string;
+  onUrlChange: (v: string) => void;
+  upload: ContentUpload;
+  onUploadChange: (v: ContentUpload) => void;
+  // Add form only: suggest the content type from the picked file's extension.
+  onFileType?: (type: string) => void;
+  placeholder: string;
+  hint?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const uploading = !!upload && upload.url === "";
+  const staged = !!upload && !uploading;
+
+  const inputCls = size === "sm"
+    ? "min-w-0 flex-1 rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs placeholder:text-white/30 focus:outline-none disabled:opacity-40"
+    : "min-w-0 flex-1 rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-40";
+  const btnCls = size === "sm"
+    ? "flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white/60 transition hover:border-white/30 hover:bg-white/10 hover:text-white disabled:opacity-40"
+    : "flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-white/60 transition hover:border-white/30 hover:bg-white/10 hover:text-white disabled:opacity-40";
+
+  async function pick(file: File) {
+    setError(null);
+    if (file.size > 50 * 1024 * 1024) {
+      setError(`${file.name} is over 50MB.`);
+      return;
+    }
+    // Stage optimistically (empty url = upload in flight); saving is disabled
+    // until the real url arrives.
+    onUploadChange({ name: file.name, url: "", path: "" });
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await apiFetchStaff(STAFF_API.moduleContentUpload(moduleId), { method: "POST", body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(res.status === 422
+          ? "That file type isn't supported."
+          : `Upload failed (${res.status})`);
+      }
+      onUploadChange({ name: file.name, url: json.url, path: json.path });
+      if (onFileType) onFileType(typeForContentFile(file.name));
+    } catch (err) {
+      onUploadChange(null);
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex gap-2">
+        <input
+          value={url}
+          onChange={(e) => onUrlChange(e.target.value)}
+          type="url"
+          inputMode="url"
+          disabled={staged}
+          placeholder={placeholder}
+          className={inputCls}
+        />
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className={btnCls} title="Pick a file from your device" aria-label="Pick a file from your device">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={DOC_ACCEPT}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) pick(file);
+            // Allow picking the same file again after removing the chip.
+            e.target.value = "";
+          }}
+        />
+      </div>
+      {upload ? (
+        <div className={`flex items-center gap-2 ${size === "sm" ? "mt-1.5" : "mt-2"}`}>
+          <span
+            className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 leading-none transition ${
+              uploading
+                ? "border-white/25 bg-white/10 text-white/70"
+                : "border-white/25 bg-white/10 text-white/85"
+            }`}
+            title={upload.name}
+          >
+            <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" />
+            </svg>
+            <span className="truncate text-xs">{uploading ? `Uploading ${upload.name}…` : upload.name}</span>
+            {!uploading && (
+              <button
+                type="button"
+                onClick={() => onUploadChange(null)}
+                className="ml-0.5 shrink-0 rounded-full p-0.5 hover:bg-black/20"
+                aria-label={`Remove ${upload.name}`}
+              >
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            )}
+          </span>
+        </div>
+      ) : null}
+      {hint && !upload ? <p className={size === "sm" ? "mt-1 text-[11px] text-white/40" : "mt-1 text-[11px] text-white/40"}>{hint}</p> : null}
+      {error ? <p className="mt-1 text-[11px] text-red-400">{error}</p> : null}
+    </div>
+  );
 }
 
 export default function StaffModulesPage() {
@@ -109,14 +241,11 @@ export default function StaffModulesPage() {
   const [contentVideoFile, setContentVideoFile] = useState<File | null>(null);
   const [contentUploadPct, setContentUploadPct] = useState<number | null>(null);
   const contentFileRef = useRef<HTMLInputElement | null>(null);
-  // Non-video file upload (PDF/document/slides): picked from the staffer's PC
-  // and stored on the platform's own disk. When set, it wins over the pasted
-  // URL. Used both to add new content and to replace an existing item's file
-  // (the download → edit locally → re-upload loop).
-  const [contentDocFile, setContentDocFile] = useState<File | null>(null);
-  const contentDocRef = useRef<HTMLInputElement | null>(null);
-  const [editDocFile, setEditDocFile] = useState<File | null>(null);
-  const editDocRef = useRef<HTMLInputElement | null>(null);
+  // Staged uploads from the ContentUrlField pickers: the file uploads as soon
+  // as it's picked, and the returned {url, path} ride along when the content
+  // is saved (path so deleting the content deletes the file).
+  const [newContentUpload, setNewContentUpload] = useState<ContentUpload>(null);
+  const [editContentUpload, setEditContentUpload] = useState<ContentUpload>(null);
 
   const [schedTitle, setSchedTitle] = useState("");
   const [schedDesc, setSchedDesc] = useState("");
@@ -127,6 +256,7 @@ export default function StaffModulesPage() {
   const [schedMeetingPwd, setSchedMeetingPwd] = useState("");
 
   const [saving, setSaving] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [confirmContentDelete, setConfirmContentDelete] = useState<number | null>(null);
   const [confirmClassDelete, setConfirmClassDelete] = useState<number | null>(null);
@@ -147,6 +277,30 @@ export default function StaffModulesPage() {
   const [editClassStatus, setEditClassStatus] = useState("scheduled");
 
   const { toast: showToast } = useToast();
+
+  // One-click module zip (files + README of links/text/Bunny videos). Fetched
+  // as a blob because the auth header can't ride on a plain anchor href.
+  const downloadModule = useCallback(async (m: Module) => {
+    if (downloadingId) return;
+    setDownloadingId(m.id);
+    try {
+      const res = await apiFetchStaff(STAFF_API.moduleDownload(m.id));
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${m.title.replace(/[^\w-]+/g, "-").toLowerCase() || "module"}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast("Could not build the module zip.", "error");
+    } finally {
+      setDownloadingId(null);
+    }
+  }, [downloadingId, showToast]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -260,24 +414,12 @@ export default function StaffModulesPage() {
         };
       }
 
-      // Non-video content: either a picked file (stored on our disk) or a
-      // pasted link. A picked file wins; the upload endpoint returns the hosted
-      // URL + storage path (the path rides along so deleting the content
-      // deletes the file).
+      // Non-video content: either a file staged by the ContentUrlField picker
+      // (already uploaded, staged url/path here) or a pasted link.
       let filePath: string | null = null;
-      if (newContentType !== "video" && contentDocFile) {
-        const fd = new FormData();
-        fd.append("file", contentDocFile);
-        const upRes = await apiFetchStaff(STAFF_API.moduleContentUpload(moduleId), { method: "POST", body: fd });
-        if (!upRes.ok) {
-          showToast(upRes.status === 422
-            ? "That file type isn't supported. Use a PDF, document, slides, spreadsheet, archive, image or audio file."
-            : `Could not upload the file (HTTP ${upRes.status}).`, "error");
-          return;
-        }
-        const up = await upRes.json() as { url: string; path: string };
-        contentUrl = up.url;
-        filePath = up.path;
+      if (newContentType !== "video" && newContentUpload) {
+        contentUrl = newContentUpload.url;
+        filePath = newContentUpload.path;
       }
 
       const res = await apiFetchStaff(STAFF_API.moduleContents(moduleId), {
@@ -295,9 +437,8 @@ export default function StaffModulesPage() {
       if (!res.ok) { showToast("Failed to add content", "error"); return; }
       showToast("Content added", "success");
       setNewContentTitle(""); setNewContentType("text"); setNewContentUrl(""); setNewContentBody("");
-      setContentVideoFile(null); setContentDocFile(null);
+      setContentVideoFile(null); setNewContentUpload(null);
       if (contentFileRef.current) contentFileRef.current.value = "";
-      if (contentDocRef.current) contentDocRef.current.value = "";
       await load();
     } catch (e) { showToast(e instanceof Error ? e.message : "Failed to add content", "error"); }
     finally { setSaving(false); setContentUploadPct(null); }
@@ -355,33 +496,21 @@ export default function StaffModulesPage() {
     setEditFormType(c.type);
     setEditFormUrl(c.content_url ?? "");
     setEditFormBody(c.content_body ?? "");
-    setEditDocFile(null);
-    if (editDocRef.current) editDocRef.current.value = "";
+    setEditContentUpload(null);
   }
 
   async function saveContentEdit(contentId: number) {
     if (!selectedId || !editFormTitle.trim()) return;
     setSaving(true);
     try {
-      // A picked replacement file wins over the URL field: upload it, then
-      // point the content at the fresh copy. The backend deletes the file it
-      // supersedes, so re-uploading an edited document doesn't orphan the old
-      // one on disk.
+      // A staged replacement file (already uploaded by the ContentUrlField)
+      // wins over the URL field. The backend deletes the file it supersedes,
+      // so re-uploading an edited document doesn't orphan the old one on disk.
       let url = editFormUrl || null;
       let filePath: string | null = null;
-      if (editDocFile) {
-        const fd = new FormData();
-        fd.append("file", editDocFile);
-        const upRes = await apiFetchStaff(STAFF_API.moduleContentUpload(selectedId), { method: "POST", body: fd });
-        if (!upRes.ok) {
-          showToast(upRes.status === 422
-            ? "That file type isn't supported. Use a PDF, document, slides, spreadsheet, archive, image or audio file."
-            : `Could not upload the file (HTTP ${upRes.status}).`, "error");
-          return;
-        }
-        const up = await upRes.json() as { url: string; path: string };
-        url = up.url;
-        filePath = up.path;
+      if (editContentUpload) {
+        url = editContentUpload.url;
+        filePath = editContentUpload.path;
       }
 
       const res = await apiFetchStaff(STAFF_API.moduleContent(selectedId, contentId), {
@@ -578,7 +707,21 @@ export default function StaffModulesPage() {
             <>
               {/* Contents */}
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                <h3 className="text-base font-semibold">Contents &mdash; <span className="font-normal text-white/70">{selectedModule.title}</span></h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-base font-semibold">Contents &mdash; <span className="font-normal text-white/70">{selectedModule.title}</span></h3>
+                  <button
+                    type="button"
+                    onClick={() => downloadModule(selectedModule)}
+                    disabled={downloadingId === selectedModule.id || selectedModule.contents.length === 0}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:border-white/30 hover:bg-white/10 hover:text-white disabled:opacity-50"
+                    title="Download this module's files as a zip (links and videos are listed in a README)"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {downloadingId === selectedModule.id ? "Preparing…" : "Download zip"}
+                  </button>
+                </div>
 
                 {selectedModule.contents.length === 0 ? (
                   <p className="mt-3 text-sm text-white/50">No content yet.</p>
@@ -591,30 +734,23 @@ export default function StaffModulesPage() {
                         {editing ? (
                           <div className="flex flex-col gap-2">
                             <input value={editFormTitle} onChange={(e) => setEditFormTitle(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none" />
-                            <select value={editFormType} onChange={(e) => { setEditFormType(e.target.value); if (!FILE_TYPES.includes(e.target.value)) { setEditDocFile(null); if (editDocRef.current) editDocRef.current.value = ""; } }} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
+                            <select value={editFormType} onChange={(e) => setEditFormType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs focus:outline-none">
                               {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
-                            <input value={editFormUrl} onChange={(e) => setEditFormUrl(e.target.value)} type="url" inputMode="url" disabled={!!editDocFile} placeholder="Content link (Google Drive, YouTube, or any URL)" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs placeholder:text-white/30 focus:outline-none disabled:opacity-40" />
-                            {FILE_TYPES.includes(editFormType) ? (
-                              <div>
-                                <input
-                                  ref={editDocRef}
-                                  type="file"
-                                  accept={DOC_ACCEPT}
-                                  onChange={(e) => setEditDocFile(e.target.files?.[0] ?? null)}
-                                  className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white"
-                                />
-                                <p className="mt-1 text-[11px] text-white/40">
-                                  {editDocFile
-                                    ? <>Replacing with <span className="text-white/70">{editDocFile.name}</span> — it uploads from your device, the link field is ignored.</>
-                                    : "Pick a file to replace the current one (e.g. an edited copy you downloaded)."}
-                                </p>
-                              </div>
-                            ) : null}
+                            <ContentUrlField
+                              moduleId={selectedModule.id}
+                              size="sm"
+                              url={editFormUrl}
+                              onUrlChange={setEditFormUrl}
+                              upload={editContentUpload}
+                              onUploadChange={setEditContentUpload}
+                              placeholder="Content link, or pick a file with the 📎"
+                              hint="Pick a file to replace the current one (e.g. an edited copy you downloaded)."
+                            />
                             <textarea value={editFormBody} onChange={(e) => setEditFormBody(e.target.value)} placeholder="Body" className="w-full rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-xs resize-none focus:outline-none" rows={3} />
                             <div className="flex gap-2">
-                              <button onClick={() => saveContentEdit(c.id)} disabled={saving} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
-                              <button onClick={() => setEditContentId(null)} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs">Cancel</button>
+                              <button onClick={() => saveContentEdit(c.id)} disabled={saving || editContentUpload?.url === ""} className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
+                              <button onClick={() => { setEditContentId(null); setEditContentUpload(null); }} className="rounded-lg border border-white/20 px-3 py-1.5 text-xs">Cancel</button>
                             </div>
                           </div>
                         ) : (
@@ -647,7 +783,7 @@ export default function StaffModulesPage() {
                   <h4 className="text-sm font-semibold">Add Content</h4>
                   <div className="mt-3 flex flex-col gap-2.5">
                     <input value={newContentTitle} onChange={(e) => setNewContentTitle(e.target.value)} placeholder="Content title" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
-                    <select value={newContentType} onChange={(e) => { setNewContentType(e.target.value); if (!FILE_TYPES.includes(e.target.value)) { setContentDocFile(null); if (contentDocRef.current) contentDocRef.current.value = ""; } }} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
+                    <select value={newContentType} onChange={(e) => setNewContentType(e.target.value)} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-white/30">
                       {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                     {newContentType === "video" ? (
@@ -670,36 +806,19 @@ export default function StaffModulesPage() {
                         ) : null}
                       </div>
                     ) : (
-                      <div>
-                        <input value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} type="url" inputMode="url" disabled={!!contentDocFile} placeholder={FILE_TYPES.includes(newContentType) ? "Paste a link (https://…), or pick a file below" : "Content link (Google Drive, YouTube, or any URL)"} className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-40" />
-                        {FILE_TYPES.includes(newContentType) ? (
-                          <>
-                            <input
-                              ref={contentDocRef}
-                              type="file"
-                              accept={DOC_ACCEPT}
-                              onChange={(e) => {
-                                const f = e.target.files?.[0] ?? null;
-                                setContentDocFile(f);
-                                // Suggest the matching content type from the
-                                // file's extension (pdf/slides/doc/file).
-                                if (f) setNewContentType(typeForContentFile(f.name));
-                              }}
-                              className="mt-2.5 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm file:mr-3 file:rounded file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-white focus:outline-none focus:ring-1 focus:ring-white/30"
-                            />
-                            <p className="mt-1 text-[11px] text-white/40">
-                              {contentDocFile
-                                ? <>Attaching <span className="text-white/70">{contentDocFile.name}</span> — it uploads from your device, the link field is ignored.</>
-                                : "PDF, document, slides, spreadsheet, archive, image or audio (max 50MB) — or paste a link above."}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="mt-1 text-[11px] text-white/40">Paste a Google Drive, YouTube, or any public link. Leave blank for text/code content.</p>
-                        )}
-                      </div>
+                      <ContentUrlField
+                        moduleId={selectedModule.id}
+                        url={newContentUrl}
+                        onUrlChange={setNewContentUrl}
+                        upload={newContentUpload}
+                        onUploadChange={setNewContentUpload}
+                        onFileType={setNewContentType}
+                        placeholder="Paste a link (https://…), or pick a file with the 📎"
+                        hint="PDF, document, slides, spreadsheet, archive, image or audio (max 50MB) — the file type is detected automatically."
+                      />
                     )}
                     <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="Content body (for text/code)" className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm placeholder:text-white/30 resize-none focus:outline-none focus:ring-1 focus:ring-white/30" rows={4} />
-                    <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim() || (newContentType === "video" && !contentVideoFile)} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
+                    <button onClick={() => addContent(selectedModule.id)} disabled={saving || !newContentTitle.trim() || (newContentType === "video" && !contentVideoFile) || newContentUpload?.url === ""} className="w-full rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:opacity-50">
                       {saving ? (newContentType === "video" ? "Uploading…" : "Adding…") : "Add Content"}
                     </button>
                   </div>

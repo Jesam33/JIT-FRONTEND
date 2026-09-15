@@ -199,29 +199,59 @@ export default function OwnerTopbar({
                 Nothing yet. New students and staff will show up here.
               </p>
             ) : (
-              items.map((n) => (
-                <div
-                  key={n.id}
-                  className="flex items-start gap-3 border-b border-white/5 px-4 py-3 last:border-0 [html.light_&]:border-black/5"
-                >
-                  <span
-                    className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${
-                      n.type === "staff_added" ? "bg-site-secondary" : "bg-site-primary"
-                    }`}
+              items.map((n) => {
+                // Ended-cohort items are action items, not just activity: they
+                // link to the Certificates page where the cohort is reviewed,
+                // and stay in the bell until issued or dismissed there.
+                const isCohort = n.type === "cohort_ended";
+                const inner = (
+                  <>
+                    <span
+                      className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${
+                        n.type === "staff_added" ? "bg-site-secondary" : isCohort ? "bg-amber-500" : "bg-site-primary"
+                      }`}
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        {isCohort ? (
+                          <>
+                            <circle cx="12" cy="8" r="6" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" />
+                          </>
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        )}
+                      </svg>
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-white [html.light_&]:text-black">{n.title}</p>
+                      <p className="truncate text-xs text-white/60 [html.light_&]:text-black/60">{n.body}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] text-white/40 [html.light_&]:text-black/40">
+                      {timeAgo(n.at)}
+                    </span>
+                  </>
+                );
+                return isCohort ? (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => {
+                      setMenu("none");
+                      router.push("/lms/admin/certificates");
+                    }}
+                    className="flex w-full items-start gap-3 border-b border-white/5 px-4 py-3 text-left last:border-0 transition hover:bg-white/5 [html.light_&]:border-black/5 [html.light_&]:hover:bg-black/5"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white [html.light_&]:text-black">{n.title}</p>
-                    <p className="truncate text-xs text-white/60 [html.light_&]:text-black/60">{n.body}</p>
+                    {inner}
+                  </button>
+                ) : (
+                  <div
+                    key={n.id}
+                    className="flex items-start gap-3 border-b border-white/5 px-4 py-3 last:border-0 [html.light_&]:border-black/5"
+                  >
+                    {inner}
                   </div>
-                  <span className="shrink-0 text-[10px] text-white/40 [html.light_&]:text-black/40">
-                    {timeAgo(n.at)}
-                  </span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

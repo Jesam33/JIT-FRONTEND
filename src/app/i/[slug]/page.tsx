@@ -76,6 +76,7 @@ export default async function InstituteStorefrontPage({ params }: Props) {
       showHeroLogo={false}
       showAgentBanner={data.institute.show_agent_program ?? false}
       agentTenantSlug={slug}
+      shareUrl={`/i/${slug}`}
     />
   );
 }

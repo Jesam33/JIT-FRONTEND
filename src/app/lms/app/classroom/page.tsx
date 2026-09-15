@@ -23,6 +23,32 @@ type TimetableItem = {
   module_id?: number | null;
 };
 
+// A live class session survives a reload: the fact that one is open lives in
+// sessionStorage, which survives reloads (and phone app-switches) but dies
+// with the tab. It is cleared on a clean leave, so its presence on load means
+// the session was interrupted and is worth resuming.
+const LIVE_SESSION_KEY = "lms_live_session";
+
+function readLiveSession(): { id: number; classType: string; name: string } | null {
+  try {
+    const raw = sessionStorage.getItem(LIVE_SESSION_KEY);
+    if (!raw) return null;
+    const info = JSON.parse(raw) as { id?: number; classType?: string; name?: string };
+    if (!info?.id || !info?.classType) return null;
+    return { id: info.id, classType: info.classType, name: info.name ?? "" };
+  } catch {
+    return null;
+  }
+}
+
+function clearLiveSession() {
+  try {
+    sessionStorage.removeItem(LIVE_SESSION_KEY);
+  } catch {
+    /* storage unavailable — nothing to clear */
+  }
+}
+
 export default function StudentClassroomPage() {
   const [timetable, setTimetable] = useState<TimetableItem[]>([]);
   const [profile, setProfile] = useState<{ first_name?: string; last_name?: string; email?: string }>({});
@@ -229,11 +255,13 @@ export default function StudentClassroomPage() {
 
   // Single teardown path for leaving the embedded room (used by the Leave
   // button's clean hang-up, the iframe's own jitsi-left, and the fallback
-  // timer). Closes out attendance and clears the live-class pin.
+  // timer). Closes out attendance and clears the live-class pin. A DELIBERATE
+  // leave ends the resumable session too.
   const teardownEmbed = useCallback(() => {
     setIsClassLive(false);
     setIframeUrl(null);
     setLiveClassId(null);
+    clearLiveSession();
     const live = liveClassRef.current;
     if (live) closeOutAttendance(live.id, live.classType);
     liveClassRef.current = null;
@@ -264,6 +292,64 @@ export default function StudentClassroomPage() {
     return () => window.removeEventListener("message", handleMeetingMessage);
   }, [handleMeetingMessage]);
 
+  // Tab close / browser refresh / external navigation / phone app switch:
+  // pagehide is the last moment the page can still talk to the API, and a
+  // normal fetch would be cancelled as the page unloads — keepalive:true lets
+  // this one survive. BUT a reload does not end the class: the session marker
+  // in sessionStorage (which a reload keeps and a tab close destroys) says the
+  // student will resume, so the close-out is skipped and attendance keeps
+  // running from the original join. Only a session with no marker posts the
+  // close-out here; a genuinely closed tab is finalized by the server sweep.
+  useEffect(() => {
+    function onPageHide() {
+      const live = liveClassRef.current;
+      if (!live || attendanceClosedRef.current === live.id) return;
+      let resumable = false;
+      try {
+        resumable = sessionStorage.getItem(LIVE_SESSION_KEY) !== null;
+      } catch {
+        /* storage unavailable: treat as not resumable */
+      }
+      if (resumable) return;
+      attendanceClosedRef.current = live.id;
+      const token = getToken();
+      if (!token) return;
+      try {
+        fetch(STUDENT_API.classroomAttendanceLeave(live.id), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ class_type: live.classType }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        /* best-effort: the server sweep closes out whatever this misses */
+      }
+    }
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
+
+  // Navigating to another portal page (client-side route change) never fires
+  // pagehide — the SPA just unmounts this page. Like the reload case, this
+  // does NOT end the class when the session is resumable: the marker stays in
+  // sessionStorage and the student picks the call back up by returning to the
+  // classroom page (or reloading it). Only a session with no marker — one that
+  // wasn't opened through openLiveSession, i.e. something abnormal — closes
+  // out here. teardownEmbed already handles the deliberate-leave case.
+  useEffect(() => {
+    return () => {
+      const live = liveClassRef.current;
+      if (!live || attendanceClosedRef.current === live.id) return;
+      let resumable = false;
+      try {
+        resumable = sessionStorage.getItem(LIVE_SESSION_KEY) !== null;
+      } catch {
+        /* storage unavailable: close out, the session can't be resumed */
+      }
+      if (!resumable) closeOutAttendance(live.id, live.classType);
+    };
+  }, [closeOutAttendance]);
+
   // NOTE: the live session is deliberately NOT torn down when the scheduled end
   // time passes. A class ends when the teacher ends the meeting (the iframe
   // posts jitsi-left) or the student leaves, never on the clock.
@@ -290,20 +376,29 @@ export default function StudentClassroomPage() {
     const classType = activeClass?.class_type ?? "classroom";
     setJoinMessage("");
     setIsJoiningEmbeddedClass(true);
+    // The pre-join panel always closes after an attempt: on success the embed
+    // replaces it, on failure the message at the top of the page takes over.
+    await openLiveSession(classroomId, classType, displayName.trim() || studentName);
+    setShowPrejoin(false);
+    setIsJoiningEmbeddedClass(false);
+  }
 
+  // Open (or re-open) the embedded room for a class: mint a fresh JWT, mount
+  // the iframe, pin the class as live, and remember the session in
+  // sessionStorage so a reload can resume it. Shared by the pre-join "Join
+  // now" flow and the post-reload resume below.
+  async function openLiveSession(classroomId: number, classType: string, name: string): Promise<boolean> {
     try {
       const response = await apiFetch(STUDENT_API.classroomSdkSignature(classroomId), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ class_type: classType, display_name: displayName.trim() }),
+        body: JSON.stringify({ class_type: classType, display_name: name }),
       });
       const payload = (await response.json()) as Partial<MeetingTokenPayload> & { message?: string };
 
       if (!response.ok || !payload.jwt || !payload.room || !payload.domain || !payload.app_id) {
         setJoinMessage(payload.message ?? "Could not initialize the live class session.");
-        // Close the panel so the error message at the top of the page shows.
-        setShowPrejoin(false);
-        return;
+        return false;
       }
 
       const url = new URL("/jitsi-meeting.html", window.location.origin);
@@ -311,7 +406,7 @@ export default function StudentClassroomPage() {
       url.searchParams.set("appId", payload.app_id);
       url.searchParams.set("room", payload.room);
       url.searchParams.set("jwt", payload.jwt);
-      url.searchParams.set("userName", payload.user_name ?? studentName);
+      url.searchParams.set("userName", payload.user_name ?? name);
       // No subject/room label on the call: the iframe sets
       // hideConferenceSubject:true so the raw "jit-..." room name never shows.
 
@@ -321,15 +416,46 @@ export default function StudentClassroomPage() {
       liveClassRef.current = { id: classroomId, classType };
       setLiveClassId(classroomId);
       attendanceClosedRef.current = null;
-      setShowPrejoin(false);
       setIframeUrl(url.toString());
+
+      // Resumable-session marker: present until a clean leave clears it. On a
+      // reload the next page load reads it and picks the class back up; if the
+      // tab is closed instead, sessionStorage dies with it and the server-side
+      // sweep closes the attendance out.
+      try {
+        sessionStorage.setItem(LIVE_SESSION_KEY, JSON.stringify({ id: classroomId, classType, name }));
+      } catch {
+        /* storage unavailable: the session just won't survive a reload */
+      }
+      return true;
     } catch {
-      setShowPrejoin(false);
       setJoinMessage("Failed to start live session. Please try again.");
-    } finally {
-      setIsJoiningEmbeddedClass(false);
+      return false;
     }
   }
+
+  // Reload / app-switch resume: a live session that was interrupted (page
+  // reloaded, phone app switched away) is picked straight back up instead of
+  // dropping the student out of the class. Runs once after the timetable
+  // loads; only resumes while the class is still running — a class that has
+  // ended is history, so the marker is dropped and the server sweep finalizes
+  // its attendance.
+  const resumeAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (loading || resumeAttemptedRef.current) return;
+    const info = readLiveSession();
+    if (!info) return;
+    resumeAttemptedRef.current = true;
+
+    const cls = timetable.find((t) => (t.class_type ?? "classroom") === info.classType && t.id === info.id);
+    if (!cls || isClassEnded(cls.starts_at, cls.ends_at, Date.now())) {
+      clearLiveSession();
+      return;
+    }
+    setJoinMessage("Rejoining your live class...");
+    void openLiveSession(info.id, info.classType, info.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, timetable]);
 
   // Leaving asks the embedded call to hang up cleanly FIRST (so the video
   // bridge drops our endpoint right away and re-joining doesn't show a ghost
@@ -411,6 +537,8 @@ export default function StudentClassroomPage() {
                 </button>
                 <a
                   href={agentHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300 underline decoration-emerald-300 decoration-2 underline-offset-4 transition hover:text-emerald-200"
                 >
                   Share academy link to earn
@@ -452,6 +580,8 @@ export default function StudentClassroomPage() {
                 </button>
                 <a
                   href={agentHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-300 underline decoration-emerald-300 decoration-2 underline-offset-4 transition hover:text-emerald-200"
                 >
                   Share academy link to earn
@@ -614,6 +744,15 @@ export default function StudentClassroomPage() {
                 {isJoiningEmbeddedClass ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Joining...</span> : "Join now"}
               </button>
             </div>
+            {/* The attendance rule, stated at the moment of joining so it's
+                never a surprise afterwards: 70% of the class = present, any
+                shorter stay = partial. Mirrors the backend threshold exactly. */}
+            <p className="mt-4 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5 text-[11px] leading-relaxed text-white/60">
+              <span className="font-semibold text-white/80">Attendance:</span> stay for at least{" "}
+              <span className="font-semibold text-white/85">70% of the class</span> to be marked{" "}
+              <span className="font-semibold text-emerald-300">present</span>. Leaving earlier records{" "}
+              <span className="font-semibold text-amber-300">partial</span> attendance.
+            </p>
           </div>
         </div>
       ) : null}

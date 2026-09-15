@@ -71,6 +71,10 @@ export const OWNER_API = {
   certificates: api("/api/frontend/lms/owner/certificates"),
   issueCertificate: api("/api/frontend/lms/owner/certificates"),
   revokeCertificate: (id: string | number) => api(`/api/frontend/lms/owner/certificates/${id}`),
+  // Ended-cohort auto-issue: bulk-issue certificates to an ended cohort's
+  // students, or retire the cohort from the review panel without issuing.
+  issueCohortCertificates: api("/api/frontend/lms/owner/certificates/cohort"),
+  dismissCohortCertificates: (id: string | number) => api(`/api/frontend/lms/owner/certificates/cohort/${id}/dismiss`),
   notifications: api("/api/frontend/lms/owner/notifications"),
   // CEO's Forum: list upcoming/past platform-hosted sessions, and mint a
   // participant token to join in-portal (only inside the join window).
@@ -145,6 +149,9 @@ export const STUDENT_API = {
   profilePhoto: api("/api/frontend/lms/profile/photo"),
   certificates: api("/api/frontend/lms/certificates"),
   messages: api("/api/frontend/lms/messages"),
+  // Chat composer file picker (any allowed type): upload first, then send the
+  // returned url as attachment_url with the next message.
+  chatUpload: api("/api/frontend/lms/chats/upload"),
   chatBootstrap: api("/api/frontend/lms/chats/bootstrap"),
   chatGroupMessages: api("/api/frontend/lms/chats/group/messages"),
   chatGroupMentionable: api("/api/frontend/lms/chats/group/mentionable"),
@@ -173,6 +180,8 @@ export const STAFF_API = {
   deleteGroupMessage: (id: string | number) => api(`/api/frontend/lms/staff/chats/group/messages/${id}/delete`),
   chatGroupMentionable: api("/api/frontend/lms/staff/chats/group/mentionable"),
   chatDmMessages: api("/api/frontend/lms/staff/chats/dm/messages"),
+  // Staff twin of the student chat file upload (composer paperclip).
+  chatUpload: api("/api/frontend/lms/staff/chats/upload"),
   editDmMessage: (id: string | number) => api(`/api/frontend/lms/staff/chats/dm/messages/${id}`),
   deleteDmMessage: (id: string | number) => api(`/api/frontend/lms/staff/chats/dm/messages/${id}/delete`),
   reactMessage: (id: string | number) => api(`/api/frontend/lms/staff/chats/messages/${id}/react`),
@@ -181,6 +190,11 @@ export const STAFF_API = {
   chatDmMarkRead: api("/api/frontend/lms/staff/chats/dm/read"),
   tasks: api("/api/frontend/lms/staff/tasks"),
   task: (id: string | number) => api(`/api/frontend/lms/staff/tasks/${id}`),
+  // Task edit/delete, scoped server-side to the teacher's assigned courses.
+  taskUpdate: (id: string | number) => api(`/api/frontend/lms/staff/tasks/${id}`),
+  taskDelete: (id: string | number) => api(`/api/frontend/lms/staff/tasks/${id}`),
+  // Every submission across the teacher's tasks — the Submissions tab.
+  taskSubmissions: api("/api/frontend/lms/staff/task-submissions"),
   profile: api("/api/frontend/lms/staff/profile"),
   changePassword: api("/api/frontend/lms/staff/profile/password"),
   profilePhoto: api("/api/frontend/lms/staff/profile/photo"),
@@ -191,6 +205,9 @@ export const STAFF_API = {
   // material. Videos use videoUpload (Bunny Stream) instead.
   materialUpload: api("/api/frontend/lms/staff/materials/upload"),
   attendance: api("/api/frontend/lms/staff/attendance"),
+  // Students ranked by average graded-task score (tiebreaks: modules completed,
+  // then attendance). Optional ?course_id narrows it to one course.
+  leaderboard: api("/api/frontend/lms/staff/leaderboard"),
   certificates: api("/api/frontend/lms/staff/certificates"),
   announcements: api("/api/frontend/lms/staff/announcements"),
   announcement: (id: string | number) => api(`/api/frontend/lms/staff/announcements/${id}`),
@@ -212,6 +229,9 @@ export const STAFF_API = {
   courseModules: (id: string | number) => api(`/api/frontend/lms/staff/courses/${id}/modules`),
   modules: api("/api/frontend/lms/staff/modules"),
   module: (id: string | number) => api(`/api/frontend/lms/staff/modules/${id}`),
+  // One-click module zip (files + README of links/text/Bunny video links).
+  // Fetched as a blob — the auth header can't ride on a plain anchor href.
+  moduleDownload: (id: string | number) => api(`/api/frontend/lms/staff/modules/${id}/download`),
   moduleContents: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/contents`),
   // Non-video module-content file upload (PDF/document/slides) to the platform's
   // public disk; returns { url, path } which the modules page saves with the
@@ -235,6 +255,9 @@ export const STAFF_API = {
 export const STUDENT_MODULE_API = {
   modules: api("/api/frontend/lms/modules"),
   module: (id: string | number) => api(`/api/frontend/lms/modules/${id}`),
+  // One-click module zip (files + README of links/text/Bunny video links).
+  // Fetched as a blob — the auth header can't ride on a plain anchor href.
+  moduleDownload: (id: string | number) => api(`/api/frontend/lms/modules/${id}/download`),
   timetable: api("/api/frontend/lms/timetable"),
 };
 

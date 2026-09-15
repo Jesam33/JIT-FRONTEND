@@ -23,6 +23,7 @@ const groups: SidebarGroup[] = [
       { href: "/lms/staff/classroom", label: "Classroom" },
       { href: "/lms/staff/timetable", label: "Timetable" },
       { href: "/lms/staff/attendance", label: "Attendance" },
+      { href: "/lms/staff/leaderboard", label: "Leaderboard" },
     ],
   },
   {

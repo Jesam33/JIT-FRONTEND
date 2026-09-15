@@ -39,6 +39,7 @@ const typeIcons: Record<string, string> = {
   code: "💻",
   file: "📁",
   doc: "📄",
+  image: "🖼",
 };
 
 function renderContent(c: ModuleContent) {
@@ -67,6 +68,13 @@ function renderContent(c: ModuleContent) {
           ) : null}
         </div>
       ) : null;
+    case "image":
+      return c.content_url ? (
+        <a href={c.content_url} target="_blank" rel="noreferrer" className="block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={c.content_url} alt={c.title} className="max-h-[420px] max-w-full rounded-lg border border-white/15 object-contain" />
+        </a>
+      ) : null;
     case "slides":
     case "pdf":
     case "file":
@@ -92,6 +100,7 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const [module, setModule] = useState<Module | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   const token = typeof window !== "undefined" ? localStorage.getItem("lms_student_token") ?? "" : "";
 
@@ -102,6 +111,30 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
       .then((d) => { setModule(Array.isArray(d) ? null : d); setLoading(false); })
       .catch(() => setLoading(false));
   }, [token, id]);
+
+  // One-click module zip (files + README of links/text/Bunny videos). Fetched
+  // as a blob because the auth header can't ride on a plain anchor href.
+  async function downloadModule() {
+    if (!module || downloading) return;
+    setDownloading(true);
+    try {
+      const res = await apiFetch(STUDENT_MODULE_API.moduleDownload(module.id));
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${module.title.replace(/[^\w-]+/g, "-").toLowerCase() || "module"}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Silent failure keeps the page calm; the button just re-enables.
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -129,8 +162,24 @@ export default function ModuleDetailPage({ params }: { params: Promise<{ id: str
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
         </Link>
         <div className="pl-12">
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>{module.title}</h1>
-          {module.description ? <p className="mt-1 text-sm text-white/60">{module.description}</p> : null}
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)" }}>{module.title}</h1>
+              {module.description ? <p className="mt-1 text-sm text-white/60">{module.description}</p> : null}
+            </div>
+            <button
+              type="button"
+              onClick={downloadModule}
+              disabled={downloading || module.contents.length === 0}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:border-white/30 hover:bg-white/10 hover:text-white disabled:opacity-50"
+              title="Download this module's files as a zip (links and videos are listed in a README)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {downloading ? "Preparing…" : "Download module"}
+            </button>
+          </div>
         </div>
       </div>
 

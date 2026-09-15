@@ -13,8 +13,12 @@ function notificationHref(n: NotificationItem): string | null {
   if (n.reference_type === "group_chat") return "/lms/app/chats";
   if (n.reference_type === "dm_thread") return "/lms/app/chats";
   if (n.reference_type === "scheduled_class") return "/lms/app/classroom";
+  // Legacy course classrooms (staff-created live classes) land on the same
+  // classroom page, which lists both delivery types.
+  if (n.reference_type === "classroom") return "/lms/app/classroom";
   if (n.reference_type === "module") return n.reference_id ? `/lms/app/modules/${n.reference_id}` : "/lms/app/modules";
   if (n.reference_type === "course") return "/lms/app/modules";
+  if (n.reference_type === "certificate") return "/lms/app/certificates";
   return null;
 }
 

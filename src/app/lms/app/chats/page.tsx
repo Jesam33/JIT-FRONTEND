@@ -7,7 +7,7 @@ import { apiFetch, okJson } from "../../../../lib/fetch-with-timeout";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
-import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner } from "../../../../components/chat/chat-extras";
+import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner, ChatAttach, ChatAttachmentView, type ChatPendingAttachment } from "../../../../components/chat/chat-extras";
 import { toggleReactionLocal, applyReactionsToList, applyReactionBroadcast } from "../../../../lib/chat-reactions";
 
 function renderMentions(text: string, mentionClass = "font-bold text-site-primary") {
@@ -33,7 +33,9 @@ export default function StudentChatsPage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [chatTab, setChatTab] = useState<"track" | "dm">("track");
   const [chatBody, setChatBody] = useState("");
-  const [chatAttachmentUrl, setChatAttachmentUrl] = useState("");
+  // Staged composer attachment: the paperclip uploads the picked file and holds
+  // {url, name} until the message is sent (url "" = upload still in flight).
+  const [chatAttachment, setChatAttachment] = useState<ChatPendingAttachment>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [mentionableUsers, setMentionableUsers] = useState<MentionableUser[]>([]);
@@ -310,12 +312,14 @@ export default function StudentChatsPage() {
   };
 
   async function sendMessage() {
-    if (!chatBody.trim() && !chatAttachmentUrl.trim()) return;
+    // url === "" means an upload is still in flight; wait for it (or clear it).
+    if (chatAttachment && chatAttachment.url === "") return;
+    if (!chatBody.trim() && !chatAttachment?.url) return;
     const contentToSend = chatBody;
-    const attachmentToSend = chatAttachmentUrl;
+    const attachmentToSend = chatAttachment?.url ?? "";
     const replyToSend = replyingTo;
     setChatBody("");
-    setChatAttachmentUrl("");
+    setChatAttachment(null);
     setReplyingTo(null);
     setMentionQuery(null);
     setMentionIndex(-1);
@@ -472,7 +476,7 @@ export default function StudentChatsPage() {
                             </p>
                           ) : null}
                           {msg.attachment_url ? (
-                            <a href={msg.attachment_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-blue-400 underline">View attachment</a>
+                            <ChatAttachmentView tone="glass" url={msg.attachment_url} mine={isOwn} />
                           ) : null}
                         </>
                       )}
@@ -553,8 +557,8 @@ export default function StudentChatsPage() {
               if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
             }}
           />
-          <input value={chatAttachmentUrl} onChange={(e) => setChatAttachmentUrl(e.target.value)} placeholder="Attachment URL" className="w-40 rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm" />
-          <button onClick={sendMessage} disabled={sending || (!chatBody.trim() && !chatAttachmentUrl.trim())} className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50 hover:bg-white/90 transition">
+          <ChatAttach tone="glass" endpoint={STUDENT_API.chatUpload} fetcher={apiFetch} value={chatAttachment} onChange={setChatAttachment} disabled={sending} />
+          <button onClick={sendMessage} disabled={sending || (chatAttachment?.url === "") || (!chatBody.trim() && !chatAttachment?.url)} className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:opacity-50 hover:bg-white/90 transition">
             Send
           </button>
           </div>

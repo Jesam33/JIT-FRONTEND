@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { STAFF_API, STUDENT_API } from "../../lib/api";
-import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner } from "./chat-extras";
+import { apiFetch, apiFetchStaff } from "../../lib/fetch-with-timeout";
+import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner, ChatAttach, ChatAttachmentView, type ChatPendingAttachment } from "./chat-extras";
 
 type AnyObj = Record<string, any>;
 
@@ -192,19 +193,7 @@ function ChatBubble({ message, role, isMe, showAvatar, avatarUrl, senderName, at
           {messageObj?.reply_to ? <ReplyQuote tone="surface" reply={messageObj.reply_to} placement={isMe ? "own" : "other"} /> : null}
           {message ? <p>{renderMentions(message, isMe ? "font-bold text-white" : "font-bold text-site-primary")}</p> : null}
           {editedAt ? <span className="ml-1 text-[10px] italic opacity-60">(edited)</span> : null}
-          {attachmentUrl ? (
-            <a
-              href={attachmentUrl}
-              target="_blank"
-              rel="noreferrer"
-              className={`mt-1 inline-flex items-center gap-1.5 text-xs underline ${isMe ? "text-white/80" : "text-site-muted hover:text-site-text"}`}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-              </svg>
-              Attachment
-            </a>
-          ) : null}
+          {attachmentUrl ? <ChatAttachmentView tone="surface" url={attachmentUrl} mine={isMe} /> : null}
         </div>
         {onReply || onReact || (messageObj?.reactions && messageObj.reactions.length > 0) ? (
           <div className={`flex items-center gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}>
@@ -315,19 +304,22 @@ function ChannelList({ label, children }: { label: string; children: React.React
   );
 }
 
-function InputBar({ value, onChange, placeholder, onSend, sending, attachmentValue, onAttachmentChange, mentionableUsers, replyingTo, onCancelReply }: {
+function InputBar({ value, onChange, placeholder, onSend, sending, attachment, onAttachmentChange, attachEndpoint, attachFetcher, mentionableUsers, replyingTo, onCancelReply }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   onSend: () => void;
   sending: boolean;
-  attachmentValue?: string;
-  onAttachmentChange?: (v: string) => void;
+  // Composer attachment via the file picker (see ChatAttach): pending object,
+  // url "" while the upload is in flight.
+  attachment?: ChatPendingAttachment;
+  onAttachmentChange?: (v: ChatPendingAttachment) => void;
+  attachEndpoint?: string;
+  attachFetcher?: (url: string, options?: RequestInit) => Promise<Response>;
   mentionableUsers?: { id: number; name: string; username: string; role: string }[];
   replyingTo?: { id: number; name: string; content: string } | null;
   onCancelReply?: () => void;
 }) {
-  const [showAttach, setShowAttach] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -402,7 +394,8 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (value.trim()) onSend();
+      // Attachment-only sends are allowed; an in-flight upload (url "") waits.
+      if (value.trim() || attachment?.url) onSend();
     }
   };
 
@@ -441,24 +434,6 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
         </div>
       ) : null}
 
-      {onAttachmentChange && showAttach ? (
-        <div className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface px-4 py-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-site-muted">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-          </svg>
-          <input
-            value={attachmentValue ?? ""}
-            onChange={(e) => onAttachmentChange(e.target.value)}
-            placeholder="Paste attachment URL…"
-            className="flex-1 bg-transparent text-sm text-site-text outline-none placeholder:text-site-muted/50"
-          />
-          {attachmentValue ? (
-            <button type="button" onClick={() => onAttachmentChange("")} className="text-xs text-site-muted hover:text-site-text">
-              Clear
-            </button>
-          ) : null}
-        </div>
-      ) : null}
       <div className="flex gap-2">
         <input
           ref={inputRef}
@@ -468,26 +443,20 @@ function InputBar({ value, onChange, placeholder, onSend, sending, attachmentVal
           placeholder={placeholder}
           className="min-h-[44px] flex-1 rounded-xl border border-site-border bg-site-surface px-4 py-2.5 text-sm text-site-text outline-none transition focus:border-site-primary/50 placeholder:text-site-muted/50"
         />
-        {onAttachmentChange ? (
-          <button
-            type="button"
-            onClick={() => setShowAttach((v) => !v)}
-            className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl border transition ${
-              showAttach 
-                ? "border-site-primary bg-site-surface-soft text-site-primary" 
-                : "border-site-border bg-site-surface text-site-muted hover:border-site-border hover:bg-site-surface-soft hover:text-site-text"
-            }`}
-            title="Attach link"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
-            </svg>
-          </button>
+        {onAttachmentChange && attachEndpoint && attachFetcher ? (
+          <ChatAttach
+            tone="surface"
+            endpoint={attachEndpoint}
+            fetcher={attachFetcher}
+            value={attachment ?? null}
+            onChange={onAttachmentChange}
+            disabled={sending}
+          />
         ) : null}
         <button
           type="button"
           onClick={onSend}
-          disabled={sending || !value.trim()}
+          disabled={sending || attachment?.url === "" || (!value.trim() && !attachment?.url)}
           className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl bg-site-primary text-[#fff] transition hover:opacity-90 disabled:opacity-40"
         >
           {sending ? (
@@ -518,8 +487,8 @@ export default function ChatLayout(props: AnyObj) {
       dmMessages,
       chatBody,
       setChatBody,
-      chatAttachmentUrl,
-      setChatAttachmentUrl,
+      chatAttachment,
+      setChatAttachment,
       sendMessage,
       sending,
       mentionableUsers,
@@ -634,8 +603,10 @@ export default function ChatLayout(props: AnyObj) {
               placeholder="Write a message…"
               onSend={sendMessage}
               sending={sending}
-              attachmentValue={chatAttachmentUrl}
-              onAttachmentChange={setChatAttachmentUrl}
+              attachment={chatAttachment}
+              onAttachmentChange={setChatAttachment}
+              attachEndpoint={STUDENT_API.chatUpload}
+              attachFetcher={apiFetch}
               mentionableUsers={chatTab === "track" ? mentionableUsers : undefined}
             />
           </div>
@@ -786,8 +757,10 @@ export default function ChatLayout(props: AnyObj) {
                 placeholder="Reply to student…"
                 onSend={sendReply}
                 sending={sending}
-                attachmentValue={messageAttachment}
+                attachment={messageAttachment}
                 onAttachmentChange={setMessageAttachment}
+                attachEndpoint={STAFF_API.chatUpload}
+                attachFetcher={apiFetchStaff}
                 replyingTo={replyingTo}
                 onCancelReply={onCancelReply}
               />
