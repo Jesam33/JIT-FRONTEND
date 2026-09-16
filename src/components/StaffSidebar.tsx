@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { STAFF_API } from "@/lib/api";
-import { apiFetchStaff } from "@/lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffAuth, getStaffToken } from "@/lib/fetch-with-timeout";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
 
@@ -191,7 +191,7 @@ export default function StaffSidebar() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   useEffect(() => {
-    const token = localStorage.getItem("lms_staff_token") ?? "";
+    const token = getStaffToken();
     if (!token) return;
     apiFetchStaff(STAFF_API.me)
       .then((r) => r.json())
@@ -259,6 +259,17 @@ export default function StaffSidebar() {
     : "??";
 
   const handleLogout = () => {
+    // Which token is actually in play: an academy owner reaches the staff pages
+    // too (full parity), signed in with the OWNER token. Signing them out of the
+    // staff token would be a no-op and drop them on the staff login they have no
+    // account for, so end the owner session and send them to the owner login.
+    const { portal } = getStaffAuth();
+    if (portal === "owner") {
+      localStorage.removeItem("lms_owner_token");
+      router.push(tenantLoginPath("owner"));
+      return;
+    }
+
     localStorage.removeItem("lms_staff_token");
     // With saved accounts on this browser (and the picker's own checkbox not
     // unchecked), land on the account picker so switching users is one tap.

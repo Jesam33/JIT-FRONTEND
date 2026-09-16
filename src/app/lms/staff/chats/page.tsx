@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import ChatLayout from "../../../../components/chat/ChatLayout";
 import { STAFF_API } from "../../../../lib/api";
 import { getPusher, disconnectPusher } from "../../../../lib/reverb-client";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 import { ReactionChips, MessageToolbar, ReplyQuote, ReplyingBanner, ChatAttach, ChatAttachmentView, type ChatPendingAttachment } from "../../../../components/chat/chat-extras";
 import { toggleReactionLocal, applyReactionsToList, applyReactionBroadcast } from "../../../../lib/chat-reactions";
 import type { ChatReaction, ChatReplyPreview } from "../../../../lib/lms-types";
@@ -67,10 +67,24 @@ type DmThread = {
   messages: DmMessage[];
 };
 
+// A group chat belongs to exactly ONE cohort, so an actor with more than one
+// (an academy owner holds every cohort in the academy) sees one conversation at
+// a time and switches with the picker. Anything but the first cohort has to be
+// named explicitly — the backend defaults to the actor's lowest-id cohort, which
+// is what a single-cohort staffer always gets.
+type Cohort = {
+  id: number;
+  name?: string | null;
+  course?: { title?: string | null } | null;
+};
+
 export default function StaffChatsPage() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   const [tab, setTab] = useState<"group" | "dm">("group");
+
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [activeTrackId, setActiveTrackId] = useState<number | null>(null);
 
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [groupBody, setGroupBody] = useState("");
@@ -156,7 +170,11 @@ export default function StaffChatsPage() {
   const loadGroupMessages = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await apiFetchStaff(STAFF_API.chatGroupMessages, { cache: "no-store" });
+      // Which cohort's conversation to read. No pick yet (the common single-
+      // cohort staffer) sends nothing and the backend resolves the actor's first
+      // — the same cohort a reply would land in.
+      const qs = activeTrackId ? `?track_id=${activeTrackId}` : "";
+      const res = await apiFetchStaff(STAFF_API.chatGroupMessages + qs, { cache: "no-store" });
       const data = await res.json();
       if (Array.isArray(data)) setGroupMessages(data);
       // Mark both group and DM as read when entering the chats page
@@ -165,7 +183,7 @@ export default function StaffChatsPage() {
         apiFetchStaff(STAFF_API.chatDmMarkRead, { method: "POST" }),
       ]).then(() => window.dispatchEvent(new CustomEvent("opencode:chat-read"))).catch(() => {});
     } catch {}
-  }, [token]);
+  }, [token, activeTrackId]);
 
   const loadThreads = useCallback(async () => {
     if (!token) return;
@@ -178,20 +196,39 @@ export default function StaffChatsPage() {
     } catch {}
   }, [token, activeThreadId]);
 
-  // Initial data load
+  // Cohorts + profile + DM threads: once per session.
   useEffect(() => {
     if (!token) return;
-    loadGroupMessages();
     loadThreads();
+    apiFetchStaff(STAFF_API.assignedTracks)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!Array.isArray(d)) return;
+        setCohorts(d);
+        // Only pin a cohort when there is a choice to make. A single-cohort
+        // staffer keeps sending no track_id, i.e. exactly the request they made
+        // before this picker existed, and the backend resolves the one cohort
+        // they have.
+        if (d.length > 1) setActiveTrackId((prev) => prev ?? d[0].id);
+      })
+      .catch(() => {});
     apiFetchStaff(STAFF_API.profile)
       .then((r) => r.json())
       .then((d) => { if (d) setStaffProfile(d); })
       .catch(() => {});
-    apiFetchStaff(STAFF_API.chatGroupMentionable)
+  }, [token, loadThreads]);
+
+  // The group conversation + its @mention roster, re-read when the cohort
+  // changes so the roster always matches the conversation on screen.
+  useEffect(() => {
+    if (!token) return;
+    loadGroupMessages();
+    const qs = activeTrackId ? `?track_id=${activeTrackId}` : "";
+    apiFetchStaff(STAFF_API.chatGroupMentionable + qs)
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d)) setMentionableUsers(d); })
       .catch(() => {});
-  }, [token, loadGroupMessages, loadThreads]);
+  }, [token, activeTrackId, loadGroupMessages]);
 
   // Subscribe to group chat channels when new chat_ids appear in state
   useEffect(() => {
@@ -411,7 +448,7 @@ export default function StaffChatsPage() {
       const res = await apiFetchStaff(STAFF_API.chatGroupMessages, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: bodyToSend, attachment_url: attachmentToSend || null, reply_to_id: replyToSend?.id ?? null }),
+        body: JSON.stringify({ content: bodyToSend, attachment_url: attachmentToSend || null, reply_to_id: replyToSend?.id ?? null, track_id: activeTrackId ?? undefined }),
       });
       if (res.ok) {
         const msg = await res.json();
@@ -478,6 +515,33 @@ export default function StaffChatsPage() {
           Refresh
         </button>
       </div>
+
+      {tab === "group" && cohorts.length > 1 ? (
+        // Which cohort's group chat is on screen. Only rendered when there is a
+        // choice: a single-cohort staffer (and a solo academy) sees the plain
+        // chat they always had, with no empty control clutter.
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <label htmlFor="group-cohort" className="text-xs font-medium uppercase tracking-wide text-white/45">
+            Cohort
+          </label>
+          <select
+            id="group-cohort"
+            value={activeTrackId ?? ""}
+            onChange={(e) => {
+              setActiveTrackId(Number(e.target.value));
+              // A reply points at a message in the conversation we're leaving.
+              setReplyingToGroup(null);
+            }}
+            className="min-w-[240px] rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+          >
+            {cohorts.map((c) => (
+              <option key={c.id} value={c.id} className="bg-[#0b0b0b]">
+                {[c.name ?? `Cohort #${c.id}`, c.course?.title].filter(Boolean).join(" · ")}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
       {tab === "group" ? (
         <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">

@@ -130,6 +130,12 @@ export type AttendanceItem = {
   starts_at: string | null;
   status: "present" | "late" | "partial" | "absent" | "made_up";
   total_seconds: number;
+  // "Stayed / lasted": minutes the student was actually in the room against the
+  // minutes the class was scheduled to run. Both derived server-side from the
+  // same rule that produced `status` (App\Support\AttendanceDuration), so the
+  // figure shown and the badge can never disagree.
+  attended_minutes?: number;
+  duration_minutes?: number;
   first_joined_at: string | null;
   calculated_at: string | null;
 };

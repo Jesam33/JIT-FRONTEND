@@ -87,8 +87,6 @@ export default function AgentApplyPage() {
     phone: "",
     home_address: "",
     qualification: "",
-    target_students: "",
-    experience: "",
     courses_to_promote: "",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -117,8 +115,6 @@ export default function AgentApplyPage() {
           home_address: form.home_address,
           qualification: form.qualification,
           custom_answers: {
-            target_students: form.target_students,
-            experience: form.experience,
             courses_to_promote: form.courses_to_promote,
           },
         }),
@@ -228,7 +224,7 @@ export default function AgentApplyPage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-site-text text-sm">Promotional Strategy</h4>
-                  <p className="text-xs text-site-muted">Target audience, experience, and targeted courses.</p>
+                  <p className="text-xs text-site-muted">Pick the courses you want to promote.</p>
                 </div>
               </div>
             </div>
@@ -319,31 +315,7 @@ export default function AgentApplyPage() {
                 ) : (
                   <div className="space-y-5">
                     <h3 className="text-lg font-bold text-site-text" style={{ fontFamily: "var(--font-display)" }}>Promotional Details</h3>
-                    <p className="text-xs text-site-muted">Tell us more about your target audience and promotion strategies.</p>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-site-muted uppercase tracking-wider">Where do you plan to find students? *</label>
-                      <textarea
-                        value={form.target_students}
-                        onChange={(e) => update("target_students", e.target.value)}
-                        required
-                        rows={3}
-                        placeholder="e.g. Social media networks, physical events, local high schools, online tech communities..."
-                        className="w-full rounded-xl border border-site-border bg-site-surface-soft px-4 py-3.5 text-sm text-site-text placeholder:text-site-muted/50 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition duration-200 resize-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-site-muted uppercase tracking-wider">What is your experience in referral marketing? *</label>
-                      <textarea
-                        value={form.experience}
-                        onChange={(e) => update("experience", e.target.value)}
-                        required
-                        rows={3}
-                        placeholder="Briefly state your background in marketing, admission facilitation, or direct sales..."
-                        className="w-full rounded-xl border border-site-border bg-site-surface-soft px-4 py-3.5 text-sm text-site-text placeholder:text-site-muted/50 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition duration-200 resize-none"
-                      />
-                    </div>
+                    <p className="text-xs text-site-muted">Choose the courses you will be promoting.</p>
 
                     <div className="space-y-1.5">
                       <label className="block text-xs font-semibold text-site-muted uppercase tracking-wider">Which courses will you focus on promoting? *</label>

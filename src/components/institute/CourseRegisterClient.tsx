@@ -139,12 +139,12 @@ export default function CourseRegisterClient({
         return;
       }
 
-      if (course.price <= 0) {
-        setStep("done");
-        setMessage(regData?.message ?? "Registration complete!");
-        return;
-      }
-
+      // Always hand the registration to the payment endpoint — even for a FREE
+      // course. The backend's free path (handleZeroPayment) is what approves
+      // the registration, creates the student account and emails the setup
+      // link; skipping it used to leave free registrations stuck at "pending"
+      // with the student never receiving anything. For a free course it
+      // responds with a success message and NO authorization_url.
       const payResponse = await fetch(PUBLIC_API.paystackInitialize, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...tenantHeaders() },
@@ -153,8 +153,16 @@ export default function CourseRegisterClient({
 
       const payData = await payResponse.json();
 
-      if (!payResponse.ok || !payData.authorization_url) {
-        setMessage(payData?.message ?? "Could not initialize payment.");
+      if (!payResponse.ok) {
+        setMessage(payData?.message ?? "Could not complete registration.");
+        return;
+      }
+
+      // Free course: no payment URL comes back, the registration is already
+      // complete on the server — show the backend's success message.
+      if (!payData.authorization_url) {
+        setStep("done");
+        setMessage(payData?.message ?? regData?.message ?? "Registration complete!");
         return;
       }
 

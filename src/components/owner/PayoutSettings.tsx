@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
 import { getOwnerToken, ownerAuthHeaders, readOwnerBranding } from "@/lib/owner-client";
@@ -44,7 +44,19 @@ type PaymentSettings = {
 const inputClass =
   "w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition focus:border-white/30 focus:bg-white/10";
 
-export default function PayoutSettings() {
+export default function PayoutSettings({
+  onStatus,
+  heading,
+}: {
+  // Called after every load/resave with whether a payout account is linked. The
+  // signup onboarding step (/lms/admin/payment-setup) uses it to reveal its
+  // "continue to dashboard" action the moment linking succeeds, without a second
+  // fetch of the same endpoint.
+  onStatus?: (configured: boolean, gatewayReady: boolean) => void;
+  // Optional stand-in for the intro paragraph, so the onboarding step can explain
+  // why the owner is here instead of the profile-page wording.
+  heading?: React.ReactNode;
+} = {}) {
   const router = useRouter();
 
   const [data, setData] = useState<PaymentSettings | null>(null);
@@ -73,6 +85,14 @@ export default function PayoutSettings() {
   const [resolving, setResolving] = useState(false);
   const [resolveError, setResolveError] = useState("");
 
+  // Held in a ref (not a dep) so `load` stays identity-stable: a caller passing an
+  // inline arrow would otherwise re-create `load` on every render, which re-fires
+  // the load effect below and re-fetches on a loop.
+  const onStatusRef = useRef(onStatus);
+  useEffect(() => {
+    onStatusRef.current = onStatus;
+  }, [onStatus]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -88,6 +108,7 @@ export default function PayoutSettings() {
         setLastName(json.payment.last_name ?? "");
         setBankCode(json.payment.bank_code ?? "");
         setAgentRate(String(json.agent_commission_percent ?? ""));
+        onStatusRef.current?.(json.payment.configured, json.gateway_ready);
       } else {
         setMsg({ kind: "err", text: `Could not load payment settings (HTTP ${res.status}).` });
       }
@@ -281,12 +302,14 @@ export default function PayoutSettings() {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-2xl text-sm text-site-muted">
-        Link your {label}&apos;s own bank so course fees paid by students settle to{" "}
-        <span className="text-white">your account</span>, not the platform. The applicable platform
-        fee is deducted from each eligible successful course sale:{" "}
-        <span className="text-white">{commission}%</span> on your current plan.
-      </p>
+      {heading ?? (
+        <p className="max-w-2xl text-sm text-site-muted">
+          Link your {label}&apos;s own bank so course fees paid by students settle to{" "}
+          <span className="text-white">your account</span>, not the platform. The applicable platform
+          fee is deducted from each eligible successful course sale:{" "}
+          <span className="text-white">{commission}%</span> on your current plan.
+        </p>
+      )}
 
       {msg && (
         <div

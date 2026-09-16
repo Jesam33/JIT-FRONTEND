@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type Course = { id: number; title: string; description?: string };
 
@@ -10,7 +10,7 @@ export default function StaffCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   useEffect(() => {
     if (!token) return;

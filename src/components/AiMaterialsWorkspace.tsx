@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API, STAFF_API } from "@/lib/api";
-import { apiFetchStaff } from "@/lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "@/lib/fetch-with-timeout";
 import { ownerAuthHeaders, getOwnerToken, maybeUpgrade } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { useToast } from "@/components/ToastProvider";
@@ -228,7 +228,9 @@ export default function AiMaterialsWorkspace({ variant }: { variant: AiVariant }
   }, [saveCourseId, loadModules]);
 
   useEffect(() => {
-    const hasToken = isOwner ? getOwnerToken() : localStorage.getItem("lms_staff_token");
+    // The staff variant also runs for the academy owner (staff parity), so it
+    // resolves the staff token with the owner fallback built in.
+    const hasToken = isOwner ? getOwnerToken() : getStaffToken();
     if (!hasToken) {
       config.sessionExpired();
       return;

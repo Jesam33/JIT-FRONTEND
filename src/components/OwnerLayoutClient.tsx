@@ -39,6 +39,12 @@ export default function OwnerLayoutClient({
   // billing (kept reachable so the owner can renew). Stays null while the freeze
   // feature is deployed dark, so nothing changes until it is switched on.
   const [frozen, setFrozen] = useState<FrozenInfo | null>(null);
+  // Set when the academy has no settlement bank linked yet. The server decides
+  // (Tenant::requiresPayoutSetup) and already exempts the platform's own academy
+  // and any deployment without live Paystack keys, so this is only ever true when
+  // the owner genuinely can and must act. While true, every owner page forwards
+  // to the payment step — the one screen that clears it.
+  const [billingRequired, setBillingRequired] = useState(false);
 
   // The customization page broadcasts saved branding so the shell (topbar logo,
   // colors, font) updates live without a reload, and we persist it to the
@@ -108,6 +114,7 @@ export default function OwnerLayoutClient({
       setFrozen(null);
       if (!r.ok) return;
       const j = await r.json();
+      setBillingRequired(!!j?.billing_required);
       setIdentity({
         name: j?.tenant?.name ?? null,
         slug: j?.tenant?.slug ?? null,
@@ -141,6 +148,17 @@ export default function OwnerLayoutClient({
     if (isPublic) return;
     loadIdentity();
   }, [isPublic, loadIdentity]);
+
+  // Compulsory payout step. Any owner page (the dashboard included) forwards to
+  // the payment screen while the academy has no linked settlement bank, so the
+  // step cannot be skipped by navigating around it. The payment screen itself is
+  // exempt, which is what stops this looping. A redirect rather than a content
+  // swap, so the flash-free shell behaviour is unchanged.
+  const onPaymentSetup = pathname.startsWith("/lms/admin/payment-setup");
+  useEffect(() => {
+    if (isPublic || onPaymentSetup || !billingRequired) return;
+    router.replace("/lms/admin/payment-setup");
+  }, [isPublic, onPaymentSetup, billingRequired, router]);
 
   // Refetch identity when a page signals the plan/identity changed. The
   // billing/verify page renders INSIDE this shell, so a client-side "Back to

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 import { isClassEnded } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 
@@ -52,7 +52,7 @@ const emptyForm = {
 };
 
 export default function StaffClassroomPage() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff, okJson } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, okJson, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type Profile = {
   id: number;
@@ -21,7 +21,7 @@ const tabs: { key: Tab; label: string }[] = [
 ];
 
 export default function StaffProfilePage() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("basic-info");

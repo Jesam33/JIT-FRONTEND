@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type Track = { id: number; name: string; instructor_id?: number | null };
 
@@ -10,7 +10,7 @@ export default function StaffTracksPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   useEffect(() => {
     if (!token) return;

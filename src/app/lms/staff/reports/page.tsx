@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff, okJson } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, okJson, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type ReportsData = {
   stats: {
@@ -21,7 +21,7 @@ export default function StaffReportsPage() {
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   useEffect(() => {
     if (!token) return;

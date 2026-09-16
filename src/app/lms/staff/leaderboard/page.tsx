@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff, okJson } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, okJson, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type LeaderboardRow = {
   student_id: number;
@@ -44,7 +44,7 @@ export default function StaffLeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   const load = useCallback(async () => {
     if (!token) return;

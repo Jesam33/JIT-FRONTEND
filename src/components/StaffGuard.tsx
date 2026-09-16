@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../lib/api";
-import { apiFetchStaff } from "../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../lib/fetch-with-timeout";
 import { tenantLoginPath, setTenantCookie, pinTenantFromLocation } from "../lib/tenant-client";
 
 const PUBLIC_PATHS = [
@@ -27,7 +27,7 @@ export default function StaffGuard({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    const token = localStorage.getItem("lms_staff_token") ?? "";
+    const token = getStaffToken();
 
     if (!token) {
       // Cold tap on an emailed staff deep link: pin the institute from the

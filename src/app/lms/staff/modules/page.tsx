@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { STAFF_API, api } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
 import { useToast } from "../../../../components/ToastProvider";
 import { uploadToBunny, type BunnyUploadSession } from "../../../../lib/bunny-upload";
@@ -214,7 +214,7 @@ function ContentUrlField({
 }
 
 export default function StaffModulesPage() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   const [modules, setModules] = useState<Module[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);

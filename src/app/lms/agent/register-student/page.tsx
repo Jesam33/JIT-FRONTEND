@@ -69,14 +69,11 @@ export default function AgentRegisterStudentPage() {
         return;
       }
 
-      const coursePrice = regData.course?.price ?? 0;
-
-      if (coursePrice <= 0) {
-        setStep("done");
-        setMessage(regData?.message ?? "Registration complete!");
-        return;
-      }
-
+      // Always hand the registration to the payment endpoint — even for a FREE
+      // course. The backend's free path is what approves the registration,
+      // creates the student account and emails the setup link; skipping it
+      // left free registrations stuck at "pending" forever. Free responds
+      // with a success message and NO authorization_url.
       const payRes = await fetchWithTimeout(PUBLIC_API.paystackInitialize, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -84,8 +81,16 @@ export default function AgentRegisterStudentPage() {
       });
       const payData = await payRes.json();
 
-      if (!payRes.ok || !payData.authorization_url) {
-        setMessage(payData?.message ?? "Could not initialize payment.");
+      if (!payRes.ok) {
+        setMessage(payData?.message ?? "Could not complete registration.");
+        return;
+      }
+
+      // Free course: no payment URL comes back, the registration is already
+      // complete on the server — show the backend's success message.
+      if (!payData.authorization_url) {
+        setStep("done");
+        setMessage(payData?.message ?? regData?.message ?? "Registration complete!");
         return;
       }
 

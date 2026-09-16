@@ -68,7 +68,7 @@ export default function BecomeAnAgentPage() {
           <div className="rounded-2xl border border-site-border bg-site-surface-soft p-6 text-left">
             <div className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white" style={{ backgroundColor: "var(--color-primary)" }}>1</div>
             <h3 className="mt-4 font-semibold">Apply</h3>
-            <p className="mt-2 text-sm text-site-text/60">Fill out your application. Tell us about your experience and which courses you want to promote.</p>
+            <p className="mt-2 text-sm text-site-text/60">Fill out your application and pick the courses you want to promote.</p>
           </div>
           <div className="rounded-2xl border border-site-border bg-site-surface-soft p-6 text-left">
             <div className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white" style={{ backgroundColor: "var(--color-primary)" }}>2</div>

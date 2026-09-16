@@ -54,6 +54,31 @@ const groups: SidebarGroup[] = [
     items: [{ href: "/lms/admin/ai-materials", label: "Create with AI", badge: "Pro", gatedFeature: "ai_materials" }],
   },
   {
+    // The owner's Teaching area: the staff portal's own features (modules,
+    // materials, tasks, attendance, chats…), re-implemented inside the admin
+    // portal at /lms/admin/teaching/* so the owner never has to leave it. The
+    // backend accepts the owner token on every staff endpoint and scopes it to
+    // the WHOLE academy (BaseLmsController::staffActor + actorCourseIds), so
+    // these pages cover every course and cohort rather than one instructor's.
+    label: "Teaching",
+    items: [
+      { href: "/lms/admin/teaching/app", label: "Teaching dashboard" },
+      { href: "/lms/admin/teaching/modules", label: "Modules" },
+      { href: "/lms/admin/teaching/materials", label: "Materials" },
+      { href: "/lms/admin/teaching/tasks", label: "Tasks" },
+      { href: "/lms/admin/teaching/classroom", label: "Classroom" },
+      { href: "/lms/admin/teaching/timetable", label: "Timetable" },
+      { href: "/lms/admin/teaching/attendance", label: "Attendance" },
+      { href: "/lms/admin/teaching/leaderboard", label: "Leaderboard" },
+      { href: "/lms/admin/teaching/reports", label: "Reports" },
+      // Chat is a paid-plan feature and its endpoints 402 on a plan without it
+      // (EnsureChatEnabled), so it carries the badge like Agents does.
+      { href: "/lms/admin/teaching/chats", label: "Chats", badge: "Basic", gatedFeature: "chat" },
+      { href: "/lms/admin/teaching/notifications", label: "Notifications" },
+      { href: "/lms/admin/teaching/announcements", label: "Announcements" },
+    ],
+  },
+  {
     label: "Staff operations",
     items: [
       { href: "/lms/admin/staff", label: "Staff Accounts" },

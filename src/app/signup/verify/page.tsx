@@ -93,7 +93,14 @@ function PageContent() {
               {data?.front_door && (
                 <div className="mt-6 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left">
                   <div className="text-xs uppercase tracking-wide text-site-muted">Your Online Academy address</div>
-                  <div className="truncate text-sm text-white">{data.front_door}</div>
+                  <a
+                    href={data.front_door}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-0.5 block truncate text-sm text-white underline decoration-white/30 underline-offset-4 transition hover:decoration-white"
+                  >
+                    {data.front_door}
+                  </a>
                 </div>
               )}
 

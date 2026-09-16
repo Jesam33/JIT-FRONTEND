@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 import { uploadToBunny, type BunnyUploadSession } from "../../../../lib/bunny-upload";
 
 type Material = {
@@ -58,7 +58,7 @@ export default function StaffMaterialsPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const docRef = useRef<HTMLInputElement | null>(null);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
   const isVideo = type === "video";
   const isLink = type === "link";
 

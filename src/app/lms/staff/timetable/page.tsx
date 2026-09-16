@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
 import CalendarTimetable from "../../../../components/CalendarTimetable";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 import ConfirmDialog from "../../../../components/ConfirmDialog";
 
 type ScheduledClass = {
@@ -25,7 +25,7 @@ type ScheduledClass = {
 };
 
 export default function StaffTimetablePage() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
   const [classes, setClasses] = useState<ScheduledClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState<number | null>(null);

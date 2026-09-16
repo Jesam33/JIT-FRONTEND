@@ -81,7 +81,11 @@ function SetupInner() {
         return;
       }
       setOwnerToken(json.token);
-      router.push("/lms/admin");
+      // Not the dashboard: the next screen is the compulsory payout step, so the
+      // owner links where their course fees settle before they ever see the
+      // portal. The shell gate (OwnerLayoutClient) forwards them here from any
+      // owner page until it's done, so this push is the first of the two paths in.
+      router.push("/lms/admin/payment-setup");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -110,7 +114,10 @@ function SetupInner() {
         <div className="rounded-2xl border border-site-border bg-site-surface p-7 shadow-sm sm:p-8">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-site-text">Set up your owner account</h1>
-            <p className="mt-1.5 text-sm text-site-muted">Choose a password to finish creating your Online Academy.</p>
+            <p className="mt-1.5 text-sm text-site-muted">
+              Choose a password to finish creating your Online Academy. You&apos;ll set up payments
+              next.
+            </p>
           </div>
 
           {!token && <p className="text-sm text-site-muted">No setup token provided.</p>}

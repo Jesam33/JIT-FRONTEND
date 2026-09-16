@@ -541,13 +541,24 @@ export default function OwnerCoursesPage() {
             placeholder="Description: what students will learn (optional)"
             className={inputClass}
           />
-          <textarea
-            value={form.requirements}
-            onChange={(e) => setField("requirements", e.target.value)}
-            rows={2}
-            placeholder="Requirements / prerequisites (optional)"
-            className={inputClass}
-          />
+          {/* One requirement per line. Newlines are preserved on the storefront
+              (whitespace-pre-line), so "a very good laptop" then Enter then
+              "a very good internet connection" renders as two lines. */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+              Requirements / prerequisites
+            </label>
+            <textarea
+              value={form.requirements}
+              onChange={(e) => setField("requirements", e.target.value)}
+              rows={4}
+              placeholder={"One requirement per line, e.g.\nA very good laptop\nA very good internet connection"}
+              className={`${inputClass} resize-y leading-6`}
+            />
+            <p className="mt-1.5 text-xs text-white/45">
+              Press Enter after each requirement. Each line is shown on its own line to students.
+            </p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">

@@ -35,6 +35,9 @@ type BillingStatus = {
   plan: string;
   subscription_status: string;
   current_period_end: string | null;
+  // A paid plan the owner already paid for is committed until its period ends:
+  // the Free card is locked until `until`, then Free can be selected.
+  downgrade_lock?: { plan: string; until: string } | null;
   subscription?: Subscription;
   plan_summary?: PlanSummary;
   plans: Plan[];
@@ -300,7 +303,14 @@ export default function BillingPage() {
                 const isCurrent = plan.slug === currentPlan;
                 const isContact = isContactSalesPlan(plan);
                 const isPaid = !isContact && (plan.price ?? 0) > 0;
-                const disabled = isCurrent || (isPaid && !status.billing_configured) || busyPlan !== null;
+                // A paid plan the owner already paid for is committed for its
+                // period: the Free card is locked until that period ends, and the
+                // backend refuses the switch outright (422) if it's forced.
+                const isLocked = plan.slug === "free" && !!status.downgrade_lock;
+                const disabled = isCurrent || isLocked || (isPaid && !status.billing_configured) || busyPlan !== null;
+                const lockDate = status.downgrade_lock?.until
+                  ? new Date(status.downgrade_lock.until).toLocaleDateString()
+                  : null;
                 return (
                   <div
                     key={plan.slug}
@@ -314,6 +324,10 @@ export default function BillingPage() {
                     {isCurrent ? (
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[--color-primary] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg">
                         Your plan
+                      </span>
+                    ) : isLocked ? (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white/90 shadow-lg">
+                        {lockDate ? `Available ${lockDate}` : "Not yet available"}
                       </span>
                     ) : plan.slug === "basic" ? (
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white/90">
@@ -334,22 +348,32 @@ export default function BillingPage() {
                         {isCurrent ? "Current plan" : "Contact sales"}
                       </a>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => choose(plan)}
-                        disabled={disabled}
-                        className={`mt-auto rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
-                          isCurrent ? "border border-white/20 text-white" : "bg-white text-black hover:brightness-90"
-                        }`}
-                      >
-                        {isCurrent
-                          ? "Current plan"
-                          : busyPlan === plan.slug
-                            ? "Starting…"
-                            : isPaid
-                              ? `Upgrade to ${plan.name}`
-                              : `Switch to ${plan.name}`}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => choose(plan)}
+                          disabled={disabled}
+                          className={`mt-auto rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
+                            isCurrent ? "border border-white/20 text-white" : "bg-white text-black hover:brightness-90"
+                          }`}
+                        >
+                          {isCurrent
+                            ? "Current plan"
+                            : busyPlan === plan.slug
+                              ? "Starting…"
+                              : isLocked
+                                ? "Locked until period ends"
+                                : isPaid
+                                  ? `Upgrade to ${plan.name}`
+                                  : `Switch to ${plan.name}`}
+                        </button>
+                        {isLocked ? (
+                          <p className="mt-2 text-center text-[11px] leading-snug text-site-muted">
+                            Your {status.downgrade_lock?.plan ? status.downgrade_lock.plan.replace(/^\w/, (c) => c.toUpperCase()) : "paid"} plan
+                            {lockDate ? ` runs until ${lockDate}` : " is still running"}. You can move to Free once it ends.
+                          </p>
+                        ) : null}
+                      </>
                     )}
                   </div>
                 );

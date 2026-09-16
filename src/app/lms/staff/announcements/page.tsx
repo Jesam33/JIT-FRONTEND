@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type Announcement = {
   id: number;
@@ -15,7 +15,7 @@ type Announcement = {
 };
 
 export default function StaffAnnouncementsPage() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [batches, setBatches] = useState<{ id: number; name: string }[]>([]);
@@ -25,6 +25,7 @@ export default function StaffAnnouncementsPage() {
   const [body, setBody] = useState("");
   const [batchId, setBatchId] = useState("");
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [notice, setNotice] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(null);
 
   const load = useCallback(async () => {
     const [annRes, trackRes] = await Promise.all([
@@ -54,15 +55,44 @@ export default function StaffAnnouncementsPage() {
 
   async function createAnnouncement() {
     setCreating(true);
-    await apiFetchStaff(STAFF_API.announcements, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ batch_id: Number(batchId), title, body: body || undefined }),
-    });
-    setCreating(false);
-    setTitle(""); setBody("");
-    if (batches.length === 1) setBatchId(String(batches[0].id));
-    await load();
+    setNotice(null);
+    try {
+      const res = await apiFetchStaff(STAFF_API.announcements, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batch_id: Number(batchId), title, body: body || undefined }),
+      });
+
+      // A rejected post must not look like a successful one. This used to clear
+      // the form and reload regardless, so a 4xx/5xx (or a tenant hiccup) showed
+      // the announcement vanishing with no explanation.
+      if (!res.ok) {
+        setNotice({ tone: "error", text: "Couldn't post that announcement. Please try again." });
+        return;
+      }
+
+      // The API reports how many students it actually reached: an announcement
+      // that goes to nobody is the failure this page could never show, because
+      // posting it looked exactly like posting one that worked.
+      const saved = await res.json().catch(() => null);
+      const notified = typeof saved?.notified === "number" ? saved.notified : null;
+      setNotice(
+        notified === null
+          ? { tone: "ok", text: "Announcement posted." }
+          : notified === 0
+            ? { tone: "warn", text: "Posted, but no students are in this cohort yet, so nobody was notified. It will still show for anyone who joins later." }
+            : { tone: "ok", text: `Posted and sent to ${notified} student${notified === 1 ? "" : "s"}.` }
+      );
+
+      setTitle("");
+      setBody("");
+      if (batches.length === 1) setBatchId(String(batches[0].id));
+      await load();
+    } catch {
+      setNotice({ tone: "error", text: "Couldn't reach the server. Please try again." });
+    } finally {
+      setCreating(false);
+    }
   }
 
   async function remove(id: number) {
@@ -94,6 +124,15 @@ export default function StaffAnnouncementsPage() {
             <button onClick={createAnnouncement} disabled={creating || !batchId || !title.trim()} className="rounded bg-white px-3 py-2 text-sm text-black disabled:opacity-60">
               {creating ? <span className="inline-flex items-center gap-2"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Posting</span> : "Post Announcement"}
             </button>
+            {notice ? (
+              <p
+                className={`text-xs ${
+                  notice.tone === "error" ? "text-red-300" : notice.tone === "warn" ? "text-amber-300" : "text-emerald-300"
+                }`}
+              >
+                {notice.text}
+              </p>
+            ) : null}
           </div>
         </div>
 

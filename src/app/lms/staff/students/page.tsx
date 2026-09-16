@@ -4,7 +4,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
+import { useTeachingBase } from "@/lib/teaching-base";
 
 type Student = {
   id: number;
@@ -24,13 +25,15 @@ export default function StaffStudentsPage() {
 }
 
 function StudentsContent() {
+  // The "Clear" link stays inside the shell showing this page (see lib/teaching-base).
+  const base = useTeachingBase();
   const searchParams = useSearchParams();
   // Search term comes from the top navbar (it redirects here as ?search=).
   const search = searchParams.get("search") ?? "";
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   useEffect(() => {
     if (!token) return;
@@ -58,7 +61,7 @@ function StudentsContent() {
       {search.trim() ? (
         <p className="mt-2 text-xs text-white/60">
           Showing results for &ldquo;{search.trim()}&rdquo;{" "}
-          <Link href="/lms/staff/students" className="text-white underline underline-offset-2">Clear</Link>
+          <Link href={`${base}/students`} className="text-white underline underline-offset-2">Clear</Link>
         </p>
       ) : null}
 

@@ -21,6 +21,16 @@ type Track = {
 
 type CourseOption = { id: number; title: string };
 type StaffOption = { id: number; name: string };
+// The owner's own teacher row, so an academy that has hired nobody can still
+// name a teacher for its cohorts (see OwnerAdminController::tracks).
+type SelfInstructor = { id: number; name: string };
+
+// "Myself" is always the first option when it exists; the owner is the teacher a
+// brand-new academy starts with, and typing it once beats creating a staff
+// account just to teach your own first cohort.
+function instructorOptions(staff: StaffOption[], self: SelfInstructor | null): StaffOption[] {
+  return self ? [{ id: self.id, name: `${self.name} (you)` }, ...staff] : staff;
+}
 
 // useSearchParams() must sit under a Suspense boundary in Next 16, so the page
 // is a thin wrapper around the real content.
@@ -42,6 +52,7 @@ function TracksContent() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [staff, setStaff] = useState<StaffOption[]>([]);
+  const [selfInstructor, setSelfInstructor] = useState<SelfInstructor | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +108,15 @@ function TracksContent() {
       }
       const tJson = await tRes.json();
       setTracks(tJson.tracks ?? []);
+      const self = tJson.self_instructor ?? null;
+      setSelfInstructor(self);
+      // A staffless academy used to leave the picker disabled ("No staff yet,
+      // assign later"), so its own cohort could never have a teacher. Default the
+      // form to the owner in that case — the one instructor such an academy has —
+      // so creating a cohort is a single, unblocked step.
+      if (self) {
+        setInstructorId((prev) => prev || ((tJson.staff ?? []).length === 0 ? String(self.id) : ""));
+      }
       if (cRes.ok) {
         const cJson = await cRes.json();
         setCourses((cJson.courses ?? []).map((c: { id: number; title: string }) => ({ id: c.id, title: c.title })));
@@ -301,7 +321,12 @@ function TracksContent() {
   const optionClass = "bg-[#0b0b0b] text-white";
 
   const noCourses = !loading && courses.length === 0;
-  const noStaff = !loading && staff.length === 0;
+  // Assignable instructors: the owner themselves, plus anyone hired. Only empty
+  // if a hired-staff list is empty AND the owner row is unavailable, which for a
+  // signed-in owner never happens — so the picker is never a dead end.
+  const instructorChoices = instructorOptions(staff, selfInstructor);
+  const noStaff = !loading && instructorChoices.length === 0;
+  const noHiredStaff = !loading && staff.length === 0;
 
   return (
     <div className="space-y-6">
@@ -432,9 +457,9 @@ function TracksContent() {
                   className={`${selectClass} disabled:opacity-50`}
                 >
                   <option value="" className={optionClass}>
-                    {noStaff ? "No staff yet, assign later" : "Unassigned"}
+                    {noStaff ? "No instructor available yet" : "Unassigned"}
                   </option>
-                  {staff.map((s) => (
+                  {instructorChoices.map((s) => (
                     <option key={s.id} value={s.id} className={optionClass}>
                       {s.name}
                     </option>
@@ -488,9 +513,11 @@ function TracksContent() {
                 </p>
               )}
             </div>
-            {noStaff && (
+            {noHiredStaff && (
               <p className="text-xs text-site-muted">
-                Tip: invite instructors on the Staff page, then assign them to a cohort here.
+                You&apos;re the instructor of your cohorts — pick{" "}
+                <span className="text-white/70">yourself</span> above and you can start teaching right away.
+                Invite instructors on the Staff page whenever you&apos;re ready, then assign them here.
               </p>
             )}
           </form>
@@ -528,16 +555,16 @@ function TracksContent() {
                       className="rounded-lg border border-white/15 bg-black/30 px-3 py-1.5 text-xs text-white outline-none transition focus:border-white/40 disabled:opacity-60"
                     >
                       <option value="" className={optionClass}>
-                        {noStaff ? "No staff yet" : "Unassigned"}
+                        {noStaff ? "No instructor available" : "Unassigned"}
                       </option>
                       {/* Keep the current instructor selectable even if they were
                           filtered out of the staff list for any reason. */}
-                      {t.instructor_id && !staff.some((s) => s.id === t.instructor_id) && (
+                      {t.instructor_id && !instructorChoices.some((s) => s.id === t.instructor_id) && (
                         <option value={String(t.instructor_id)} className={optionClass}>
                           {t.instructor ?? "Current instructor"}
                         </option>
                       )}
-                      {staff.map((s) => (
+                      {instructorChoices.map((s) => (
                         <option key={s.id} value={s.id} className={optionClass}>
                           {s.name}
                         </option>

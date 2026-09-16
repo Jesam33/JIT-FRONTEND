@@ -170,6 +170,22 @@ export default function StudentDashboardPage() {
   const pendingTasks = useMemo(() => (data.tasks ?? []).filter((item) => item.status === "pending"), [data.tasks]);
   const unreadNotifications = useMemo(() => (data.notifications ?? []).filter((item) => !item.is_read), [data.notifications]);
 
+  // Announcements own the Announcements panel, so they are lifted above every
+  // other notification type before the three slots are filled. The panel is
+  // titled "Announcements" and its empty state says "No announcements yet.", but
+  // it renders the three newest notifications of ANY type: an announcement posted
+  // by the academy was pushed off by routine task/grade/class alerts within a day,
+  // which reads as "my announcement never reached the student". Announcements
+  // cannot be crowded out now; the other types still fill any slots left over.
+  // `announcement` is a cohort post from the staff/owner portal,
+  // `platform_announcement` is a broadcast from the platform.
+  const panelNotifications = useMemo(() => {
+    const all: any[] = data.notifications ?? [];
+    const isAnnouncement = (n: any) => n.type === "announcement" || n.type === "platform_announcement";
+    // Both halves keep the API's newest-first order, so this is a stable lift.
+    return [...all.filter(isAnnouncement), ...all.filter((n) => !isAnnouncement(n))].slice(0, 3);
+  }, [data.notifications]);
+
   if (loading) return <LoadingSpinner />;
 
   if (loadError) {
@@ -253,8 +269,16 @@ export default function StudentDashboardPage() {
               </div>
               <div className="min-w-0">
                 <div className="flex items-baseline justify-between gap-1">
-                  <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-white/60 sm:text-xs">Tasks</p>
-                  <p className="shrink-0 text-[10px] text-white/70 sm:text-xs">{data.summary?.task_score_total ?? 0}/{(data.summary?.tasks_total ?? 0) * 100}</p>
+                  {/* "Task Score", not "Tasks": this bar is a GRADE, not a count.
+                      Every task is out of 100, so the value is earned points over
+                      the course's total possible (80 + 60 of 5 tasks = 140/500 =
+                      28%), with un-attempted tasks counting as 0. Labelled
+                      "Tasks" it read as a completion count, because the two bars
+                      beside it ("3/8" modules, "2/5" attendance) genuinely are
+                      counts. Same name as the Task Score tile on the Learning
+                      Progress card below, which shows the same number. */}
+                  <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-white/60 sm:text-xs">Task Score</p>
+                  <p className="shrink-0 text-[10px] text-white/70 sm:text-xs">{data.summary?.task_progress ?? 0}%</p>
                 </div>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10 sm:h-2">
                   <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
@@ -385,9 +409,9 @@ export default function StudentDashboardPage() {
               onClick={() => router.push("/lms/app/tasks")}
               className="rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-white/25 hover:bg-white/10"
             >
-              <p className="text-xs text-white/60">Task Points</p>
-              <p className="mt-2 text-2xl font-semibold">{data.summary?.task_score_total ?? 0}<span className="text-base font-normal text-white/50"> / {(data.summary?.tasks_total ?? 0) * 100}</span></p>
-              <p className="mt-1 text-xs text-white/50">{data.summary?.task_progress ?? 0}% of total points</p>
+              <p className="text-xs text-white/60">Task Score</p>
+              <p className="mt-2 text-2xl font-semibold">{data.summary?.task_progress ?? 0}%</p>
+              <p className="mt-1 text-xs text-white/50">{data.summary?.task_score_total ?? 0} of {(data.summary?.tasks_total ?? 0) * 100} points</p>
             </button>
           </div>
         </article>
@@ -395,7 +419,8 @@ export default function StudentDashboardPage() {
         <article className="rounded-2xl border border-white/15 bg-black/30 p-6 xl:col-span-8 xl:min-h-[220px]">
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">Announcements</p>
           <div className="mt-4 space-y-3 text-sm text-white/75">
-            {(data.notifications ?? []).slice(0, 3).map((item) => {
+            {panelNotifications.map((item) => {
+              const isAnnouncement = item.type === "announcement" || item.type === "platform_announcement";
               const href =
                 item.reference_type === "task" && item.reference_id ? `/lms/tasks/${item.reference_id}`
                 : item.reference_type === "group_chat" ? "/lms/app/chats"
@@ -410,15 +435,20 @@ export default function StudentDashboardPage() {
                   tabIndex={href ? 0 : undefined}
                   onClick={href ? () => router.push(href) : undefined}
                   onKeyDown={href ? (e) => { if (e.key === "Enter") router.push(href); } : undefined}
-                  className={`rounded-xl border border-white/10 bg-white/5 px-4 py-3 ${href ? "cursor-pointer" : ""}`}
+                  className={`rounded-xl border px-4 py-3 ${
+                    isAnnouncement ? "border-amber-300/25 bg-amber-300/[0.06]" : "border-white/10 bg-white/5"
+                  } ${href ? "cursor-pointer" : ""}`}
                 >
-                  <p className="font-medium text-white">{item.title}</p>
+                  {isAnnouncement ? (
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/80">Announcement</p>
+                  ) : null}
+                  <p className={`font-medium text-white ${isAnnouncement ? "mt-1" : ""}`}>{item.title}</p>
                   {item.body ? <p className="mt-1 text-xs text-white/60">{item.body}</p> : null}
                 </div>
               );
             })}
-            {!(data.notifications ?? []).length ? <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">No announcements yet.</div> : null}
-            <p className="text-xs text-white/55">Task and grading alerts appear here and are also sent by email when enabled.</p>
+            {!panelNotifications.length ? <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">No announcements yet.</div> : null}
+            <p className="text-xs text-white/55">Announcements from your academy appear here first, with task and class alerts below. Everything is also emailed to you.</p>
           </div>
         </article>
 
@@ -437,17 +467,40 @@ export default function StudentDashboardPage() {
 
         <article className="rounded-2xl border border-white/15 bg-black/30 p-6 xl:col-span-12">
           <p className="text-xs uppercase tracking-[0.18em] text-white/60">Quick Actions</p>
+          {/* Real buttons, not cards. These were `border-white/15 bg-white/5`, the
+              exact recipe every passive panel on this page uses (announcement
+              rows, calendar rows), so they read as one more box that happened to
+              have words in it. Pill shape + a fill that changes on hover + a
+              press-down are what make them read as things you can click, and the
+              primary action gets the app's solid CTA treatment (see the submit
+              button on a task). */}
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <button type="button" onClick={() => router.push("/lms/app/classroom")} className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white">
+            <button
+              type="button"
+              onClick={() => router.push("/lms/app/classroom")}
+              className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-white/90 active:scale-[0.98]"
+            >
               Join Class
             </button>
-            <button type="button" onClick={openTimetable} className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white">
+            <button
+              type="button"
+              onClick={openTimetable}
+              className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/20 active:scale-[0.98]"
+            >
               View Timetable
             </button>
-            <button type="button" onClick={openMaterials} className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white">
+            <button
+              type="button"
+              onClick={openMaterials}
+              className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/20 active:scale-[0.98]"
+            >
               Open Materials
             </button>
-            <button type="button" onClick={openChats} className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-left text-sm font-semibold text-white">
+            <button
+              type="button"
+              onClick={openChats}
+              className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white/20 active:scale-[0.98]"
+            >
               More
             </button>
           </div>

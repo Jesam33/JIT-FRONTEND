@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 
 type AttendanceRecord = {
   id: number;
@@ -14,6 +14,11 @@ type AttendanceRecord = {
   student_id: number;
   total_seconds?: number;
   status?: string;
+  // Minutes the student actually stayed vs. the minutes the class was
+  // scheduled to run. Computed server-side by the same rule that set `status`
+  // (App\Support\AttendanceDuration), so the two always agree.
+  attended_minutes?: number;
+  duration_minutes?: number;
   first_joined_at?: string;
   calculated_at?: string;
   student?: { id: number; first_name?: string; last_name?: string; email?: string };
@@ -25,7 +30,7 @@ export default function StaffAttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("lms_staff_token") ?? "" : "";
+  const token = getStaffToken();
 
   useEffect(() => {
     if (!token) return;
@@ -53,7 +58,7 @@ export default function StaffAttendancePage() {
                   <th className="pb-2 pr-4">Student</th>
                   <th className="pb-2 pr-4">Class</th>
                   <th className="pb-2 pr-4">Status</th>
-                  <th className="pb-2 pr-4">Duration</th>
+                  <th className="pb-2 pr-4">Stayed / Lasted</th>
                   <th className="pb-2">Date</th>
                 </tr>
               </thead>
@@ -63,11 +68,15 @@ export default function StaffAttendancePage() {
                     <td className="py-2 pr-4">{r.student?.first_name ?? "Student"} {r.student?.last_name ?? ""}</td>
                     <td className="py-2 pr-4">{r.classroom?.title ?? r.scheduled_class?.title ?? `Class #${r.class_type === "scheduled" ? r.scheduled_class_id : r.classroom_id}`}</td>
                     <td className="py-2 pr-4">
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${r.status === "present" ? "bg-green-500/20 text-green-400" : r.status === "late" ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${r.status === "present" ? "bg-green-500/20 text-green-400" : r.status === "late" ? "bg-yellow-500/20 text-yellow-400" : r.status === "partial" ? "bg-orange-500/20 text-orange-400" : "bg-red-500/20 text-red-400"}`}>
                         {r.status ?? "unknown"}
                       </span>
                     </td>
-                    <td className="py-2 pr-4">{r.total_seconds ? `${Math.round(r.total_seconds / 60)}m` : "-"}</td>
+                    <td className="py-2 pr-4 tabular-nums">
+                      {r.attended_minutes != null || r.total_seconds != null
+                        ? `${r.attended_minutes ?? Math.round((r.total_seconds ?? 0) / 60)} / ${r.duration_minutes ?? 60} min`
+                        : "-"}
+                    </td>
                     <td className="py-2">{r.first_joined_at ? new Date(r.first_joined_at).toLocaleDateString() : "-"}</td>
                   </tr>
                 ))}

@@ -1,19 +1,50 @@
 import { tenantLoginPath } from "./tenant-client";
 
-type Portal = "student" | "staff";
+type Portal = "student" | "staff" | "owner";
 
 function getToken(key: string): string {
   if (typeof window === "undefined") return "";
   return localStorage.getItem(key) ?? "";
 }
 
+/**
+ * The bearer token for a STAFF-portal request.
+ *
+ * The academy owner has full parity with staff ("an admin can do everything a
+ * staff can do"), and the backend accepts an owner token on every staff endpoint
+ * (BaseLmsController::staffActor resolves it to the academy-wide mirror teacher).
+ * So when no staff token is present we fall back to the owner token, and resolve
+ * which one we used so the caller can retarget 401s at the right login.
+ */
+export function getStaffAuth(): { token: string; portal: Portal } {
+  const staff = getToken("lms_staff_token");
+  if (staff) return { token: staff, portal: "staff" };
+
+  const owner = getToken("lms_owner_token");
+  if (owner) return { token: owner, portal: "owner" };
+
+  return { token: "", portal: "staff" };
+}
+
+/**
+ * The raw bearer token for a staff-portal request (staff token, else the
+ * owner's). For code that needs the token itself rather than a fetch — inline
+ * `Authorization` headers, Echo auth, upload widgets — so every staff-portal
+ * surface works identically whether a staffer or the academy owner is signed in.
+ */
+export function getStaffToken(): string {
+  return getStaffAuth().token;
+}
+
 // A session that expires must return the user to THEIR institute's login, not
 // the primary (JIT) one. tenantLoginPath resolves the current tenant from the
 // subdomain/cookie; ?expired=1 lets the login page show the "session expired"
-// banner. Portal-aware so a staff 401 lands on the staff login, not student.
+// banner. Portal-aware so a staff 401 lands on the staff login, not student,
+// and an owner acting in the staff shell lands on the owner login.
 export function onUnauthorized(portal: Portal = "student") {
   localStorage.removeItem("lms_student_token");
   localStorage.removeItem("lms_staff_token");
+  if (portal === "owner") localStorage.removeItem("lms_owner_token");
   const path = tenantLoginPath(portal);
   const sep = path.includes("?") ? "&" : "?";
   window.location.href = `${path}${sep}expired=1`;
@@ -131,10 +162,13 @@ export async function apiFetchStaff(
   url: string,
   options: RequestInit & { timeout?: number } = {},
 ): Promise<Response> {
-  const token = getToken("lms_staff_token");
+  // Staff token, else the owner's (full parity — the backend accepts an owner
+  // token on every staff endpoint). `portal` follows the token we actually used
+  // so an expired owner session returns to the OWNER login, not the staff one.
+  const { token, portal } = getStaffAuth();
   return fetchWithTimeout(url, {
     ...options,
-    portal: "staff",
+    portal,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,

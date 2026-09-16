@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STAFF_API } from "../../../../lib/api";
-import { apiFetchStaff } from "../../../../lib/fetch-with-timeout";
+import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
+import { useTeachingBase } from "@/lib/teaching-base";
 
 type TeacherNotification = {
   id: number;
@@ -17,19 +18,21 @@ type TeacherNotification = {
   created_at: string | null;
 };
 
-function notificationHref(n: TeacherNotification): string | null {
-  if (n.reference_type === "task" || n.reference_type === "task_submission") return `/lms/staff/tasks`;
-  if (n.reference_type === "group_chat") return "/lms/staff/chats";
-  if (n.reference_type === "dm_thread") return "/lms/staff/chats";
-  if (n.reference_type === "scheduled_class") return "/lms/staff/timetable";
+function notificationHref(n: TeacherNotification, base: string): string | null {
+  if (n.reference_type === "task" || n.reference_type === "task_submission") return `${base}/tasks`;
+  if (n.reference_type === "group_chat") return `${base}/chats`;
+  if (n.reference_type === "dm_thread") return `${base}/chats`;
+  if (n.reference_type === "scheduled_class") return `${base}/timetable`;
   return null;
 }
 
 export default function StaffNotificationsPage() {
+  // Deep links must stay inside the shell showing this page (see lib/teaching-base).
+  const base = useTeachingBase();
   const router = useRouter();
   const token = useMemo(() => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("lms_staff_token");
+    return getStaffToken();
   }, []);
   const [notifications, setNotifications] = useState<TeacherNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,7 @@ export default function StaffNotificationsPage() {
 
   function handleClick(n: TeacherNotification) {
     if (!n.is_read) markRead(n.id);
-    const href = notificationHref(n);
+    const href = notificationHref(n, base);
     if (href) router.push(href);
   }
 

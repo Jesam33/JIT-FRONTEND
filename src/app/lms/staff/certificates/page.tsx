@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useTeachingBase } from "@/lib/teaching-base";
 
 // Certificates were moved off the staff portal, issuing is now an
 // admin-only action (see OwnerAdminController + /lms/admin/certificates).
 // This stub stays so any bookmarked /lms/staff/certificates URL lands on a
 // clear explanation instead of a dead route or a form staff shouldn't use.
 export default function StaffCertificatesPage() {
+  // Shared with the owner portal's Teaching area (see lib/teaching-base).
+  const base = useTeachingBase();
+
   return (
     <section>
       <h1 className="text-2xl font-bold">Certificates</h1>
@@ -26,7 +30,7 @@ export default function StaffCertificatesPage() {
           Certificates page.
         </p>
         <Link
-          href="/lms/staff/app"
+          href={`${base}/app`}
           className="mt-4 inline-block rounded bg-white px-4 py-2 text-sm font-semibold text-black transition hover:brightness-90"
         >
           Back to dashboard

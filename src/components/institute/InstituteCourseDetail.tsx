@@ -155,7 +155,23 @@ export default function InstituteCourseDetail({
             {course.requirements ? (
               <div className="mt-6 text-sm leading-7 text-white/85">
                 <h2 className="mb-2 text-lg font-semibold text-white">Requirements</h2>
-                <p>{course.requirements}</p>
+                {/* The owner types one requirement per line in the course form.
+                    Split on newlines and render each as its own line, so
+                    "A very good laptop" / "A very good internet connection" no
+                    longer collapse into one run-on sentence. A single-line value
+                    still renders as one bullet. */}
+                <ul className="list-none space-y-1.5">
+                  {course.requirements
+                    .split(/\r?\n/)
+                    .map((line) => line.trim())
+                    .filter(Boolean)
+                    .map((line, i) => (
+                      <li key={i} className="flex gap-2.5">
+                        <span aria-hidden className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-primary)]" />
+                        <span className="whitespace-pre-line break-words">{line}</span>
+                      </li>
+                    ))}
+                </ul>
               </div>
             ) : null}
 
