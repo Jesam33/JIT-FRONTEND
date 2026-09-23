@@ -36,8 +36,11 @@ type BillingStatus = {
   subscription_status: string;
   current_period_end: string | null;
   // A paid plan the owner already paid for is committed until its period ends:
-  // the Free card is locked until `until`, then Free can be selected.
+  // every cheaper card is locked until `until`, then it can be selected.
   downgrade_lock?: { plan: string; until: string } | null;
+  // The exact slugs to disable right now, decided server-side (Tenant::
+  // lockedPlanSlugs) so this page never re-derives the price comparison.
+  locked_slugs?: string[];
   subscription?: Subscription;
   plan_summary?: PlanSummary;
   plans: Plan[];
@@ -168,6 +171,18 @@ export default function BillingPage() {
   // the top tier), falling back to the raw stored plan.
   const currentPlan = summary?.slug ?? status?.plan ?? "free";
 
+  // Nothing here renews itself: no recurring mandate is ever created with the
+  // gateway, so the period simply ends and the owner has to pay again. This line
+  // used to read "Renews {date}", promising a charge that never comes.
+  const periodEnd = status?.current_period_end ? new Date(status.current_period_end) : null;
+  const periodRunning = periodEnd ? periodEnd.getTime() > Date.now() : false;
+
+  // Cheaper cards the backend is refusing until the running period ends. The
+  // `downgrade_lock` fallback keeps Free locked if an older API response is ever
+  // served; the set empties the moment the subscription is over, which is the
+  // only way back down to a cheaper plan.
+  const lockedSlugs = status?.locked_slugs ?? (status?.downgrade_lock ? ["free"] : []);
+
   // Scroll the carousel by one card (+ the gap), wired to the desktop arrows.
   const scrollByCard = (dir: number) => {
     const el = scrollerRef.current;
@@ -252,7 +267,10 @@ export default function BillingPage() {
                   </div>
                 ) : null}
                 {status.current_period_end && currentPlan !== "free" ? (
-                  <div>Renews {new Date(status.current_period_end).toLocaleDateString()}</div>
+                  <div>
+                    {periodRunning ? "Ends" : "Ended"}{" "}
+                    {new Date(status.current_period_end).toLocaleDateString()} &middot; no auto-renewal
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -304,9 +322,10 @@ export default function BillingPage() {
                 const isContact = isContactSalesPlan(plan);
                 const isPaid = !isContact && (plan.price ?? 0) > 0;
                 // A paid plan the owner already paid for is committed for its
-                // period: the Free card is locked until that period ends, and the
-                // backend refuses the switch outright (422) if it's forced.
-                const isLocked = plan.slug === "free" && !!status.downgrade_lock;
+                // period: every cheaper card (Free included) is locked until that
+                // period ends, and the backend refuses the switch outright (422)
+                // if it's forced. Picking a higher tier stays available.
+                const isLocked = lockedSlugs.includes(plan.slug);
                 const disabled = isCurrent || isLocked || (isPaid && !status.billing_configured) || busyPlan !== null;
                 const lockDate = status.downgrade_lock?.until
                   ? new Date(status.downgrade_lock.until).toLocaleDateString()
@@ -370,7 +389,7 @@ export default function BillingPage() {
                         {isLocked ? (
                           <p className="mt-2 text-center text-[11px] leading-snug text-site-muted">
                             Your {status.downgrade_lock?.plan ? status.downgrade_lock.plan.replace(/^\w/, (c) => c.toUpperCase()) : "paid"} plan
-                            {lockDate ? ` runs until ${lockDate}` : " is still running"}. You can move to Free once it ends.
+                            {lockDate ? ` runs until ${lockDate}` : " is still running"}. You can move to {plan.name} once it ends.
                           </p>
                         ) : null}
                       </>
@@ -385,7 +404,10 @@ export default function BillingPage() {
 
           <p className="text-xs text-site-muted">
             The applicable platform fee is deducted from each eligible successful course sale,
-            never an upfront charge. Prices are in Naira, billed monthly, and you can change plans any time.
+            never an upfront charge. Prices are in Naira. A plan runs for one month from the day
+            you pay and does not renew on its own, so nothing is charged again until you choose
+            to renew. You can move up to a higher plan at any time; a cheaper plan unlocks when
+            the period you paid for ends.
           </p>
         </>
       )}
