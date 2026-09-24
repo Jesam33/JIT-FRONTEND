@@ -372,3 +372,21 @@ export const PUBLIC_API = {
   paystackInitialize: api("/api/frontend/paystack/initialize"),
   paystackVerify: (ref: string) => api(`/api/frontend/paystack/verify?reference=${encodeURIComponent(ref)}`),
 };
+
+// QA testing passes: outside testers get into a room with name, email and phone
+// only. These three are public and unauthenticated by design. The token in the
+// URL IS the credential, which is what lets someone join from any device with
+// nothing stored on it.
+export const QA_API = {
+  // Which event is running right now, with no slug: the visitor landed on the
+  // marketing site rather than on an event URL, so the server decides. Answers
+  // `event: null` whenever nothing is live, which is the normal case.
+  active: api("/api/frontend/qa/active"),
+  event: (slug: string) => api(`/api/frontend/qa/${encodeURIComponent(slug)}`),
+  register: api("/api/frontend/qa/register"),
+  join: (token: string) => api(`/api/frontend/qa/join/${encodeURIComponent(token)}`),
+  // Hosts mint a moderator token. Same endpoint shape, different claim: the
+  // server decides which based on whether the token is the event's host token.
+  host: (token: string, slotId?: number | string) =>
+    api(`/api/frontend/qa/host/${encodeURIComponent(token)}${slotId ? `?slot=${encodeURIComponent(String(slotId))}` : ""}`),
+};

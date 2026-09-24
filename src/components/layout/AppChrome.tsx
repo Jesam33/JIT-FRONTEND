@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import QaPopup from "@/components/qa/QaPopup";
 import { tenantSubdomainForHost } from "@/lib/tenant-subdomain";
 
 type AppChromeProps = {
@@ -37,11 +38,16 @@ export default function AppChrome({ children }: AppChromeProps) {
     setTenantHost(tenantSubdomainForHost(window.location.hostname) !== null);
   }, []);
 
+  // QA testing passes (/qa/*) are also chrome-less. The people who sign up are
+  // outside testers, not Jorsas customers, and handing them a navbar full of
+  // Jorsas products on the way into a testing session is noise. The page draws
+  // its own co-branded shell instead.
   const hideGlobalChrome =
     tenantHost ||
     pathname.startsWith("/lms") ||
     pathname === "/i" ||
     pathname.startsWith("/i/") ||
+    pathname.startsWith("/qa") ||
     pathname.startsWith("/become-an-agent");
 
   return (
@@ -49,6 +55,13 @@ export default function AppChrome({ children }: AppChromeProps) {
       {hideGlobalChrome ? null : <Header />}
       <main>{children}</main>
       {hideGlobalChrome ? null : <Footer />}
+      {/* The QA signup popup rides the same switch as the header and footer, and
+          for the same reason: it is an invitation to outside testers arriving on
+          the marketing site. It must not appear on the tester's own page
+          (/qa/*), inside a portal (/lms/*), on an academy's storefront (/i/*) or
+          on an agent's branded page, which each draw their own shell.
+          It decides for itself whether anything is live to invite them to. */}
+      {hideGlobalChrome ? null : <QaPopup />}
     </div>
   );
 }
