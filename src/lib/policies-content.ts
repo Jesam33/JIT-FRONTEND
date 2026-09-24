@@ -4,7 +4,12 @@
 export type PolicyBlock =
   | { type: "part"; label: string; title: string }
   | { type: "section"; num: string; title: string }
-  | { type: "paragraph"; text: string }
+  // `linkPolicy` turns the paragraph into a paragraph PLUS a button that opens
+  // another policy on this same page. It exists for the cross-references the
+  // supplied text already contains ("Further information is provided in the JIT
+  // Campus Cookie Policy") which were unreachable before: the reader had to go
+  // back to the nav and guess which entry was meant.
+  | { type: "paragraph"; text: string; linkPolicy?: string }
   | { type: "list"; items: string[] }
   | { type: "copyright"; text: string };
 
@@ -10062,7 +10067,8 @@ const policiesRaw: Policy[] = [
       },
       {
         "type": "paragraph",
-        "text": "Further information is provided in the JIT Campus Cookie Policy."
+        "text": "Further information is provided in the JIT Campus Cookie Policy.",
+        "linkPolicy": "cookie-policy"
       },
       {
         "type": "section",
@@ -10946,6 +10952,142 @@ const policiesRaw: Policy[] = [
       {
         "type": "paragraph",
         "text": "JIT Campus will seek to collect and process only the personal information reasonably necessary for legitimate and defined purposes."
+      },
+      {
+        "type": "copyright",
+        "text": "© 2026 Jorsas Tech, JIT Campus. All rights reserved."
+      }
+    ]
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // NOT SUPPLIED TEXT. Every policy above is a 1:1 copy of wording the client
+  // gave us. This one is not: section 12 of the Privacy Policy promised "the
+  // JIT Campus Cookie Policy" and no such document existed, so it is drafted
+  // from what the platform actually does — the cookie names, lifetimes and
+  // scopes below were read out of the code, not invented.
+  //
+  // IT STILL NEEDS THEIR LEGAL REVIEW before it is treated as binding, and the
+  // retention/consent wording in particular is a legal judgement rather than a
+  // technical one. Marked here so nobody later assumes it came from the same
+  // source as the rest.
+  //
+  // If the platform ever adds analytics, advertising, an embedded third-party
+  // widget or any other non-essential cookie, this document AND the consent
+  // position in Privacy Policy section 12 both stop being true. That is the
+  // tripwire: today there is nothing to consent to, which is why there is no
+  // banner.
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    "id": "cookie-policy",
+    "title": "JIT CAMPUS COOKIE POLICY",
+    "shortTitle": "Cookies",
+    "lastUpdated": "24 September 2026",
+    "effectiveDate": "24 September 2026",
+    "blocks": [
+      {
+        "type": "section",
+        "num": "1",
+        "title": "About This Policy"
+      },
+      {
+        "type": "paragraph",
+        "text": "This Cookie Policy explains how Jorsas Tech (\"JIT Campus\", \"we\", \"us\") uses cookies and similar technologies on the JIT Campus platform, including academy storefronts, student and staff portals, and the platform administration area."
+      },
+      {
+        "type": "paragraph",
+        "text": "It should be read together with the JIT Campus Privacy Policy, which explains how we handle personal information generally."
+      },
+      {
+        "type": "section",
+        "num": "2",
+        "title": "What Cookies Are"
+      },
+      {
+        "type": "paragraph",
+        "text": "A cookie is a small text file that a website stores in your browser. It is sent back to the website on later requests so the site can recognise your browser. Cookies cannot run programs, and they cannot read other files on your device."
+      },
+      {
+        "type": "paragraph",
+        "text": "\"Similar technologies\" include browser storage such as local storage. We describe our use of those below as well, because the distinction matters to what you can control."
+      },
+      {
+        "type": "section",
+        "num": "3",
+        "title": "The Cookies We Set"
+      },
+      {
+        "type": "paragraph",
+        "text": "JIT Campus sets only cookies that are strictly necessary to provide the service. They are listed here in full."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Session cookie — keeps an administrator signed in to the platform administration area and protects forms against cross-site request forgery. Lifetime: the browser session, or up to 2 hours of inactivity. Scope: the platform administration area.",
+          "CSRF token cookie (XSRF-TOKEN) — a security token that lets the platform verify that a form submission came from the platform and not from another site. Lifetime: the browser session. Scope: the platform administration area.",
+          "tenant — records which academy's pages you are currently viewing, so that a visit to an academy's storefront or portal stays inside that academy. Lifetime: 7 days. Scope: the whole site.",
+          "tenant_name — records that same academy's display name, so pages and the browser tab can name it on the first render. Lifetime: 7 days. Scope: the whole site.",
+          "currency — records the currency you selected from the currency switcher, so prices are shown in it on your next visit. Lifetime: 7 days. Scope: the whole site.",
+          "lms_owner_branding — caches an academy's logo, colours and font so its portal renders in the academy's own branding immediately rather than flashing the default. Lifetime: about 180 days. Scope: the academy owner's portal only.",
+          "lms_owner_name — caches an academy's display name for the same reason. Lifetime: about 180 days. Scope: the academy owner's portal only."
+        ]
+      },
+      {
+        "type": "section",
+        "num": "4",
+        "title": "Browser Storage We Use"
+      },
+      {
+        "type": "paragraph",
+        "text": "When you sign in to a student, staff, academy owner or admission marketer account, the credential that keeps you signed in is held in your browser's local storage, not in a cookie. It is not transmitted to us on every request the way a cookie is, and it is removed when you sign out. You can clear it at any time by clearing site data for this site, which signs you out."
+      },
+      {
+        "type": "paragraph",
+        "text": "We also use local storage for interface preferences, such as which account you last signed in with on this browser and whether you have dismissed a notice."
+      },
+      {
+        "type": "section",
+        "num": "5",
+        "title": "Cookies We Do Not Use"
+      },
+      {
+        "type": "paragraph",
+        "text": "JIT Campus does not use advertising cookies, does not use third-party analytics or tracking cookies, and does not embed third-party advertising or social media trackers. We do not sell or share cookie data with advertising networks, and we do not track you across other websites."
+      },
+      {
+        "type": "paragraph",
+        "text": "Because every cookie listed in section 3 is strictly necessary to operate the service you have asked for, there is nothing optional to accept or reject, and no cookie consent banner is shown."
+      },
+      {
+        "type": "section",
+        "num": "6",
+        "title": "Managing Cookies"
+      },
+      {
+        "type": "paragraph",
+        "text": "You can block or delete cookies through your browser settings. Blocking the strictly necessary cookies listed above will stop parts of the platform from working: in particular you will not be able to sign in to the platform administration area, and academy pages may not stay within the academy you were viewing."
+      },
+      {
+        "type": "paragraph",
+        "text": "Clearing cookies does not delete your account or any record held about you, and it does not sign you out of a student, staff, owner or marketer account, because those sessions are held in browser storage rather than in cookies."
+      },
+      {
+        "type": "section",
+        "num": "7",
+        "title": "Changes to This Policy"
+      },
+      {
+        "type": "paragraph",
+        "text": "If we introduce a cookie that is not strictly necessary, we will update this Policy before doing so and, where consent is legally required, we will ask for it."
+      },
+      {
+        "type": "section",
+        "num": "8",
+        "title": "Contact"
+      },
+      {
+        "type": "paragraph",
+        "text": "Questions about this Policy, or about how JIT Campus handles personal information, should be sent to Jorsas Tech using the contact details published on the platform."
       },
       {
         "type": "copyright",

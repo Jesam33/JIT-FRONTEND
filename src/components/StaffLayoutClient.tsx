@@ -9,6 +9,7 @@ import ToastProvider from "./ToastProvider";
 import LmsNavbar from "./LmsNavbar";
 import DynamicFavicon from "./DynamicFavicon";
 import AppInstallPrompt from "./AppInstallPrompt";
+import AcademyOfflineBanner from "./AcademyOfflineBanner";
 import { STAFF_API, PUBLIC_API } from "@/lib/api";
 import { apiFetchStaff, okJson } from "@/lib/fetch-with-timeout";
 import type { NavbarSearchItem } from "@/components/NavbarSearch";
@@ -188,6 +189,7 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
                 logoUrl={branding?.logo_url ?? null}
               />
             )}
+            <AcademyOfflineBanner accepting={branding?.academy_accepting} name={branding?.name} />
             <ErrorBoundary>{children}</ErrorBoundary>
           </main>
         </div>

@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from "react";
 import { STAFF_API } from "../../../../lib/api";
 import { apiFetchStaff, okJson, getStaffToken } from "../../../../lib/fetch-with-timeout";
+import AccountDangerZone from "../../../../components/account/AccountDangerZone";
+import HelpAndPrivacy from "../../../../components/account/HelpAndPrivacy";
+import DevicesCard from "../../../../components/account/DevicesCard";
 
 type Profile = {
   id: number;
@@ -13,11 +16,16 @@ type Profile = {
   profile_photo_url?: string;
 };
 
-type Tab = "basic-info" | "change-password";
+type Tab = "basic-info" | "change-password" | "help-privacy";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "basic-info", label: "Basic Info" },
   { key: "change-password", label: "Change Password" },
+  // Data rights only. There is no "report your academy" here on purpose: a
+  // report is a student complaining about the academy they are enrolled in, and
+  // the backend takes that academy from the student session — offering it to
+  // staff would be offering something the API refuses.
+  { key: "help-privacy", label: "Help & privacy" },
 ];
 
 export default function StaffProfilePage() {
@@ -131,7 +139,7 @@ export default function StaffProfilePage() {
   return (
     <section>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold capitalize">{activeTab === "basic-info" ? "Basic info" : "Change Password"}</h1>
+        <h1 className="text-2xl font-bold capitalize">{activeTab === "basic-info" ? "Basic info" : activeTab === "help-privacy" ? "Help & privacy" : "Change Password"}</h1>
         <p className="mt-1 text-sm text-white/60">Edit and update your profile</p>
       </div>
 
@@ -218,6 +226,31 @@ export default function StaffProfilePage() {
               </div>
             </div>
           )}
+
+          {activeTab === "help-privacy" && (
+            <HelpAndPrivacy fetcher={apiFetchStaff} rightsEndpoint={STAFF_API.rightsRequest} />
+          )}
+
+          <DevicesCard
+            fetcher={apiFetchStaff}
+            listEndpoint={STAFF_API.devices}
+            signOutEndpoint={STAFF_API.deviceSignOut}
+            signOutAllEndpoint={STAFF_API.devicesSignOutEverywhere}
+          />
+
+          {/* Self-hides for the academy owner, who has no separate staff account
+              and whose equivalent controls are the academy's (admin profile). */}
+          <AccountDangerZone
+            endpoints={{
+              show: STAFF_API.account,
+              deactivate: STAFF_API.accountDeactivate,
+              reactivate: STAFF_API.accountReactivate,
+              remove: STAFF_API.accountDelete,
+              cancelDeletion: STAFF_API.accountCancelDeletion,
+            }}
+            fetcher={apiFetchStaff}
+            onRequestErasure={() => setActiveTab("help-privacy")}
+          />
         </div>
       </div>
     </section>

@@ -3,16 +3,34 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
+import type { LifecycleState } from "@/components/account/AccountDangerZone";
+import { LifecycleBadge } from "@/components/account/lifecycle-label";
 
 type Staff = {
   id: number;
   name: string;
   email: string | null;
+  /** The cosmetic label the staffer set for themselves ("Instructor", "teacher"). */
   role: string;
+  /**
+   * The RBAC preset that decides which parts of the staff portal this person can
+   * reach. Distinct from `role` above despite the similar name: that one is a
+   * display string that grants nothing, this one is enforced on every request.
+   */
+  staff_role?: string;
+  staff_role_label?: string;
+  /** The section keys `staff_role` grants (App\Support\StaffPermissions). */
+  sections?: string[];
   phone: string | null;
   is_active: boolean;
+  /** active | deactivated | purge_scheduled | purged */
+  lifecycle: LifecycleState;
+  purge_after: string | null;
   created_at: string | null;
 };
+
+/** One entry of the role catalogue, served by GET /owner/staff. */
+type RolePreset = { label: string; description: string; sections: string[] };
 
 export default function OwnerStaffPage() {
   const router = useRouter();
@@ -42,6 +60,10 @@ export default function OwnerStaffPage() {
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [actionMsg, setActionMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  // The role catalogue from the server (never hard-coded here, so the labels and
+  // the sentences explaining each role have one home) and which row is saving.
+  const [roles, setRoles] = useState<Record<string, RolePreset>>({});
+  const [savingRoleId, setSavingRoleId] = useState<number | null>(null);
 
   const closeMenu = () => {
     setMenuFor(null);
@@ -64,6 +86,7 @@ export default function OwnerStaffPage() {
       const json = await res.json();
       setStaff(json.staff ?? []);
       setTenantId(json.tenant_id ?? null);
+      if (json.staff_roles && typeof json.staff_roles === "object") setRoles(json.staff_roles);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -172,7 +195,10 @@ export default function OwnerStaffPage() {
         setActionMsg({ kind: "err", text: json?.message || `Could not remove staff (HTTP ${res.status}).` });
         return;
       }
-      setActionMsg({ kind: "ok", text: `Removed ${t.name}.` });
+      const json = await res.json().catch(() => ({}));
+      // "Deletion scheduled", not "removed": the staffer stays on the roster
+      // (marked) for the whole 30-day window and can be brought back until then.
+      setActionMsg({ kind: "ok", text: json?.message || `Deletion scheduled for ${t.name}.` });
       load();
     } catch (err) {
       setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
@@ -212,6 +238,33 @@ export default function OwnerStaffPage() {
     }
   };
 
+  const cancelDeletion = async (t: Staff) => {
+    setTogglingId(t.id);
+    setActionMsg(null);
+    try {
+      const res = await fetch(OWNER_API.cancelStaffDeletion(t.id), {
+        method: "POST",
+        headers: { Accept: "application/json", ...ownerAuthHeaders() },
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setActionMsg({ kind: "err", text: json?.message || `Could not cancel this deletion (HTTP ${res.status}).` });
+        return;
+      }
+      setActionMsg({ kind: "ok", text: json?.message || `Deletion cancelled for ${t.name}.` });
+      load();
+    } catch (err) {
+      setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTogglingId(null);
+      closeMenu();
+    }
+  };
+
   const toggleActive = async (t: Staff) => {
     setTogglingId(t.id);
     setActionMsg(null);
@@ -244,6 +297,62 @@ export default function OwnerStaffPage() {
   };
 
   const activeStaff = menuFor === null ? null : staff.find((s) => s.id === menuFor) ?? null;
+
+  /**
+   * Change what this staffer can reach.
+   *
+   * Patched in place from the response rather than refetching the roster: the
+   * change takes effect on the staffer's NEXT request (the middleware reads the
+   * role every time, deliberately, so a demotion is not deferred to their next
+   * sign-in), and refetching the whole table to learn one label would make the
+   * row flicker for nothing.
+   */
+  const setRole = async (t: Staff, role: string) => {
+    const previous = t.staff_role;
+    setSavingRoleId(t.id);
+    setActionMsg(null);
+    // Move the select straight away: it is a controlled input, so leaving the
+    // old value in place would make the click look ignored until the round trip
+    // finished. A refusal puts it back.
+    setStaff((prev) => prev.map((s) => (s.id === t.id ? { ...s, staff_role: role } : s)));
+    try {
+      const res = await fetch(OWNER_API.setStaffRole(t.id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
+        body: JSON.stringify({ staff_role: role }),
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Leave the select showing what the server actually holds, not what was
+        // clicked: a refused change must not look like it landed.
+        setActionMsg({ kind: "err", text: json?.message || `Could not change the role (HTTP ${res.status}).` });
+        setStaff((prev) => prev.map((s) => (s.id === t.id ? { ...s, staff_role: previous } : s)));
+        return;
+      }
+      setStaff((prev) =>
+        prev.map((s) =>
+          s.id === t.id
+            ? {
+                ...s,
+                staff_role: json?.staff?.staff_role ?? role,
+                staff_role_label: json?.staff?.staff_role_label,
+                sections: json?.staff?.sections ?? s.sections,
+              }
+            : s,
+        ),
+      );
+      setActionMsg({ kind: "ok", text: json?.message || `${t.name} is now ${roles[role]?.label ?? role}.` });
+    } catch (err) {
+      setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+      setStaff((prev) => prev.map((s) => (s.id === t.id ? { ...s, staff_role: previous } : s)));
+    } finally {
+      setSavingRoleId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -305,7 +414,7 @@ export default function OwnerStaffPage() {
               <tr className="border-b border-white/10 text-[11px] uppercase tracking-wide text-site-muted">
                 <th className="px-5 py-3 font-semibold">Name</th>
                 <th className="px-5 py-3 font-semibold">Email</th>
-                <th className="px-5 py-3 font-semibold">Role</th>
+                <th className="px-5 py-3 font-semibold">Access</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
                 <th className="px-5 py-3 text-right font-semibold">Actions</th>
               </tr>
@@ -315,15 +424,51 @@ export default function OwnerStaffPage() {
                 <tr key={t.id} className="border-b border-white/5 last:border-0">
                   <td className="px-5 py-3 text-white">{t.name}</td>
                   <td className="px-5 py-3 text-site-muted">{t.email ?? "—"}</td>
-                  <td className="px-5 py-3 capitalize text-site-muted">{t.role}</td>
+                  {/* This cell used to show the cosmetic label the staffer set for
+                      themselves ("Instructor", "teacher"), which granted nothing
+                      and meant the word "role" appeared twice on one page for two
+                      unrelated things. It now shows the preset that actually
+                      decides what they can reach, and the line under it says what
+                      that preset MEANS — which was as much the point of the
+                      feature as the enforcement. */}
                   <td className="px-5 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                        t.is_active ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"
-                      }`}
-                    >
-                      {t.is_active ? "Active" : "Suspended"}
-                    </span>
+                    {roles[t.staff_role ?? ""] ? (
+                      <div className="min-w-[168px]">
+                        <select
+                          value={t.staff_role}
+                          onChange={(e) => setRole(t, e.target.value)}
+                          disabled={savingRoleId === t.id}
+                          aria-label={`Access for ${t.name}`}
+                          className="w-full rounded-lg border border-white/15 bg-black/30 px-2.5 py-1.5 text-xs text-white/90 transition disabled:opacity-50 [html.light_&]:border-black/15 [html.light_&]:bg-white [html.light_&]:text-black/85"
+                        >
+                          {Object.entries(roles).map(([key, r]) => (
+                            <option key={key} value={key}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-1 text-[11px] leading-snug text-site-muted">
+                          {savingRoleId === t.id ? "Saving…" : roles[t.staff_role ?? ""].description}
+                        </p>
+                      </div>
+                    ) : (
+                      // No catalogue (an older API, or the row's role is not one we
+                      // can offer): show the label rather than an empty picker.
+                      <span className="capitalize text-site-muted">{t.staff_role_label ?? t.role}</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    {t.lifecycle !== "active" ? (
+                      <LifecycleBadge state={t.lifecycle} purgeAfter={t.purge_after} />
+                    ) : (
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                          t.is_active ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300"
+                        }`}
+                      >
+                        {t.is_active ? "Active" : "Suspended"}
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end">
@@ -374,9 +519,10 @@ export default function OwnerStaffPage() {
             {confirmingId === activeStaff.id ? (
               <div className="px-4 py-3">
                 <p className="text-xs text-white/70 [html.light_&]:text-black/70">
-                  Remove{" "}
-                  <span className="font-semibold text-white [html.light_&]:text-black">{activeStaff.name}</span>? This
-                  can’t be undone.
+                  Delete{" "}
+                  <span className="font-semibold text-white [html.light_&]:text-black">{activeStaff.name}</span>? They
+                  are signed out now and removed for good in 30 days. Until then nothing is touched and you can cancel
+                  it from this menu.
                 </p>
                 <div className="mt-3 flex gap-2">
                   <button
@@ -385,7 +531,7 @@ export default function OwnerStaffPage() {
                     disabled={deletingId === activeStaff.id}
                     className="rounded-full bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-60"
                   >
-                    {deletingId === activeStaff.id ? "Removing…" : "Remove"}
+                    {deletingId === activeStaff.id ? "Scheduling…" : "Confirm"}
                   </button>
                   <button
                     type="button"
@@ -414,7 +560,7 @@ export default function OwnerStaffPage() {
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => toggleActive(activeStaff)}
+                  onClick={() => (activeStaff.lifecycle === "purge_scheduled" ? cancelDeletion(activeStaff) : toggleActive(activeStaff))}
                   disabled={togglingId === activeStaff.id}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-white/85 transition hover:bg-white/10 disabled:opacity-60 [html.light_&]:text-black/85 [html.light_&]:hover:bg-black/5"
                 >
@@ -429,19 +575,26 @@ export default function OwnerStaffPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12l2.5 2.5 4.5-5" />
                     </svg>
                   )}
-                  {togglingId === activeStaff.id ? "Saving…" : activeStaff.is_active ? "Suspend" : "Activate"}
+                  {togglingId === activeStaff.id
+                    ? "Saving…"
+                    : activeStaff.lifecycle === "purge_scheduled"
+                      ? "Cancel deletion"
+                      : activeStaff.is_active
+                        ? "Suspend"
+                        : "Activate"}
                 </button>
                 <div className="my-1 border-t border-white/10 [html.light_&]:border-black/10" />
                 <button
                   type="button"
                   role="menuitem"
                   onClick={() => setConfirmingId(activeStaff.id)}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+                  disabled={activeStaff.lifecycle === "purged"}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M18 7l-1 13a2 2 0 01-2 2H9a2 2 0 01-2-2L6 7" />
                   </svg>
-                  Remove
+                  {activeStaff.lifecycle === "purge_scheduled" ? "Delete now" : "Delete"}
                 </button>
               </>
             )}

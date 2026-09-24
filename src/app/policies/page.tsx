@@ -38,7 +38,7 @@ function groupByPart(blocks: PolicyBlock[]) {
   return { intro, segments, copyright };
 }
 
-function renderBlock(block: PolicyBlock, i: number) {
+function renderBlock(block: PolicyBlock, i: number, onOpenPolicy?: (id: string) => void) {
   switch (block.type) {
     case "part":
       // PARTs are rendered as accordion headers by PolicyBody, never inline.
@@ -69,16 +69,31 @@ function renderBlock(block: PolicyBlock, i: number) {
         </p>
       );
     case "paragraph":
-    default:
       return (
-        <p key={i} className="mt-3 leading-relaxed text-site-text/80">
-          {block.text}
-        </p>
+        <div key={i}>
+          <p className="mt-3 leading-relaxed text-site-text/80">{block.text}</p>
+          {/* A cross-reference inside the supplied text ("Further information is
+              provided in the ... Policy"). Without this the sentence names a
+              document the reader has no way to open. Rendered only when the
+              target actually exists, so a stale reference degrades to plain
+              text rather than a button that does nothing. */}
+          {block.linkPolicy && onOpenPolicy && policies.some((p) => p.id === block.linkPolicy) ? (
+            <button
+              type="button"
+              onClick={() => onOpenPolicy(block.linkPolicy as string)}
+              className="mt-2 text-sm font-semibold text-site-primary underline underline-offset-4 transition hover:opacity-80"
+            >
+              Read the {policies.find((p) => p.id === block.linkPolicy)?.shortTitle} policy
+            </button>
+          ) : null}
+        </div>
       );
+    default:
+      return null;
   }
 }
 
-function PolicyBody({ policy }: { policy: Policy }) {
+function PolicyBody({ policy, onOpenPolicy }: { policy: Policy; onOpenPolicy?: (id: string) => void }) {
   const { intro, segments, copyright } = groupByPart(policy.blocks);
 
   return (
@@ -95,7 +110,7 @@ function PolicyBody({ policy }: { policy: Policy }) {
       )}
 
       {/* Intro blocks (before the first PART) always visible */}
-      {intro.length > 0 && <div className="mt-8">{intro.map(renderBlock)}</div>}
+      {intro.length > 0 && <div className="mt-8">{intro.map((b, i) => renderBlock(b, i, onOpenPolicy))}</div>}
 
       {/* Each PART is a collapsible accordion, closed by default so the page stays compact */}
       {segments.length > 0 && (
@@ -130,7 +145,7 @@ function PolicyBody({ policy }: { policy: Policy }) {
                 </svg>
               </summary>
               <div className="border-t border-site-border/20 px-5 pb-6 pt-1">
-                {seg.body.map(renderBlock)}
+                {seg.body.map((b, i) => renderBlock(b, i, onOpenPolicy))}
               </div>
             </details>
           ))}
@@ -212,7 +227,7 @@ function PoliciesContent() {
 
             {/* key={active.id} resets accordion open/closed state when switching policies */}
             <div className="min-w-0 flex-1">
-              {active ? <PolicyBody key={active.id} policy={active} /> : null}
+              {active ? <PolicyBody key={active.id} policy={active} onOpenPolicy={setActiveId} /> : null}
             </div>
           </div>
         )}

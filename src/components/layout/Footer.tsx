@@ -142,6 +142,14 @@ export default function Footer() {
                   Terms &amp; Conditions
                 </Link>
               </li>
+              <li>
+                {/* Listed here rather than left to the /policies nav alone: the
+                    Privacy Policy names this document, and a reader following
+                    that reference should find it where they expect. */}
+                <Link href="/policies?policy=cookie-policy" className="text-site-text/80 underline decoration-site-border/50 underline-offset-4 transition hover:text-site-primary hover:decoration-site-primary">
+                  Cookie Policy
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

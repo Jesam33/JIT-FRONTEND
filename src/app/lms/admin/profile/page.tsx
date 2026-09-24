@@ -13,17 +13,40 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import PersonalDetailsEditor from "@/components/owner/PersonalDetailsEditor";
 import PayoutSettings from "@/components/owner/PayoutSettings";
+import AccountDangerZone from "@/components/account/AccountDangerZone";
+import DevicesCard from "@/components/account/DevicesCard";
+import HelpAndPrivacy from "@/components/account/HelpAndPrivacy";
+import { OWNER_API } from "@/lib/api";
+import { ownerAuthHeaders } from "@/lib/owner-client";
 
-type TabKey = "details" | "payment";
+type TabKey = "details" | "payment" | "academy" | "privacy";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "details", label: "Personal details" },
   { key: "payment", label: "Payment & account setup" },
+  { key: "academy", label: "Academy status" },
+  // Where the owner talks to the PLATFORM: their own data rights (an owner
+  // account has no academy-side equivalent) and the devices signed in to it.
+  { key: "privacy", label: "Help & privacy" },
 ];
+
+// Owner components fetch with the owner token directly (ownerAuthHeaders), so
+// the shared danger zone gets a fetcher shaped the same way rather than one of
+// the student/staff apiFetch wrappers, which would send the wrong token.
+function ownerFetch(url: string, options?: RequestInit): Promise<Response> {
+  return fetch(url, {
+    ...options,
+    headers: { ...ownerAuthHeaders(), ...((options?.headers as Record<string, string>) ?? {}) },
+  });
+}
 
 function ProfilePageInner() {
   const searchParams = useSearchParams();
-  const initial = searchParams.get("tab") === "payment" ? "payment" : "details";
+  // Any known tab is deep-linkable, not just ?tab=payment: the page grew a
+  // fourth tab and hard-coding one accepted value would have made the other two
+  // silently land on Personal details.
+  const requested = searchParams.get("tab");
+  const initial: TabKey = TABS.some((t) => t.key === requested) ? (requested as TabKey) : "details";
   const [tab, setTab] = useState<TabKey>(initial);
 
   return (
@@ -53,7 +76,63 @@ function ProfilePageInner() {
         ))}
       </div>
 
-      {tab === "details" ? <PersonalDetailsEditor /> : <PayoutSettings />}
+      {tab === "details" ? (
+        <PersonalDetailsEditor />
+      ) : tab === "payment" ? (
+        <PayoutSettings />
+      ) : tab === "privacy" ? (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Help &amp; privacy</h2>
+            <p className="mt-1 text-sm text-site-muted">
+              Ask Jorsas Tech about your data, and see where your account is signed in.
+            </p>
+          </div>
+
+          {/* Owner wording, not the student wording: a request from here names
+              the academy as well as the login, and it is answered by the platform
+              rather than by the academy. There is no "report your academy" card —
+              an owner has no academy above them to report. */}
+          <HelpAndPrivacy
+            fetcher={ownerFetch}
+            rightsEndpoint={OWNER_API.rightsRequest}
+            audience="owner"
+          />
+
+          <DevicesCard
+            fetcher={ownerFetch}
+            listEndpoint={OWNER_API.devices}
+            signOutEndpoint={OWNER_API.deviceSignOut}
+            signOutAllEndpoint={OWNER_API.devicesSignOutEverywhere}
+          />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Academy status</h2>
+            <p className="mt-1 text-sm text-site-muted">
+              Take your academy off the market, close it, or bring it back.
+            </p>
+          </div>
+
+          {/* The owner's deactivate/reactivate act on the ACADEMY, not on their own
+              login: their account has no separate state. Deactivating keeps every
+              student and staffer working and only stops new business. */}
+          <AccountDangerZone
+            scope="academy"
+            endpoints={{
+              show: OWNER_API.academyLifecycle,
+              deactivate: OWNER_API.academyDeactivate,
+              reactivate: OWNER_API.academyReactivate,
+              cancelDeletion: OWNER_API.academyReactivate,
+              // No `remove`: closing an academy permanently is the platform's
+              // call (Jorsas, from the host admin), so the component simply does
+              // not offer it rather than pointing at an endpoint that would 404.
+            }}
+            fetcher={ownerFetch}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -8,51 +8,57 @@ import { apiFetchStaff, getStaffAuth, getStaffToken } from "@/lib/fetch-with-tim
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
 
+// `section` is the RBAC key this item belongs to (see App\Support\StaffPermissions
+// on the backend). It is the same string the owner's role picker grants, and the
+// endpoint behind each link enforces it independently — this filter only decides
+// what is worth showing, never what is allowed. Profile has no section: everyone
+// can always reach their own profile.
+type SidebarItem = { href: string; label: string; section?: string };
 type SidebarGroup = {
   label: string;
-  items: { href: string; label: string }[];
+  items: SidebarItem[];
 };
 
 const groups: SidebarGroup[] = [
   {
     label: "Teaching",
     items: [
-      { href: "/lms/staff/app", label: "Dashboard" },
-      { href: "/lms/staff/courses", label: "Courses" },
-      { href: "/lms/staff/tracks", label: "Tracks" },
-      { href: "/lms/staff/students", label: "Students" },
-      { href: "/lms/staff/classroom", label: "Classroom" },
-      { href: "/lms/staff/timetable", label: "Timetable" },
-      { href: "/lms/staff/attendance", label: "Attendance" },
-      { href: "/lms/staff/leaderboard", label: "Leaderboard" },
+      { href: "/lms/staff/app", label: "Dashboard", section: "dashboard" },
+      { href: "/lms/staff/courses", label: "Courses", section: "courses" },
+      { href: "/lms/staff/tracks", label: "Tracks", section: "tracks" },
+      { href: "/lms/staff/students", label: "Students", section: "students" },
+      { href: "/lms/staff/classroom", label: "Classroom", section: "classroom" },
+      { href: "/lms/staff/timetable", label: "Timetable", section: "timetable" },
+      { href: "/lms/staff/attendance", label: "Attendance", section: "attendance" },
+      { href: "/lms/staff/leaderboard", label: "Leaderboard", section: "leaderboard" },
     ],
   },
   {
     label: "Content",
     items: [
-      { href: "/lms/staff/modules", label: "Modules" },
-      { href: "/lms/staff/materials", label: "Materials" },
+      { href: "/lms/staff/modules", label: "Modules", section: "modules" },
+      { href: "/lms/staff/materials", label: "Materials", section: "materials" },
       // AI materials (Gamma, Pro+): teachers author the content, so the
       // generator lives here too (the owner keeps theirs for solo academies).
       // Server-side every save target is scoped to the teacher's assigned
       // courses; the link itself is dropped below when the academy's plan
       // doesn't include the feature.
-      { href: "/lms/staff/ai-materials", label: "Create with AI" },
-      { href: "/lms/staff/tasks", label: "Tasks" },
+      { href: "/lms/staff/ai-materials", label: "Create with AI", section: "ai_materials" },
+      { href: "/lms/staff/tasks", label: "Tasks", section: "tasks" },
     ],
   },
   {
     label: "Communication",
     items: [
-      { href: "/lms/staff/chats", label: "Chats" },
-      { href: "/lms/staff/notifications", label: "Notifications" },
-      { href: "/lms/staff/announcements", label: "Announcements" },
+      { href: "/lms/staff/chats", label: "Chats", section: "chats" },
+      { href: "/lms/staff/notifications", label: "Notifications", section: "notifications" },
+      { href: "/lms/staff/announcements", label: "Announcements", section: "announcements" },
     ],
   },
   {
     label: "Admin",
     items: [
-      { href: "/lms/staff/reports", label: "Reports" },
+      { href: "/lms/staff/reports", label: "Reports", section: "reports" },
       { href: "/lms/staff/profile", label: "Profile" },
     ],
   },
@@ -187,6 +193,11 @@ export default function StaffSidebar() {
   // same /staff/me payload and default to visible until it answers, so a slow
   // profile load never hides a paid feature the academy actually has.
   const [aiEnabled, setAiEnabled] = useState(true);
+  // Role presets (App\Support\StaffPermissions): the sections this staffer's role
+  // grants. `null` means "not answered yet" and is treated as everything, so a
+  // slow /staff/me never hides a link the person actually has — the endpoint
+  // behind the link is what refuses them, and it refuses them either way.
+  const [sections, setSections] = useState<string[] | null>(null);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -210,6 +221,7 @@ export default function StaffSidebar() {
           setChatEnabled(enabled);
           const ai = p.ai_materials !== false;
           setAiEnabled(ai);
+          if (Array.isArray(p.sections)) setSections(p.sections as string[]);
         }
       })
       .catch(() => {});
@@ -284,15 +296,21 @@ export default function StaffSidebar() {
   }
 
   // Chat (Basic+) and AI materials (Pro+) are paid-plan features, drop their
-  // links when the academy's plan doesn't include them.
-  const visibleGroups = groups.map((g) => ({
-    ...g,
-    items: g.items.filter(
-      (i) =>
-        (chatEnabled || i.href !== "/lms/staff/chats") &&
-        (aiEnabled || i.href !== "/lms/staff/ai-materials"),
-    ),
-  }));
+  // links when the academy's plan doesn't include them. On top of that, a link
+  // whose section the role doesn't grant is dropped too — and a group left with
+  // no items is dropped with it, so an assistant never sees an empty "Content"
+  // heading with nothing under it.
+  const visibleGroups = groups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter(
+        (i) =>
+          (chatEnabled || i.href !== "/lms/staff/chats") &&
+          (aiEnabled || i.href !== "/lms/staff/ai-materials") &&
+          (sections === null || !i.section || sections.includes(i.section)),
+      ),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <>

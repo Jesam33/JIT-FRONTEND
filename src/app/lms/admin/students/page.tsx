@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
+import type { LifecycleState } from "@/components/account/AccountDangerZone";
+import { LifecycleBadge } from "@/components/account/lifecycle-label";
 
 type Student = {
   id: number;
@@ -13,6 +15,18 @@ type Student = {
   learning_mode: string | null;
   onboarding_completed: boolean;
   created_at: string | null;
+  is_active: boolean;
+  /** active | deactivated | purge_scheduled | purged */
+  lifecycle: LifecycleState;
+  purge_after: string | null;
+  /**
+   * Whether this student may be erased at all. False once any successful payment
+   * exists against their registration (a paid course or a ₦0 comped invite):
+   * that is a financial record, so erasing them is Jorsas' decision, made from
+   * the student's own Help & privacy tab, not the academy's.
+   */
+  can_delete?: boolean;
+  delete_blocked_reason?: string | null;
 };
 
 // Minimal shape for the invite form's course picker (from OWNER_API.courses).
@@ -55,6 +69,7 @@ export default function OwnerStudentsPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [actionMsg, setActionMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -201,13 +216,75 @@ export default function OwnerStudentsPage() {
         setActionMsg({ kind: "err", text: json?.message || `Could not remove student (HTTP ${res.status}).` });
         return;
       }
-      setActionMsg({ kind: "ok", text: `Removed ${s.name}.` });
+      const json = await res.json().catch(() => ({}));
+      // Not "removed": the account is scheduled for deletion and is still on the
+      // roster until the window closes, which is the whole point of the change.
+      setActionMsg({ kind: "ok", text: json?.message || `Deletion scheduled for ${s.name}.` });
       load();
     } catch (err) {
       setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
     } finally {
       setDeletingId(null);
       setConfirmingId(null);
+    }
+  };
+
+  // Suspend / restore, the reversible half. The backend refuses everything for a
+  // suspended student without deleting anything, and their enrolments and records
+  // are untouched, so this is the safe way to bench someone mid-course.
+  const setStudentActive = async (s: Student, isActive: boolean) => {
+    setTogglingId(s.id);
+    setActionMsg(null);
+    try {
+      const res = await fetch(OWNER_API.setStudentActive(s.id), {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json", ...ownerAuthHeaders() },
+        body: JSON.stringify({ is_active: isActive }),
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setActionMsg({ kind: "err", text: json?.message || `Could not update this student (HTTP ${res.status}).` });
+        return;
+      }
+      setActionMsg({ kind: "ok", text: json?.message || (isActive ? `Restored ${s.name}.` : `Suspended ${s.name}.`) });
+      load();
+    } catch (err) {
+      setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  // Separate from setStudentActive on purpose: cancelling a deletion returns the
+  // student to the state they were in before it was armed, which for someone the
+  // owner had already suspended means back on the bench, not back in class.
+  const cancelDeletion = async (s: Student) => {
+    setTogglingId(s.id);
+    setActionMsg(null);
+    try {
+      const res = await fetch(OWNER_API.cancelStudentDeletion(s.id), {
+        method: "POST",
+        headers: { Accept: "application/json", ...ownerAuthHeaders() },
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setActionMsg({ kind: "err", text: json?.message || `Could not cancel this deletion (HTTP ${res.status}).` });
+        return;
+      }
+      setActionMsg({ kind: "ok", text: json?.message || `Deletion cancelled for ${s.name}.` });
+      load();
+    } catch (err) {
+      setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -378,28 +455,34 @@ export default function OwnerStudentsPage() {
                   <td className="px-5 py-3 text-site-muted">{s.phone ?? "—"}</td>
                   <td className="px-5 py-3 text-site-muted">{s.course ?? "—"}</td>
                   <td className="px-5 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                        s.onboarding_completed
-                          ? "bg-emerald-500/15 text-emerald-300"
-                          : "bg-amber-500/15 text-amber-300"
-                      }`}
-                    >
-                      {s.onboarding_completed ? "Active" : "Pending"}
-                    </span>
+                    {s.lifecycle !== "active" ? (
+                      <LifecycleBadge state={s.lifecycle} purgeAfter={s.purge_after} />
+                    ) : (
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                          s.onboarding_completed
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-amber-500/15 text-amber-300"
+                        }`}
+                      >
+                        {s.onboarding_completed ? "Active" : "Pending"}
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-2">
                       {confirmingId === s.id ? (
                         <>
-                          <span className="text-xs text-white/60">Remove?</span>
+                          <span className="text-xs text-white/60">
+                            Delete? Restorable for 30 days.
+                          </span>
                           <button
                             type="button"
                             onClick={() => removeStudent(s)}
                             disabled={deletingId === s.id}
                             className="rounded-full bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/30 disabled:opacity-60"
                           >
-                            {deletingId === s.id ? "Removing…" : "Confirm"}
+                            {deletingId === s.id ? "Scheduling…" : "Confirm"}
                           </button>
                           <button
                             type="button"
@@ -409,6 +492,11 @@ export default function OwnerStudentsPage() {
                             Cancel
                           </button>
                         </>
+                      ) : s.lifecycle === "purged" ? (
+                        // Nothing left to act on: the identifying details are gone
+                        // and the record only survives so the academy's enrolment,
+                        // attendance and certificate history still adds up.
+                        <span className="text-xs text-white/40">Deleted. Records kept.</span>
                       ) : (
                         <>
                           {!s.onboarding_completed && (
@@ -423,11 +511,42 @@ export default function OwnerStudentsPage() {
                           )}
                           <button
                             type="button"
-                            onClick={() => setConfirmingId(s.id)}
-                            className="rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300"
+                            onClick={() => {
+                              if (s.lifecycle === "purge_scheduled") return cancelDeletion(s);
+                              // active → bench them; deactivated → hand access back.
+                              return setStudentActive(s, s.lifecycle !== "active");
+                            }}
+                            disabled={togglingId === s.id}
+                            className="rounded-full border border-white/15 px-4 py-1.5 text-xs font-semibold text-white/85 transition hover:bg-white/10 disabled:opacity-60"
                           >
-                            Remove
+                            {togglingId === s.id
+                              ? "Saving…"
+                              : s.lifecycle === "purge_scheduled"
+                                ? "Cancel deletion"
+                                : s.lifecycle === "active"
+                                  ? "Suspend"
+                                  : "Restore"}
                           </button>
+                          {s.can_delete === false ? (
+                            // No button at all rather than a disabled one that
+                            // looks clickable: the endpoint behind it returns 422
+                            // every time, so offering it would be offering a dead
+                            // end. The backend's own sentence is the tooltip.
+                            <span
+                              title={s.delete_blocked_reason ?? "This student has payment records, so the account cannot be erased from here."}
+                              className="cursor-not-allowed rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-white/30"
+                            >
+                              Can&apos;t delete (paid)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(s.id)}
+                              className="rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300"
+                            >
+                              {s.lifecycle === "purge_scheduled" ? "Delete now" : "Delete"}
+                            </button>
+                          )}
                         </>
                       )}
                     </div>

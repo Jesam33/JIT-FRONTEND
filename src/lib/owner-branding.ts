@@ -34,6 +34,11 @@ export type OwnerBranding = {
   // storefront footer uses; gates the credit on institute surfaces like the
   // logged-out account picker.
   show_powered_by?: boolean | null;
+  // Whether the academy is still open for new business. False while the owner
+  // has it offline: students and staff keep working, but nobody new can join.
+  // Rides on the branding payload (BrandingController::withPlanFlags) so the
+  // banner costs no extra request.
+  academy_accepting?: boolean | null;
 };
 
 // Concrete defaults (the current red/blue theme). Typed with plain-string

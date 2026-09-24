@@ -7,6 +7,7 @@ import StudentGuard from "./StudentGuard";
 import LmsNavbar from "./LmsNavbar";
 import DynamicFavicon from "./DynamicFavicon";
 import AppInstallPrompt from "./AppInstallPrompt";
+import AcademyOfflineBanner from "./AcademyOfflineBanner";
 import { STUDENT_API, STUDENT_MODULE_API, PUBLIC_API } from "@/lib/api";
 import { apiFetch, okJson } from "@/lib/fetch-with-timeout";
 import type { NavbarSearchItem } from "@/components/NavbarSearch";
@@ -144,6 +145,7 @@ export default function StudentLayoutClient({ children }: { children: React.Reac
                 logoUrl={branding?.logo_url ?? null}
               />
             )}
+            <AcademyOfflineBanner accepting={branding?.academy_accepting} name={branding?.name} />
             {children}
           </main>
         </div>

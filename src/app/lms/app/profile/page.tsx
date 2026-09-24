@@ -3,14 +3,22 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { STUDENT_API } from "../../../../lib/api";
 import { apiFetch } from "../../../../lib/fetch-with-timeout";
+import AccountDangerZone from "../../../../components/account/AccountDangerZone";
+import HelpAndPrivacy from "../../../../components/account/HelpAndPrivacy";
+import DevicesCard from "../../../../components/account/DevicesCard";
 import type { StudentProfile } from "../../../../lib/lms-types";
 
-type Tab = "basic-info" | "professional-details" | "change-password";
+type Tab = "basic-info" | "professional-details" | "change-password" | "help-privacy";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "basic-info", label: "Basic Info" },
   { key: "professional-details", label: "Professional Details" },
   { key: "change-password", label: "Change Password" },
+  // Where a student talks to the platform rather than to their academy: report
+  // the academy, or ask Jorsas for their data. The Delete card below points here
+  // when the account cannot be erased (a paid student), so this tab is also that
+  // card's remedy and the two must stay on the same page.
+  { key: "help-privacy", label: "Help & privacy" },
 ];
 
 export default function ProfilePage() {
@@ -109,7 +117,7 @@ export default function ProfilePage() {
     <section>
       <div className="mb-6 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold capitalize">{activeTab === "basic-info" ? "Basic info" : activeTab === "professional-details" ? "Professional Details" : "Change Password"}</h1>
+          <h1 className="text-2xl font-bold capitalize">{activeTab === "basic-info" ? "Basic info" : activeTab === "professional-details" ? "Professional Details" : activeTab === "help-privacy" ? "Help & privacy" : "Change Password"}</h1>
           <p className="mt-1 text-sm text-white/60">Edit and update your profile</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -249,6 +257,40 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+
+          {activeTab === "help-privacy" && (
+            <HelpAndPrivacy
+              fetcher={apiFetch}
+              reportEndpoint={STUDENT_API.reportAcademy}
+              rightsEndpoint={STUDENT_API.rightsRequest}
+            />
+          )}
+
+          {/* Devices sits outside the tab switch, next to the danger zone: both
+              are account-level controls rather than profile fields, and someone
+              who has just had a "new sign-in" email should not have to find the
+              right tab first. */}
+          <DevicesCard
+            fetcher={apiFetch}
+            listEndpoint={STUDENT_API.devices}
+            signOutEndpoint={STUDENT_API.deviceSignOut}
+            signOutAllEndpoint={STUDENT_API.devicesSignOutEverywhere}
+          />
+
+          <AccountDangerZone
+            endpoints={{
+              show: STUDENT_API.account,
+              deactivate: STUDENT_API.accountDeactivate,
+              reactivate: STUDENT_API.accountReactivate,
+              remove: STUDENT_API.accountDelete,
+              cancelDeletion: STUDENT_API.accountCancelDeletion,
+            }}
+            fetcher={apiFetch}
+            // A student with a payment on record cannot be erased from here (the
+            // backend refuses with 422 and reports can_delete: false). Send them
+            // to the tab above rather than leaving the card as a dead end.
+            onRequestErasure={() => setActiveTab("help-privacy")}
+          />
         </div>
       </div>
     </section>

@@ -35,6 +35,8 @@ export const OWNER_API = {
   analytics: api("/api/frontend/lms/owner/analytics"),
   students: api("/api/frontend/lms/owner/students"),
   deleteStudent: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}`),
+  setStudentActive: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/active`),
+  cancelStudentDeletion: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/cancel-deletion`),
   resendStudentInvite: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/resend-invite`),
   // Invite students straight into a specific course, paid via the academy's
   // own Paystack (pay-first) or comped in. Distinct from importStudents, which
@@ -46,6 +48,28 @@ export const OWNER_API = {
   deleteStaff: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}`),
   resendStaffInvite: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/resend-invite`),
   setStaffActive: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/active`),
+  cancelStaffDeletion: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/cancel-deletion`),
+  // Role preset (owner | admin | instructor | assistant) — what the staffer's
+  // sidebar and endpoints are scoped to. The owner's own row is not editable;
+  // the backend refuses `owner` outright. Takes effect on their next request.
+  setStaffRole: (id: string | number) => api(`/api/frontend/lms/owner/staff/${id}/role`),
+
+  // The owner's own academy. Deactivate takes the public page and new enrolments
+  // offline while students and staff carry on; reactivate undoes it. Permanent
+  // closure is the platform's call and has no endpoint here on purpose.
+  academyLifecycle: api("/api/frontend/lms/owner/academy-lifecycle"),
+  academyDeactivate: api("/api/frontend/lms/owner/academy/deactivate"),
+  academyReactivate: api("/api/frontend/lms/owner/academy/reactivate"),
+  // The owner's own data-rights request (access / erasure / portability …).
+  // Answered by Jorsas, not by the academy — it goes to the platform inbox.
+  rightsRequest: api("/api/frontend/lms/owner/rights-request"),
+  // Device management is the shared account endpoints: one handler accepts the
+  // student, staff and owner sessions and works out which from the token, so the
+  // URL is the same in all three namespaces. What differs is the fetcher, and for
+  // the owner that is ownerFetch() on the profile page (it sends the owner token).
+  devices: api("/api/frontend/lms/account/devices"),
+  deviceSignOut: api("/api/frontend/lms/account/devices/sign-out"),
+  devicesSignOutEverywhere: api("/api/frontend/lms/account/devices/sign-out-everywhere"),
   // Owner Admission Marketer (agent) management: everyone advertising the
   // academy, their referral numbers + payout balance, and approve/reject.
   // Basic+ feature: a lower plan gets 402, which maybeUpgrade() turns into the
@@ -151,6 +175,25 @@ export const STUDENT_API = {
   profile: api("/api/frontend/lms/profile"),
   changePassword: api("/api/frontend/lms/profile/password"),
   profilePhoto: api("/api/frontend/lms/profile/photo"),
+  // Account lifecycle: pause, come back, ask to be deleted, change your mind.
+  // "Delete" only arms a restorable window; nothing is erased until it closes.
+  account: api("/api/frontend/lms/account"),
+  accountDeactivate: api("/api/frontend/lms/account/deactivate"),
+  accountReactivate: api("/api/frontend/lms/account/reactivate"),
+  accountDelete: api("/api/frontend/lms/account/delete"),
+  accountCancelDeletion: api("/api/frontend/lms/account/cancel-deletion"),
+  // Safety & privacy (the profile's Help & privacy tab):
+  //   report-academy — a student flagging their own academy to Jorsas. One open
+  //     report per student per academy; a second is refused with the existing one.
+  //   rights-request — access / rectification / erasure / portability / restrict
+  //     / object, from a student or staffer. Owners use OWNER_API.rightsRequest.
+  //   devices — the shared device list + per-device and everywhere sign-out
+  //     (same endpoints for the student, staff and owner profiles).
+  reportAcademy: api("/api/frontend/lms/account/report-academy"),
+  rightsRequest: api("/api/frontend/lms/account/rights-request"),
+  devices: api("/api/frontend/lms/account/devices"),
+  deviceSignOut: api("/api/frontend/lms/account/devices/sign-out"),
+  devicesSignOutEverywhere: api("/api/frontend/lms/account/devices/sign-out-everywhere"),
   certificates: api("/api/frontend/lms/certificates"),
   messages: api("/api/frontend/lms/messages"),
   // Chat composer file picker (any allowed type): upload first, then send the
@@ -190,6 +233,21 @@ export const STAFF_API = {
   deleteDmMessage: (id: string | number) => api(`/api/frontend/lms/staff/chats/dm/messages/${id}/delete`),
   reactMessage: (id: string | number) => api(`/api/frontend/lms/staff/chats/messages/${id}/react`),
   chatUnread: api("/api/frontend/lms/staff/chats/unread"),
+
+  // Staff account lifecycle, the twin of the student block above.
+  account: api("/api/frontend/lms/staff/account"),
+  accountDeactivate: api("/api/frontend/lms/staff/account/deactivate"),
+  accountReactivate: api("/api/frontend/lms/staff/account/reactivate"),
+  accountDelete: api("/api/frontend/lms/staff/account/delete"),
+  accountCancelDeletion: api("/api/frontend/lms/staff/account/cancel-deletion"),
+  // A staffer's own data-rights request (the student twin is FRONTEND_API.rightsRequest).
+  rightsRequest: api("/api/frontend/lms/account/rights-request"),
+  // Device management is the shared account endpoints — one handler accepts the
+  // student, staff and owner sessions and works out which from the token, so the
+  // URLs are identical across all three namespaces (only the fetcher differs).
+  devices: api("/api/frontend/lms/account/devices"),
+  deviceSignOut: api("/api/frontend/lms/account/devices/sign-out"),
+  devicesSignOutEverywhere: api("/api/frontend/lms/account/devices/sign-out-everywhere"),
   chatGroupMarkRead: api("/api/frontend/lms/staff/chats/group/read"),
   chatDmMarkRead: api("/api/frontend/lms/staff/chats/dm/read"),
   tasks: api("/api/frontend/lms/staff/tasks"),
