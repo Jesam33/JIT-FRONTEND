@@ -19,8 +19,15 @@ type Props = {
   slots: QaSlotInfo[];
   /** The server accepted the registration; carries the address to confirm to. */
   onDone: (email: string) => void;
-  /** Re-read the event: the picked session was taken between load and submit. */
-  onReload: () => void | Promise<void>;
+  /**
+   * Re-read the event: the picked session was taken between load and submit.
+   *
+   * The result is awaited and discarded, so callers may return whatever their own
+   * reload happens to produce (the page's returns whether the event loaded, the
+   * popup's returns whether it should still be showing). Typing this `void` forced
+   * a pointless wrapper at every call site.
+   */
+  onReload: () => Promise<unknown> | void;
   /** The event itself closed between load and submit. */
   onClosed: () => void;
 };

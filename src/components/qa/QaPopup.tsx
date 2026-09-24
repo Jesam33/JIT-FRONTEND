@@ -217,9 +217,7 @@ export default function QaPopup() {
                   // already in their inbox; a second popup is only in the way.
                   rememberDismissed(event.slug);
                 }}
-                onReload={async () => {
-                  await load();
-                }}
+                onReload={load}
                 // The event shut between load and submit. That is not the visitor
                 // choosing to leave, so it closes the popup without recording a
                 // dismissal.
