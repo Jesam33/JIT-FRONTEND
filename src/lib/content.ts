@@ -318,7 +318,7 @@ export const pricingPlans: PricingPlan[] = [
     features: [
       "Up to 3 courses, 1 student, 1 staff",
       "Live classes on every plan",
-      "Full LMS: modules, tasks & grading",
+      "Academic portal: modules, tasks & grading",
       "Student & staff portals",
       "Your own branded academy page",
       "5% platform fee on course sales",

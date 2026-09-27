@@ -48,6 +48,11 @@ type Submission = {
 
 const MAX_ATTACHMENTS = 5;
 
+// Matches StaffTaskController::validateAttachments(). Kept in sync by hand: a
+// longer note typed here would be rejected by the API at save time, after the
+// teacher had already written it, which is the worst moment to find out.
+const MAX_ATTACHMENT_DESCRIPTION = 500;
+
 function formatBytes(bytes?: number | null): string {
   if (!bytes || bytes <= 0) return "";
   const units = ["B", "KB", "MB", "GB"];
@@ -132,6 +137,17 @@ function TaskFormModal({
       .catch(() => setModules([]));
   }, [courseId]);
 
+  /**
+   * Patch one attachment in place.
+   *
+   * By index, not by path: an attachment still uploading has a temporary path
+   * that the upload swaps out mid-edit, so matching on it would drop the edit.
+   * The list never reorders, which is what makes the index stable enough.
+   */
+  function updateAttachment(index: number, patch: Partial<AttachmentDraft>) {
+    setAttachments((prev) => prev.map((a, idx) => (idx === index ? { ...a, ...patch } : a)));
+  }
+
   async function pickFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     const room = MAX_ATTACHMENTS - attachments.length;
@@ -144,7 +160,7 @@ function TaskFormModal({
       // success. Uploads reuse the materials upload endpoint (platform public
       // disk, 50MB cap, mimes allowlist).
       const tempKey = `${file.name}-${Date.now()}-${Math.random()}`;
-      setAttachments((prev) => [...prev, { name: file.name, url: "", size: file.size, uploading: true, path: tempKey }]);
+      setAttachments((prev) => [...prev, { name: file.name, url: "", size: file.size, description: "", uploading: true, path: tempKey }]);
       try {
         const fd = new FormData();
         fd.append("file", file);
@@ -183,6 +199,12 @@ function TaskFormModal({
       setError("Remove the files that failed to upload first.");
       return;
     }
+    // The name is a text field now, so it can be emptied. The API requires one,
+    // and a nameless row in the student's list is useless anyway.
+    if (attachments.some((a) => !a.name.trim())) {
+      setError("Every attachment needs a name.");
+      return;
+    }
 
     setSaving(true);
     setError("");
@@ -195,7 +217,15 @@ function TaskFormModal({
       instructions: instructions.trim(),
       due_at: dueAt,
       submission_type: submissionType,
-      attachments: attachments.map((a) => ({ name: a.name, url: a.url, path: a.path, size: a.size })),
+      // description and name are trimmed here: the API stores them verbatim, so
+      // a name of " handout.pdf " would sort and display with the padding.
+      attachments: attachments.map((a) => ({
+        name: a.name.trim(),
+        url: a.url,
+        path: a.path,
+        size: a.size,
+        description: a.description?.trim() || null,
+      })),
     };
 
     try {
@@ -272,22 +302,48 @@ function TaskFormModal({
               <input type="file" multiple className="hidden" onChange={(e) => { pickFiles(e.target.files); e.currentTarget.value = ""; }} />
             </label>
           </div>
-          <p className="mt-1 text-[11px] text-white/40">Datasets, documents, images or archives students need for this task. Max 50MB each.</p>
+          <p className="mt-1 text-[11px] text-white/40">Datasets, documents, images or archives students need for this task. Max 50MB each. Rename a file to something students will recognise, and add a line saying what it is for.</p>
           {attachments.length > 0 ? (
             <ul className="mt-3 grid gap-2">
               {attachments.map((a, i) => (
-                <li key={`${a.path}-${i}`} className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-white/50" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-                  <span className="min-w-0 flex-1 truncate text-sm text-white">{a.name}</span>
-                  <span className="shrink-0 text-[11px] text-white/40">{a.uploading ? "Uploading…" : a.uploadError ? "" : formatBytes(a.size)}</span>
-                  <button
-                    type="button"
-                    onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
-                    aria-label={`Remove ${a.name}`}
-                    className="shrink-0 rounded-full p-1 text-white/50 transition hover:bg-white/10 hover:text-white"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                  </button>
+                <li key={`${a.path}-${i}`} className="grid gap-1.5 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5">
+                  <div className="flex items-center gap-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-white/50" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                    {/* The file name is editable, so this is a text field rather
+                        than the label it used to be: "Week 3 handout.pdf" tells a
+                        student more than "scan_0043.pdf" does. */}
+                    <input
+                      value={a.name}
+                      onChange={(e) => updateAttachment(i, { name: e.target.value })}
+                      aria-label="Attachment name"
+                      placeholder="File name"
+                      maxLength={255}
+                      className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm text-white placeholder:text-white/35 transition hover:border-white/15 focus:border-white/35 focus:bg-black/40 focus:outline-none"
+                    />
+                    <span className="shrink-0 text-[11px] text-white/40">{a.uploading ? "Uploading…" : a.uploadError ? "" : formatBytes(a.size)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                      aria-label={`Remove ${a.name}`}
+                      className="shrink-0 rounded-full p-1 text-white/50 transition hover:bg-white/10 hover:text-white"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  {/* A failed upload has no file behind it, so it asks to be
+                      removed instead of inviting a description for it. */}
+                  {a.uploadError ? (
+                    <p className="pl-1 text-[11px] text-red-400">{a.uploadError}</p>
+                  ) : (
+                    <input
+                      value={a.description ?? ""}
+                      onChange={(e) => updateAttachment(i, { description: e.target.value })}
+                      aria-label={`What ${a.name} is for`}
+                      placeholder="What this file is for (optional)"
+                      maxLength={MAX_ATTACHMENT_DESCRIPTION}
+                      className="w-full rounded-md border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white placeholder:text-white/35 focus:border-white/35 focus:outline-none"
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -573,7 +629,10 @@ function TaskDetailModal({ task, courses, onEdit, onDelete, onClose }: {
             <ul className="mt-2 grid gap-2">
               {task.attachments.map((a, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2">
-                  <span className="min-w-0 flex-1 truncate text-sm text-white">{a.name}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-white">{a.name}</span>
+                    {a.description ? <span className="mt-0.5 block text-[11px] text-white/50">{a.description}</span> : null}
+                  </span>
                   <a href={a.url} target="_blank" rel="noreferrer" download className="shrink-0 text-xs text-blue-400 underline hover:text-blue-300">Download</a>
                 </li>
               ))}

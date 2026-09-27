@@ -55,7 +55,7 @@ export default function AppInstallPrompt({
   name,
   logoUrl,
 }: {
-  role: "student" | "staff";
+  role: "student" | "staff" | "agent";
   name?: string | null;
   logoUrl?: string | null;
 }) {

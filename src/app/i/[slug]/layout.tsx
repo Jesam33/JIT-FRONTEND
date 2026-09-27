@@ -4,6 +4,7 @@ import { hasContactInfo } from "@/lib/institute-profile";
 import type { StorefrontData } from "@/components/institute/InstituteStorefront";
 import InstituteHeader from "@/components/institute/InstituteHeader";
 import InstituteSiteFooter from "@/components/institute/InstituteSiteFooter";
+import ReferralCapture from "@/components/institute/ReferralCapture";
 
 // Route-scoped chrome for every per-institute mini-site under /i/{slug}
 // (the storefront AND its /i/{slug}/{courseSlug} course pages). AppChrome
@@ -45,6 +46,9 @@ export default async function InstituteLayout({ children, params }: Props) {
 
   return (
     <div style={{ ...brandingStyle(data.branding), ...storefrontBackgroundStyle(data.branding) }}>
+      {/* Remembers an Admission Marketer's ?ref= from a shared link, so the
+          registration form can prefill it. Renders nothing. */}
+      <ReferralCapture slug={slug} />
       <InstituteHeader
         institute={data.institute}
         branding={data.branding}

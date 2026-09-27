@@ -14,10 +14,45 @@ type OwnerNotification = {
   title: string;
   body: string;
   at: string | null;
+  // Present only on the academy's REAL notification rows (raised by the backend
+  // when something consequential happens). Its absence marks a synthesised
+  // activity item — ended cohort, newest student/staff, pending agent
+  // application — which is derived on every read and therefore cannot be
+  // dismissed, only handled at its source.
+  notification_id?: number | null;
+  is_read?: boolean;
+  reference_type?: string | null;
+  reference_id?: number | null;
 };
 
+// Where a real owner notification sends the owner when clicked. Mirrors
+// App\Support\NotificationLinks::pathFor('owner', ...) on the backend, so the
+// emailed deep link and the in-portal click land in the same place. null means
+// the item is informational and not clickable.
+function ownerNotificationHref(n: OwnerNotification): string | null {
+  switch (n.reference_type) {
+    case "course":
+      return "/lms/admin/courses";
+    case "cohort":
+      return "/lms/admin/tracks";
+    case "staff":
+      return "/lms/admin/staff";
+    case "student":
+      return "/lms/admin/students";
+    case "payment":
+      return "/lms/admin/payments";
+    case "agent":
+    case "registration":
+      return "/lms/admin/agents";
+    default:
+      return null;
+  }
+}
+
 // localStorage key holding the ISO timestamp the owner last opened the bell;
-// anything newer counts as unread. Keeps "unread" state without a backend table.
+// anything newer counts as unread. This only covers the SYNTHESISED activity
+// items — the real notification rows carry their own is_read flag, which the
+// backend owns and the badge adds on top.
 const SEEN_KEY = "lms_owner_notifs_seen";
 
 function timeAgo(iso: string | null): string {
@@ -55,15 +90,23 @@ export default function OwnerTopbar({
   const [menu, setMenu] = useState<"none" | "notifications" | "account">("none");
   const [items, setItems] = useState<OwnerNotification[]>([]);
   const [unread, setUnread] = useState(0);
+  // Clearing the whole bell is destructive with no undo, so it asks first with
+  // the inline two-step confirm the admin pages use (no window.confirm). A
+  // single row does not ask: it is one item, and a mis-click costs a
+  // notification the owner had already read.
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   // Theme toggle is intentionally hidden for now: the portal runs in a single
   // dark theme while the light theme is being finished. Restore the theme
   // state, the sync effect, toggleTheme and the toggle button to bring it back.
 
-  // Poll institute activity for the bell. Unread = items newer than last seen.
+  // Poll institute activity for the bell. Unread = synthesised items newer than
+  // last seen, PLUS the academy's real unread rows. The real half comes from the
+  // response's own count rather than from the rendered list, which is capped —
+  // so the badge stays honest past the cap.
   useEffect(() => {
-    const recount = (list: OwnerNotification[]) => {
+    const recount = (list: OwnerNotification[], serverUnread: number) => {
       let seen = 0;
       try {
         const raw = localStorage.getItem(SEEN_KEY);
@@ -71,8 +114,8 @@ export default function OwnerTopbar({
       } catch {
         seen = 0;
       }
-      const n = list.filter((i) => i.at && new Date(i.at).getTime() > seen).length;
-      setUnread(n);
+      const local = list.filter((i) => i.notification_id == null && i.at && new Date(i.at).getTime() > seen).length;
+      setUnread(local + serverUnread);
     };
 
     const load = () => {
@@ -83,7 +126,7 @@ export default function OwnerTopbar({
           if (!j) return;
           const list: OwnerNotification[] = j.notifications ?? [];
           setItems(list);
-          recount(list);
+          recount(list, Number(j.unread) || 0);
         })
         .catch(() => {});
     };
@@ -102,19 +145,40 @@ export default function OwnerTopbar({
 
   const openNotifications = () => {
     setMenu((m) => (m === "notifications" ? "none" : "notifications"));
-    // Opening the panel marks everything seen.
+    // Opening the panel marks everything seen: the local marker for the
+    // synthesised items, and a read-all for the real rows (optimistically
+    // applied here so the badge clears without waiting for the round trip).
     try {
       localStorage.setItem(SEEN_KEY, new Date().toISOString());
     } catch {
       /* ignore */
     }
     setUnread(0);
+    if (items.some((n) => n.notification_id != null && !n.is_read)) {
+      setItems((prev) => prev.map((n) => (n.notification_id != null ? { ...n, is_read: true } : n)));
+      fetch(OWNER_API.markAllOwnerNotificationsRead, { method: "POST", headers: ownerAuthHeaders() }).catch(() => {});
+    }
+  };
+
+  const dismissOne = (id: number) => {
+    setItems((prev) => prev.filter((n) => n.notification_id !== id));
+    fetch(OWNER_API.dismissOwnerNotification(id), { method: "DELETE", headers: ownerAuthHeaders() }).catch(() => {});
+  };
+
+  const clearAll = () => {
+    setItems((prev) => prev.filter((n) => n.notification_id == null));
+    setConfirmingClear(false);
+    fetch(OWNER_API.clearOwnerNotifications, { method: "POST", headers: ownerAuthHeaders() }).catch(() => {});
   };
 
   const handleLogout = () => {
     clearOwnerToken();
     router.push(tenantLoginPath("owner"));
   };
+
+  // Clear-all only makes sense when there is at least one real row; the
+  // synthesised activity items have nothing to clear.
+  const hasRealItems = items.some((n) => n.notification_id != null);
 
   const iconBtn =
     "relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 [html.light_&]:border-black/10 [html.light_&]:bg-black/5 [html.light_&]:text-black/80 [html.light_&]:hover:bg-black/[0.08]";
@@ -190,25 +254,88 @@ export default function OwnerTopbar({
       {/* Notifications panel */}
       {menu === "notifications" && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/15 bg-[#0b0b0b] shadow-2xl [html.light_&]:border-site-border [html.light_&]:bg-white">
-          <div className="border-b border-white/10 px-4 py-3 [html.light_&]:border-black/10">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 [html.light_&]:border-black/10">
             <p className="text-sm font-semibold text-white [html.light_&]:text-black">Activity</p>
+            {hasRealItems &&
+              (confirmingClear ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="rounded-lg bg-red-500/20 px-2.5 py-1 text-xs font-semibold text-red-300 transition hover:bg-red-500/30"
+                  >
+                    Confirm clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingClear(false)}
+                    className="rounded-lg border border-white/15 px-2.5 py-1 text-xs text-white/70 transition hover:bg-white/10 [html.light_&]:border-black/15 [html.light_&]:text-black/70 [html.light_&]:hover:bg-black/5"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingClear(true)}
+                  className="rounded-lg border border-white/10 px-2.5 py-1 text-xs text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300 [html.light_&]:border-black/10"
+                >
+                  Clear all
+                </button>
+              ))}
           </div>
           <div className="max-h-[360px] overflow-y-auto">
             {items.length === 0 ? (
               <p className="px-4 py-8 text-center text-sm text-white/50 [html.light_&]:text-black/50">
-                Nothing yet. New students and staff will show up here.
+                Nothing yet. New students, staff and agent applications will show up here.
               </p>
             ) : (
               items.map((n) => {
-                // Ended-cohort items are action items, not just activity: they
-                // link to the Certificates page where the cohort is reviewed,
-                // and stay in the bell until issued or dismissed there.
+                // Ended cohorts and pending agent applications are action items,
+                // not just activity: they stay in the bell until handled, and
+                // clicking one opens the page where they are handled. Real
+                // notification rows carry their own destination instead.
                 const isCohort = n.type === "cohort_ended";
-                const inner = (
-                  <>
+                const isAgent = n.type === "agent_applied";
+                const href =
+                  ownerNotificationHref(n) ??
+                  (isCohort
+                    ? "/lms/admin/certificates"
+                    : isAgent
+                      ? "/lms/admin/agents"
+                      : null);
+                const open = href
+                  ? () => {
+                      setMenu("none");
+                      router.push(href);
+                    }
+                  : undefined;
+                return (
+                  <div
+                    key={n.id}
+                    role={open ? "button" : undefined}
+                    tabIndex={open ? 0 : undefined}
+                    onClick={open}
+                    onKeyDown={
+                      open
+                        ? (e) => {
+                            if (e.key === "Enter") open();
+                          }
+                        : undefined
+                    }
+                    className={`flex items-start gap-3 border-b border-white/5 px-4 py-3 last:border-0 [html.light_&]:border-black/5 ${
+                      open ? "cursor-pointer transition hover:bg-white/5 [html.light_&]:hover:bg-black/5" : ""
+                    }`}
+                  >
                     <span
                       className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white ${
-                        n.type === "staff_added" ? "bg-site-secondary" : isCohort ? "bg-amber-500" : "bg-site-primary"
+                        n.type === "staff_added"
+                          ? "bg-site-secondary"
+                          : isCohort
+                            ? "bg-amber-500"
+                            : isAgent
+                              ? "bg-emerald-500"
+                              : "bg-site-primary"
                       }`}
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -217,6 +344,8 @@ export default function OwnerTopbar({
                             <circle cx="12" cy="8" r="6" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" />
                           </>
+                        ) : isAgent ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.83 10.17a4 4 0 010 5.66l-3 3a4 4 0 01-5.66-5.66l1.5-1.5M10.17 13.83a4 4 0 010-5.66l3-3a4 4 0 015.66 5.66l-1.5 1.5" />
                         ) : (
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         )}
@@ -226,29 +355,28 @@ export default function OwnerTopbar({
                       <p className="text-sm font-medium text-white [html.light_&]:text-black">{n.title}</p>
                       <p className="truncate text-xs text-white/60 [html.light_&]:text-black/60">{n.body}</p>
                     </div>
-                    <span className="shrink-0 text-[10px] text-white/40 [html.light_&]:text-black/40">
-                      {timeAgo(n.at)}
-                    </span>
-                  </>
-                );
-                return isCohort ? (
-                  <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => {
-                      setMenu("none");
-                      router.push("/lms/admin/certificates");
-                    }}
-                    className="flex w-full items-start gap-3 border-b border-white/5 px-4 py-3 text-left last:border-0 transition hover:bg-white/5 [html.light_&]:border-black/5 [html.light_&]:hover:bg-black/5"
-                  >
-                    {inner}
-                  </button>
-                ) : (
-                  <div
-                    key={n.id}
-                    className="flex items-start gap-3 border-b border-white/5 px-4 py-3 last:border-0 [html.light_&]:border-black/5"
-                  >
-                    {inner}
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span className="text-[10px] text-white/40 [html.light_&]:text-black/40">
+                        {timeAgo(n.at)}
+                      </span>
+                      {/* Only the real rows can be cleared. The synthesised ones
+                          are derived on every read from live data, so they go
+                          away by handling the thing they point at. */}
+                      {n.notification_id != null && (
+                        <button
+                          type="button"
+                          aria-label="Clear this notification"
+                          title="Clear this notification"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissOne(n.notification_id as number);
+                          }}
+                          className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-white/50 transition hover:bg-red-500/10 hover:text-red-300 [html.light_&]:border-black/10 [html.light_&]:text-black/50"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })

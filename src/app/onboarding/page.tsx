@@ -56,7 +56,7 @@ function OnboardingInner() {
           <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
             <h1 className="mb-1 text-2xl font-semibold text-white">Setting up your Online Academy</h1>
             <p className="mb-6 text-sm text-site-muted">
-              We&apos;re provisioning your LMS. This page updates automatically.
+              We&apos;re provisioning your academic portal. This page updates automatically.
             </p>
 
             {!tenant && (

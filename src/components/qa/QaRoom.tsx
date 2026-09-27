@@ -280,7 +280,6 @@ export default function QaRoom({ mode, token }: Props) {
       <div className="flex shrink-0 items-center gap-3 bg-black px-4 py-2.5 text-white">
         <span className="min-w-0 flex-1 truncate text-xs">
           <span className="font-semibold">{brand}</span>
-          <span className="text-white/50"> x Jorsas Tech</span>
           {room?.slot?.label ? <span className="text-white/50"> · {room.slot.label}</span> : null}
           {room?.moderator ? <span className="ml-2 rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold">Host</span> : null}
         </span>

@@ -19,6 +19,14 @@ export const AUTH_API = {
   ownerInvite: (token: string) => api(`/api/frontend/lms/owner-invite?token=${encodeURIComponent(token)}`),
 };
 
+// "Help us make the app better" — ONE endpoint for every portal. The backend
+// resolves the author (and the academy) from whichever bearer token the request
+// carries, so student, staff, owner and agent all post here with their own
+// credentials and there is no per-portal URL to keep in sync.
+export const FEEDBACK_API = {
+  submit: api("/api/frontend/lms/feedback"),
+};
+
 // Owner (institute admin) endpoints. All authenticated calls send
 // `Authorization: Bearer <lms_owner_token>`; the backend derives the tenant
 // from the owner session (ResolveTenantFromSession), so no tenant header.
@@ -100,6 +108,13 @@ export const OWNER_API = {
   issueCohortCertificates: api("/api/frontend/lms/owner/certificates/cohort"),
   dismissCohortCertificates: (id: string | number) => api(`/api/frontend/lms/owner/certificates/cohort/${id}/dismiss`),
   notifications: api("/api/frontend/lms/owner/notifications"),
+  // The owner bell merges real notification rows (dismissible, clearable) with
+  // activity items synthesised from existing tables (not dismissible). The
+  // payload's per-item `notification_id` is the flag that separates them.
+  markOwnerNotificationRead: (id: string | number) => api(`/api/frontend/lms/owner/notifications/${id}/read`),
+  markAllOwnerNotificationsRead: api("/api/frontend/lms/owner/notifications/read-all"),
+  dismissOwnerNotification: (id: string | number) => api(`/api/frontend/lms/owner/notifications/${id}`),
+  clearOwnerNotifications: api("/api/frontend/lms/owner/notifications/clear"),
   // CEO's Forum: list upcoming/past platform-hosted sessions, and mint a
   // participant token to join in-portal (only inside the join window).
   forums: api("/api/frontend/lms/owner/forums"),
@@ -163,6 +178,10 @@ export const STUDENT_API = {
   notificationUnread: api("/api/frontend/lms/notifications/unread"),
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/notifications/${id}/read`),
   markAllNotificationsRead: api("/api/frontend/lms/notifications/read-all"),
+  // Clearing is a DELETE (not another flag): the bell has no archive view, so a
+  // dismissed row is gone for good. `clear` empties the whole bell.
+  dismissNotification: (id: string | number) => api(`/api/frontend/lms/notifications/${id}`),
+  clearNotifications: api("/api/frontend/lms/notifications/clear"),
   attendance: api("/api/frontend/lms/attendance"),
   courses: api("/api/frontend/lms/courses"),
   // Rate the course the student is enrolled in (1 to 5). One rating per student per
@@ -312,6 +331,10 @@ export const STAFF_API = {
   notificationUnread: api("/api/frontend/lms/staff/notifications/unread"),
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/staff/notifications/${id}/read`),
   markAllNotificationsRead: api("/api/frontend/lms/staff/notifications/read-all"),
+  // Clearing is a DELETE (not another flag): the bell has no archive view, so a
+  // dismissed row is gone for good. `clear` empties the whole bell.
+  dismissNotification: (id: string | number) => api(`/api/frontend/lms/staff/notifications/${id}`),
+  clearNotifications: api("/api/frontend/lms/staff/notifications/clear"),
 };
 
 export const STUDENT_MODULE_API = {
@@ -335,6 +358,12 @@ export const AGENT_API = {
   apply: api("/api/frontend/lms/agents/apply"),
   login: api("/api/frontend/lms/agents/login"),
   me: api("/api/frontend/lms/agents/me"),
+  // White-label branding for the agent portal shell. Same portal-agnostic
+  // endpoint the student/staff shells use; the tenant resolves from the agent's
+  // own bearer session (ResolveTenantFromSession handles AgentSession), so an
+  // Admission Marketer of a non-primary academy wears THAT academy's logo,
+  // colour and favicon instead of the platform's.
+  branding: api("/api/frontend/lms/branding"),
   profile: api("/api/frontend/lms/agents/profile"),
   avatar: api("/api/frontend/lms/agents/avatar"),
   dashboard: api("/api/frontend/lms/agents/dashboard"),
@@ -347,6 +376,10 @@ export const AGENT_API = {
   notificationUnread: api("/api/frontend/lms/agents/notifications/unread"),
   markNotificationRead: (id: string | number) => api(`/api/frontend/lms/agents/notifications/${id}/read`),
   markAllNotificationsRead: api("/api/frontend/lms/agents/notifications/read-all"),
+  // Clearing is a DELETE (not another flag): the bell has no archive view, so a
+  // dismissed row is gone for good. `clear` empties the whole bell.
+  dismissNotification: (id: string | number) => api(`/api/frontend/lms/agents/notifications/${id}`),
+  clearNotifications: api("/api/frontend/lms/agents/notifications/clear"),
   forgotPassword: api("/api/frontend/lms/agents/forgot-password"),
   resetPassword: api("/api/frontend/lms/agents/reset-password"),
 };

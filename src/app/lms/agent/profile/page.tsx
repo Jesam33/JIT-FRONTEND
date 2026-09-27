@@ -13,6 +13,8 @@ type AgentProfile = {
   home_address: string;
   qualification: string;
   referral_code: string;
+  // The same code as a ready-to-share academy link (see Agent::getReferralLinkAttribute).
+  referral_link?: string | null;
   status: string;
   avatar: string | null;
   profile_photo_url: string | null;
@@ -185,10 +187,27 @@ export default function AgentProfilePage() {
           </div>
         </div>
         <div className="flex items-center justify-between px-6 py-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-[0.1em] text-white/50">Referral Code</p>
             <p className="mt-1 text-lg font-bold tracking-widest text-white">{profile.referral_code}</p>
+            {profile.referral_link && (
+              <>
+                <p className="mt-3 text-xs uppercase tracking-[0.1em] text-white/50">Referral Link</p>
+                <p className="mt-1 break-all font-mono text-xs text-white/70">{profile.referral_link}</p>
+              </>
+            )}
           </div>
+          {profile.referral_link && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(profile.referral_link as string);
+                toast("Referral link copied!", "success");
+              }}
+              className="shrink-0 rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white hover:bg-white/5 transition"
+            >
+              Copy Link
+            </button>
+          )}
         </div>
         <div className="flex items-center justify-between px-6 py-4">
           <div>

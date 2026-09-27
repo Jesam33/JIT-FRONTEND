@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PUBLIC_API } from "@/lib/api";
 import { tenantHeaders } from "@/lib/tenant-client";
 import { formatPrice, readCookie } from "@/lib/currency";
 import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
+import { referralCodeFor } from "@/lib/referral";
+import { useCourseMode } from "@/components/institute/course-mode";
 
 type CourseDetail = {
   id: number;
@@ -110,6 +112,26 @@ export default function CourseRegisterClient({
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  // A student who arrived through an Admission Marketer's shared link gets the
+  // referral code filled in for them (see lib/referral). Prefilled, not locked:
+  // it is optional, and the visitor can correct or clear it. Read after mount
+  // because it comes from the URL and storage, neither of which exists on the
+  // server, so doing it during render would mismatch the server's HTML.
+  useEffect(() => {
+    const code = referralCodeFor(slug);
+    if (!code) return;
+    setForm((prev) => (prev.referral_code ? prev : { ...prev, referral_code: code }));
+  }, [slug]);
+
+  // Publish the chosen delivery mode so the price headline above follows it
+  // (CourseAside). Null outside a provider, so this is a no-op when the form is
+  // rendered somewhere with no price panel.
+  const courseMode = useCourseMode();
+  const publishMode = courseMode?.setMode;
+  useEffect(() => {
+    publishMode?.(form.learning_mode);
+  }, [form.learning_mode, publishMode]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

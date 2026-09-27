@@ -9,7 +9,9 @@ import ToastProvider from "./ToastProvider";
 import DynamicFavicon from "./DynamicFavicon";
 import UpgradeModal from "./UpgradeModal";
 import OwnerFrozenScreen, { type FrozenInfo } from "./OwnerFrozenScreen";
-import { OWNER_API } from "@/lib/api";
+import FeedbackButton, { type FeedbackSubmission } from "./FeedbackButton";
+import { OWNER_API, FEEDBACK_API } from "@/lib/api";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { getOwnerToken, clearOwnerToken, ownerAuthHeaders, writeBrandingCookie, writeOwnerNameCookie } from "@/lib/owner-client";
 import { brandingStyle, storefrontBackgroundStyle, type OwnerBranding } from "@/lib/owner-branding";
 import { tenantLoginPath, setTenantCookie, getTenantSlug } from "@/lib/tenant-client";
@@ -220,6 +222,18 @@ export default function OwnerLayoutClient({
     );
   }
 
+  // "Help us make the app better" (see FeedbackButton). Only the main shell
+  // renders the pill, so this is declared beside that return rather than above
+  // the frozen-screen branch.
+  const submitOwnerFeedback = async (payload: FeedbackSubmission) => {
+    const res = await fetchWithTimeout(FEEDBACK_API.submit, {
+      method: "POST",
+      headers: { ...ownerAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Feedback was not accepted.");
+  };
+
   return (
     <ToastProvider>
     <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }}>
@@ -232,6 +246,10 @@ export default function OwnerLayoutClient({
       <IdleLogout tokenKeys={["lms_owner_token"]} redirectTo={tenantLoginPath("owner")} />
       {/* Global plan-limit prompt, any owner page raises it via maybeUpgrade(). */}
       <UpgradeModal />
+      {/* "Help us make the app better". The backend resolves the author and the
+          academy from the owner session, so only the category, the message and
+          the page are sent. */}
+      <FeedbackButton submit={submitOwnerFeedback} />
       <div className="container-wide grid items-start gap-4 md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <OwnerSidebar identity={identity} />
         <main className="relative min-w-0 pb-8">

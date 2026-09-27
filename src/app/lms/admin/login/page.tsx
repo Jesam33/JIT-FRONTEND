@@ -69,7 +69,7 @@ function OwnerLoginInner() {
   return (
     <AuthLayout
       title="Owner sign in"
-      subtitle="Manage your Online Academy's LMS."
+      subtitle="Manage your Online Academy."
       footer={
         <>
           Don&apos;t have an Online Academy yet?{" "}

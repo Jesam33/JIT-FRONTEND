@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { QA_API } from "@/lib/api";
 import QaSignupForm from "@/components/qa/QaSignupForm";
-import { qaBrandName, qaPrettyDate, type QaEventInfo, type QaSlotInfo } from "@/components/qa/types";
+import { qaBrandName, qaParentNotice, qaPrettyDate, type QaEventInfo, type QaSlotInfo } from "@/components/qa/types";
 
 // Public signup for a QA testing pass, as a standalone page. The same form is
 // also offered as a popup on the marketing site (see QaPopup); this page is the
@@ -77,12 +77,13 @@ export default function QaRegisterPage() {
   }, [loadEvent]);
 
   const brand = qaBrandName(event);
+  const parentNotice = qaParentNotice(event);
   const when = useMemo(() => qaPrettyDate(event?.starts_at), [event]);
 
   return (
     <div className="min-h-dvh bg-site-bg px-4 py-10 text-site-text sm:px-6">
       <div className="mx-auto w-full max-w-xl">
-        <BrandLockup brand={brand} />
+        <BrandLockup brand={brand} notice={parentNotice} />
 
         {phase === "loading" ? (
           <Card>
@@ -172,12 +173,11 @@ function Card({ children }: { children: React.ReactNode }) {
 // Type lockup rather than a logo image: no iungo mark has been supplied yet, so
 // the collaboration is carried by the wordmarks. Swap in the real lockup here
 // (and in QaPopup) when the asset arrives.
-function BrandLockup({ brand }: { brand: string }) {
+function BrandLockup({ brand, notice }: { brand: string; notice: string }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
+    <div className="mb-6 flex flex-col items-center gap-1">
       <span className="text-lg font-semibold tracking-tight">{brand}</span>
-      <span className="text-sm text-site-muted">x</span>
-      <span className="text-lg font-semibold tracking-tight">Jorsas Tech</span>
+      <span className="text-xs text-site-muted">{notice}</span>
     </div>
   );
 }

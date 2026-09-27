@@ -8,8 +8,8 @@ import type { Metadata } from "next";
 // This is a server component wrapping client children, which is why it exists
 // as a layout at all.
 export const metadata: Metadata = {
-  title: "iungo x Jorsas Tech testing",
-  description: "Sign up for an iungo app testing session with Jorsas Tech.",
+  title: "iungo testing",
+  description: "Sign up for an iungo app testing session.",
   robots: { index: false, follow: false },
 };
 

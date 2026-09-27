@@ -1,17 +1,18 @@
 // Client-side helper that makes the CURRENT page installable as the ACADEMY's
-// app (not the platform's). Called from inside the logged-in student/staff
-// portals (see AppInstallPrompt).
+// app (not the platform's). Called from inside the logged-in student/staff/
+// agent portals (see AppInstallPrompt).
 //
 // Browsers read a PWA's identity (name, icons, theme color, start_url) from the
 // page's <link rel="manifest"> AT INSTALL TIME — and Chrome snapshots it at
 // page load, before hydration. The portal layouts therefore SERVER-RENDER this
-// link from the tenant cookie (see app/lms/app/layout.tsx and
-// app/lms/staff/layout.tsx); the swap below is the follow-up correction for a
-// stale cookie (the guards re-pin it from the authenticated session shortly
-// after load, announced via the "lms-tenant-pinned" event). We only mutate the
-// link's href attribute (never remove/re-append the React-owned node — that
-// corrupts React's DOM bookkeeping, the DynamicFavicon lesson) and nothing
-// re-renders head metadata on the portal routes, so the swap holds.
+// link from the tenant cookie (see app/lms/app/layout.tsx, app/lms/staff/
+// layout.tsx and app/lms/agent/layout.tsx); the swap below is the follow-up
+// correction for a stale cookie (the guards re-pin it from the authenticated
+// session shortly after load, announced via the "lms-tenant-pinned" event). We
+// only mutate the link's href attribute (never remove/re-append the
+// React-owned node — that corrupts React's DOM bookkeeping, the DynamicFavicon
+// lesson) and nothing re-renders head metadata on the portal routes, so the
+// swap holds.
 //
 // iOS Safari's "Add to Home Screen" ignores the manifest's icon in favour of
 // <link rel="apple-touch-icon"> and the tab title / apple-mobile-web-app-title
@@ -20,7 +21,7 @@
 // Android, but iOS needs a bitmap, so a logo-less academy keeps the default
 // apple icon there).
 
-export type InstallRole = "student" | "staff";
+export type InstallRole = "student" | "staff" | "agent";
 
 function setLinkHref(rel: string, href: string): void {
   let link = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);

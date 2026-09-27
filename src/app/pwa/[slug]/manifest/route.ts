@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
-// Per-academy Web App Manifest, served at /pwa/{slug}/manifest?role=student|staff.
+// Per-academy Web App Manifest, served at
+// /pwa/{slug}/manifest?role=student|staff|agent.
 //
 // Each academy's students and staff install THEIR OWN app from inside the
 // logged-in portal: a PFC student installs "PFC Academy" (its logo, its brand
@@ -18,8 +19,9 @@ import { NextRequest } from "next/server";
 // The `role` query param picks where the installed app opens:
 //   student → /lms/app          (its guard bounces a logged-out user to login)
 //   staff   → /lms/staff/app
-// The two roles are separate installs (distinct `id`), so a teacher who is also
-// a student at the same academy can have both on their home screen.
+//   agent   → /lms/agent/dashboard
+// The roles are separate installs (distinct `id`), so a teacher who is also a
+// student at the same academy can have both on their home screen.
 // start_url carries ?tenant={slug} so the app pins the right academy even on
 // deployments without subdomains (the portals read it via
 // pinTenantFromLocation on mount).
@@ -33,6 +35,16 @@ type StorefrontPayload = {
 };
 
 const FALLBACK_THEME = "#000000";
+
+// Whitelisted so an unknown ?role= can never end up interpolated into a
+// start_url (the value lands in the manifest, not in a query we control).
+const ROLES = {
+  student: { start: "/lms/app", portal: "learning portal" },
+  staff: { start: "/lms/staff/app", portal: "staff portal" },
+  agent: { start: "/lms/agent/dashboard", portal: "Admission Marketer portal" },
+} as const;
+
+type Role = keyof typeof ROLES;
 
 function themeColor(hex?: string | null): string {
   return hex && /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : FALLBACK_THEME;
@@ -50,7 +62,8 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const role = request.nextUrl.searchParams.get("role") === "staff" ? "staff" : "student";
+  const requested = request.nextUrl.searchParams.get("role");
+  const role: Role = requested && requested in ROLES ? (requested as Role) : "student";
 
   let data: StorefrontPayload | null = null;
   try {
@@ -69,7 +82,7 @@ export async function GET(
   const logo = data?.branding?.logo_url ?? null;
   const theme = themeColor(data?.branding?.primary_color);
 
-  const startUrl = `${role === "staff" ? "/lms/staff/app" : "/lms/app"}?tenant=${encodeURIComponent(slug)}`;
+  const startUrl = `${ROLES[role].start}?tenant=${encodeURIComponent(slug)}`;
 
   // When the academy has a logo we declare it at the sizes Chrome's
   // installability check requires (an actual bitmap >= 144px). A logo-less
@@ -91,7 +104,10 @@ export async function GET(
     name,
     // The launcher label: the first word or two, kept short.
     short_name: name.split(/\s+/).slice(0, 2).join(" ").slice(0, 15) || name.slice(0, 15),
-    description: data?.profile?.tagline?.trim() || `The ${name} learning portal`,
+    // The academy's own tagline wins when it has one; otherwise name the
+    // portal this particular install opens, so an agent's and a student's app
+    // are not described identically on the home screen.
+    description: data?.profile?.tagline?.trim() || `The ${name} ${ROLES[role].portal}`,
     start_url: startUrl,
     scope: "/",
     display: "standalone",

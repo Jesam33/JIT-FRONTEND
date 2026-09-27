@@ -153,6 +153,12 @@ export type TaskAttachment = {
   name: string;
   url: string;
   size?: number | null;
+  /**
+   * The teacher's own line on what the file is for. Optional everywhere it is
+   * read: files attached before this existed have no such key, and a reader that
+   * assumed one would render "undefined" under the file name.
+   */
+  description?: string | null;
 };
 
 export type TaskItem = {

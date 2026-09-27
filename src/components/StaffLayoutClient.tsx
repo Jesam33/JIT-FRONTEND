@@ -10,7 +10,8 @@ import LmsNavbar from "./LmsNavbar";
 import DynamicFavicon from "./DynamicFavicon";
 import AppInstallPrompt from "./AppInstallPrompt";
 import AcademyOfflineBanner from "./AcademyOfflineBanner";
-import { STAFF_API, PUBLIC_API } from "@/lib/api";
+import FeedbackButton, { type FeedbackSubmission } from "./FeedbackButton";
+import { STAFF_API, PUBLIC_API, FEEDBACK_API } from "@/lib/api";
 import { apiFetchStaff, okJson } from "@/lib/fetch-with-timeout";
 import type { NavbarSearchItem } from "@/components/NavbarSearch";
 import { brandingStyle, storefrontBackgroundStyle } from "@/lib/owner-branding";
@@ -145,6 +146,18 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
 
   const hideSidebar = publicPaths.some((p) => pathname.startsWith(p));
 
+  // "Help us make the app better". apiFetchStaff injects the staff (or owner)
+  // token; the backend takes the author and the academy from that session, never
+  // from this body, so the payload is only the category, the message and page.
+  const submitFeedback = async (payload: FeedbackSubmission) => {
+    const res = await apiFetchStaff(FEEDBACK_API.submit, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Feedback was not accepted.");
+  };
+
   // Every staff auth screen (login, forgot/reset/setup password) now uses the
   // shared neutral <AuthLayout>, which owns the whole viewport (its own logo,
   // branding + favicon). Render them all chrome-free, no sidebar shell, no
@@ -175,6 +188,7 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
       {!hideSidebar && (
         <AppInstallPrompt role="staff" name={branding?.name ?? null} logoUrl={branding?.logo_url ?? null} />
       )}
+      <FeedbackButton submit={submitFeedback} />
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
         <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
           {!hideSidebar && <StaffSidebar />}

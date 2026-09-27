@@ -16,6 +16,9 @@ type DashboardData = {
   paid_commission: number;
   balance: number;
   referral_code: string;
+  // The same code as a ready-to-share academy link. Null only for a legacy agent
+  // whose academy cannot be resolved, in which case the link row is hidden.
+  referral_link?: string | null;
   has_bank_details: boolean;
   recent_referrals: { id: number; name: string; email: string; course: string; enrolled_at: string }[];
   recent_transactions: { id: number; amount: number; type: string; status: string; notes: string; created_at: string }[];
@@ -55,6 +58,12 @@ export default function AgentDashboardPage() {
     toast("Referral code copied!", "success");
   }
 
+  function copyLink() {
+    if (!data?.referral_link) return;
+    navigator.clipboard.writeText(data.referral_link);
+    toast("Referral link copied!", "success");
+  }
+
   const filtered = (data?.recent_transactions ?? []).filter((tx) => {
     if (txSearch && !(tx.notes ?? "").toLowerCase().includes(txSearch.toLowerCase())) return false;
     if (txType !== "all" && tx.type !== txType) return false;
@@ -88,6 +97,31 @@ export default function AgentDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* The code as a link. Sharing the link is the point: a student who opens
+            it lands on the academy with the code already applied, so nothing has
+            to be typed (or remembered) at registration. */}
+        {data.referral_link && (
+          <div className="mt-5 border-t border-white/10 pt-5">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.2em] text-white/60">Your Referral Link</p>
+                <p className="mt-1 break-all font-mono text-sm text-white/90">{data.referral_link}</p>
+              </div>
+              <button onClick={copyLink} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black hover:bg-white/90 transition">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Link
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-white/50">
+              Anyone who registers through this link is credited to you automatically. The code above is
+              for when someone registers in person or over the phone.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -236,7 +270,7 @@ export default function AgentDashboardPage() {
           </div>
         </div>
         {data.recent_referrals.length === 0 ? (
-          <p className="mt-4 text-sm text-white/50">No referrals yet. Start by sharing your referral code or registering a student.</p>
+          <p className="mt-4 text-sm text-white/50">No referrals yet. Start by sharing your referral link or registering a student.</p>
         ) : (
           <div className="mt-4 divide-y divide-white/10">
             {data.recent_referrals.map((r) => (

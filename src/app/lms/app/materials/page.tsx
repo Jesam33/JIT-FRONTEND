@@ -26,7 +26,7 @@ function MaterialCard({ item }: { item: MaterialItem }) {
   const resolvedType = item.type === "video" || isBunny || isVideoUrl(item.file_url) ? "video" : item.type ?? "file";
   const processing = isBunny && item.status === "processing";
 
-  return (
+  return (  
     <li className="rounded-lg border border-white/15 bg-black/30 px-3 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">

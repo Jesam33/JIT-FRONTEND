@@ -1,11 +1,11 @@
 import { brandingStyle, type OwnerBranding } from "@/lib/owner-branding";
 import type { InstituteProfile } from "@/lib/institute-profile";
+import CourseAside from "@/components/institute/CourseAside";
 import CourseRegisterClient from "@/components/institute/CourseRegisterClient";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
-import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
 import CourseDescription from "@/components/institute/CourseDescription";
+import CourseRequirements from "@/components/institute/CourseRequirements";
 import StarRating from "@/components/ui/StarRating";
-import { formatPrice } from "@/lib/currency";
 
 export type DetailCourse = {
   id: number;
@@ -60,33 +60,9 @@ export type CourseDetailData = {
   course: DetailCourse;
 };
 
-// The big headline price in the visitor's display currency (free → "Free").
-function headlinePrice(course: DetailCourse): string {
-  if (course.price <= 0) return "Free";
-  return formatPrice(course.price_display ?? course.price, course.display_currency ?? "NGN");
-}
-
-// The struck-through "was" price beside the headline, only when a real original
-// was entered AND it exceeds the current price (compared in the same currency space).
-function detailOriginalPrice(course: DetailCourse): string | null {
-  if (course.price <= 0) return null;
-  const orig = course.original_price_display ?? course.original_price ?? null;
-  const current = course.price_display ?? course.price;
-  if (orig == null || !(orig > current)) return null;
-  return formatPrice(orig, course.display_currency ?? "NGN");
-}
-
-// The cheaper pre-recorded price, shown as a secondary line beneath the headline
-// (which is the live price, the register form defaults to Live). Only rendered
-// when the course sets a distinct, genuinely lower pre-recorded price.
-function prerecordedPriceLabel(course: DetailCourse): string | null {
-  if (course.price <= 0) return null;
-  const pre = course.prerecorded_price_display ?? course.prerecorded_price ?? null;
-  if (pre == null) return null;
-  const live = course.price_display ?? course.price;
-  if (!(pre < live)) return null;
-  return formatPrice(pre, course.display_currency ?? "NGN");
-}
+// The big headline price, the struck-through "was" price and the charge note all
+// live in CourseAside now: they follow the delivery mode chosen in the register
+// form, which makes them stateful, so they cannot stay server-rendered here.
 
 // First character of the title, for the branded placeholder when no cover is set.
 function coverInitial(title: string): string {
@@ -152,28 +128,9 @@ export default function InstituteCourseDetail({
 
             {course.description ? <CourseDescription text={course.description} /> : null}
 
-            {course.requirements ? (
-              <div className="mt-6 text-sm leading-7 text-white/85">
-                <h2 className="mb-2 text-lg font-semibold text-white">Requirements</h2>
-                {/* The owner types one requirement per line in the course form.
-                    Split on newlines and render each as its own line, so
-                    "A very good laptop" / "A very good internet connection" no
-                    longer collapse into one run-on sentence. A single-line value
-                    still renders as one bullet. */}
-                <ul className="list-none space-y-1.5">
-                  {course.requirements
-                    .split(/\r?\n/)
-                    .map((line) => line.trim())
-                    .filter(Boolean)
-                    .map((line, i) => (
-                      <li key={i} className="flex gap-2.5">
-                        <span aria-hidden className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-primary)]" />
-                        <span className="whitespace-pre-line break-words">{line}</span>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ) : null}
+            {/* One requirement per line, clamped with a See more toggle when the
+                list runs long (CourseRequirements). */}
+            {course.requirements ? <CourseRequirements text={course.requirements} /> : null}
 
             <div className="mt-6 flex flex-wrap gap-2">
               {course.is_live_available ? (
@@ -190,74 +147,51 @@ export default function InstituteCourseDetail({
           </article>
 
           <aside className="h-fit rounded-xl border border-white/20 bg-white/5 p-6">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
-                {headlinePrice(course)}
-              </p>
-              {detailOriginalPrice(course) ? (
-                <span className="text-lg text-white/40 line-through">{detailOriginalPrice(course)}</span>
-              ) : null}
-              {prerecordedPriceLabel(course) ? (
-                <span className="rounded-full border border-white/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-white/60">
-                  live
-                </span>
-              ) : null}
-            </div>
-            {prerecordedPriceLabel(course) ? (
-              <p className="mt-1 text-sm text-white/75">
-                or <span className="font-semibold text-white">{prerecordedPriceLabel(course)}</span> pre-recorded
-              </p>
-            ) : null}
-            {course.price > 0 && course.is_base_currency === false ? (
-              <p className="mt-1 text-xs text-white/60">
-                Approx. shown in {course.display_currency} · you&apos;ll be charged{" "}
-                {course.charge_currency === "USD" ? "in USD" : formatPrice(course.price, "NGN")}
-              </p>
-            ) : null}
-            {course.price > 0 ? (
-              <div className="mt-3 flex items-center gap-2 text-xs text-white/60">
-                <span>Show price in</span>
-                <CurrencySwitcher active={course.display_currency ?? "NGN"} />
-              </div>
-            ) : null}
-
-            <div className="mt-4 space-y-3 text-sm text-white/75">
-              <div className="flex justify-between border-b border-white/10 pb-2">
-                <span>Slots remaining</span>
-                <span className="font-semibold text-white">
-                  {course.is_full ? "Full" : course.max_students > 0 ? course.slots_remaining : "Open"}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-white/10 pb-2">
-                <span>Total capacity</span>
-                <span className="font-semibold text-white">
-                  {course.max_students > 0 ? course.max_students : "Unlimited"}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-white/10 pb-2">
-                <span>Registered</span>
-                <span className="font-semibold text-white">{course.registered_count}</span>
-              </div>
-            </div>
-
-            {/* Registration gate mirrors is_full: full and closed both hide the
-                form (the backend rejects a direct submit with the same message). */}
-            {course.is_full ? (
-              <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: "#d97706" }}>
-                This course is currently full. Check back later for available slots.
-              </div>
-            ) : course.registration_open === false ? (
-              <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: "#d97706" }}>
-                Registration for this course has closed. Please check back for the next cohort.
-                {course.next_cohort_starts_at ? (
-                  <span className="block mt-1">
-                    The next cohort starts {new Date(course.next_cohort_starts_at).toLocaleDateString()}.
+            {/* Price panel. Owns the delivery-mode state the register form below
+                publishes into, so the headline price reprices itself when the
+                visitor picks Pre-recorded (see CourseAside). */}
+            <CourseAside
+              course={course}
+              footer={
+                /* Registration gate mirrors is_full: full and closed both hide the
+                   form (the backend rejects a direct submit with the same message). */
+                course.is_full ? (
+                  <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: "#d97706" }}>
+                    This course is currently full. Check back later for available slots.
+                  </div>
+                ) : course.registration_open === false ? (
+                  <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-4 text-sm" style={{ color: "#d97706" }}>
+                    Registration for this course has closed. Please check back for the next cohort.
+                    {course.next_cohort_starts_at ? (
+                      <span className="block mt-1">
+                        The next cohort starts {new Date(course.next_cohort_starts_at).toLocaleDateString()}.
+                      </span>
+                    ) : null}
+                  </div>
+                ) : (
+                  <CourseRegisterClient course={course} slug={registerSlug} branding={branding} />
+                )
+              }
+            >
+              <div className="mt-4 space-y-3 text-sm text-white/75">
+                <div className="flex justify-between border-b border-white/10 pb-2">
+                  <span>Slots remaining</span>
+                  <span className="font-semibold text-white">
+                    {course.is_full ? "Full" : course.max_students > 0 ? course.slots_remaining : "Open"}
                   </span>
-                ) : null}
+                </div>
+                <div className="flex justify-between border-b border-white/10 pb-2">
+                  <span>Total capacity</span>
+                  <span className="font-semibold text-white">
+                    {course.max_students > 0 ? course.max_students : "Unlimited"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b border-white/10 pb-2">
+                  <span>Registered</span>
+                  <span className="font-semibold text-white">{course.registered_count}</span>
+                </div>
               </div>
-            ) : (
-              <CourseRegisterClient course={course} slug={registerSlug} branding={branding} />
-            )}
+            </CourseAside>
           </aside>
         </div>
         </div>

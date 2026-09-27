@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 /**
- * "Your academy is offline" notice for the student and staff portals.
+ * "Your academy is offline" notice for the student, staff and agent portals.
  *
  * An owner taking their academy offline is a "keep teaching, stop selling"
  * decision: everyone already enrolled keeps full access, so nothing on these
@@ -18,10 +18,23 @@ import { usePathname } from "next/navigation";
  * academy is not taking students is confusing when they are already a student
  * there, and those screens are reached by existing users far more often than by
  * new ones. Login is refused separately by the backend when it matters.
+ *
+ * `audience="agent"` swaps the reassurance line: an Admission Marketer is not
+ * here to consume courses, they are here to register students, and that is the
+ * one thing the offline switch actually takes away from them
+ * (AgentController::registerStudent refuses).
  */
 const AUTH_PREFIXES = ["/login", "/staff/login", "/setup-password", "/forgot-password", "/reset-password"];
 
-export default function AcademyOfflineBanner({ accepting, name }: { accepting?: boolean | null; name?: string | null }) {
+export default function AcademyOfflineBanner({
+  accepting,
+  name,
+  audience = "member",
+}: {
+  accepting?: boolean | null;
+  name?: string | null;
+  audience?: "member" | "agent";
+}) {
   const pathname = usePathname() ?? "";
 
   if (accepting !== false) return null;
@@ -33,7 +46,9 @@ export default function AcademyOfflineBanner({ accepting, name }: { accepting?: 
         {name ? `${name} is not accepting new students right now` : "This academy is not accepting new students right now"}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-amber-200/80 [html.light_&]:text-amber-900/80">
-        You still have full access to your courses, classes and materials. Only new registrations are paused.
+        {audience === "agent"
+          ? "Registering a student will be refused until it reopens. Students you have already enrolled keep their full access."
+          : "You still have full access to your courses, classes and materials. Only new registrations are paused."}
       </p>
     </div>
   );

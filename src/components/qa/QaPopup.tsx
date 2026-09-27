@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { QA_API } from "@/lib/api";
 import QaSignupForm from "./QaSignupForm";
-import { qaBrandName, qaPrettyDate, type QaEventInfo, type QaSlotInfo } from "./types";
+import { qaBrandName, qaParentNotice, qaPrettyDate, type QaEventInfo, type QaSlotInfo } from "./types";
 
 // The tester signup, as a popup on the marketing site.
 //
@@ -143,6 +143,7 @@ export default function QaPopup() {
   if (phase === "idle" || !event) return null;
 
   const brand = qaBrandName(event);
+  const parentNotice = qaParentNotice(event);
   const when = qaPrettyDate(event.starts_at);
 
   return (
@@ -171,10 +172,9 @@ export default function QaPopup() {
           </svg>
         </button>
 
-        <div className="flex flex-wrap items-center gap-2 pr-8">
+        <div className="pr-8">
           <span className="text-base font-semibold tracking-tight">{brand}</span>
-          <span className="text-xs text-site-muted">x</span>
-          <span className="text-base font-semibold tracking-tight">Jorsas Tech</span>
+          <p className="mt-0.5 text-xs text-site-muted">{parentNotice}</p>
         </div>
 
         {phase === "done" ? (

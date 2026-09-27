@@ -29,6 +29,10 @@ type Course = {
   tracks_count: number;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
+  // Whether pre-recorded lessons exist yet. The toggle above can be on with
+  // nothing behind it, and the storefront then hides the mode (the backend
+  // gates on this too, so a student can never pick an empty mode).
+  has_prerecorded_content?: boolean;
   is_active: boolean;
 };
 
@@ -54,6 +58,13 @@ function coverInitial(title: string): string {
   const c = (title || "").trim().charAt(0);
   return c ? c.toUpperCase() : "•";
 }
+
+// Requirements is one line per prerequisite, so it grows faster than a normal
+// field: without a ceiling a long paste becomes a wall of text on the public
+// course page. Matches OwnerAdminController's `max:2000` rule, kept in sync by
+// hand, so the form never lets an owner write something the API will reject at
+// save time (after they have written it).
+const MAX_REQUIREMENTS = 2000;
 
 const emptyForm = {
   title: "",
@@ -95,6 +106,10 @@ export default function OwnerCoursesPage() {
   // course is created, that's what makes a cover compulsory "during setup".
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  // Whether the course being EDITED already has a pre-recorded lesson uploaded.
+  // False in create mode (nothing exists yet) and for a course toggled on with no
+  // video, which is when the warning below the checkbox appears.
+  const [hasPrerecordedContent, setHasPrerecordedContent] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverBusy, setCoverBusy] = useState(false);
   // The raw file the owner just picked, held while they drag to position it in
@@ -197,6 +212,7 @@ export default function OwnerCoursesPage() {
     // plan loads.
     setForm({ ...emptyForm, maxStudents: String(plan?.limits.students ?? 1) });
     setCoverUrl(null);
+    setHasPrerecordedContent(false);
     clearStagedCover();
     setSaveMsg(null);
   };
@@ -219,6 +235,7 @@ export default function OwnerCoursesPage() {
       isActive: !!c.is_active,
     });
     setCoverUrl(c.cover_image_url ?? null);
+    setHasPrerecordedContent(!!c.has_prerecorded_content);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -278,6 +295,16 @@ export default function OwnerCoursesPage() {
     // In edit mode the course already has one, replacing it is optional.
     if (!editingId && !coverFile) {
       setSaveMsg({ kind: "err", text: "Add a cover image. It's required for every course." });
+      return;
+    }
+    // maxLength stops typing past the ceiling, but it does not shorten a value
+    // that arrived with the course, so a legacy course over the limit must be
+    // trimmed here rather than 422ing after a save the owner thought worked.
+    if (form.requirements.length > MAX_REQUIREMENTS) {
+      setSaveMsg({
+        kind: "err",
+        text: `Requirements are too long. Keep them under ${MAX_REQUIREMENTS} characters.`,
+      });
       return;
     }
 
@@ -552,11 +579,24 @@ export default function OwnerCoursesPage() {
               value={form.requirements}
               onChange={(e) => setField("requirements", e.target.value)}
               rows={4}
+              maxLength={MAX_REQUIREMENTS}
               placeholder={"One requirement per line, e.g.\nA very good laptop\nA very good internet connection"}
               className={`${inputClass} resize-y leading-6`}
             />
-            <p className="mt-1.5 text-xs text-white/45">
-              Press Enter after each requirement. Each line is shown on its own line to students.
+            <p className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-white/45">
+              <span>Press Enter after each requirement. Each line is shown on its own line to students.</span>
+              {/* Only worth showing once the field is getting full: a counter on an
+                  empty field is noise, and the limit is generous enough that most
+                  owners never reach it. */}
+              {form.requirements.length > MAX_REQUIREMENTS * 0.8 ? (
+                <span
+                  className={
+                    form.requirements.length >= MAX_REQUIREMENTS ? "font-semibold text-amber-300" : "text-white/60"
+                  }
+                >
+                  {form.requirements.length} / {MAX_REQUIREMENTS}
+                </span>
+              ) : null}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -637,6 +677,19 @@ export default function OwnerCoursesPage() {
               Published (visible on your public page)
             </label>
           </div>
+
+          {/* Pre-recorded is only offered to students once the course actually
+              has a video lesson to deliver (backend: LmsCourse::hasPrerecordedContent).
+              The toggle alone is not enough, so say so rather than leaving the
+              owner to wonder why the storefront never offers the mode. Only shown
+              while editing: a course being created has no content yet by design. */}
+          {prerecordedAllowed && form.isPrerecorded && editingId !== null && !hasPrerecordedContent ? (
+            <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+              Students will not see the pre-recorded option yet. Upload at least one video
+              lesson to this course (Staff, then Modules or Materials) and it turns on
+              automatically.
+            </p>
+          ) : null}
 
           {/* Pre-recorded price, only when pre-recorded is available on this plan
               AND toggled on for this course. Optional: left blank, pre-recorded is

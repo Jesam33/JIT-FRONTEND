@@ -194,7 +194,7 @@ function SignupInner() {
       <div className="container-wide max-w-3xl rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
         <h1 className="mb-2 text-3xl font-bold text-white">Create your Online Academy</h1>
         <p className="mb-6 text-sm text-site-muted">
-          Register your school or training organisation to get a dedicated LMS. Start free in minutes, or choose a
+          Register your school or training organisation to get a dedicated academic portal. Start free in minutes, or choose a
           paid plan for more features. Free Online Academies are ready right away; paid plans are set up the moment
           your payment is confirmed.
         </p>
