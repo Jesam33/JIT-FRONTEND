@@ -214,6 +214,14 @@ export const STUDENT_API = {
   deviceSignOut: api("/api/frontend/lms/account/devices/sign-out"),
   devicesSignOutEverywhere: api("/api/frontend/lms/account/devices/sign-out-everywhere"),
   certificates: api("/api/frontend/lms/certificates"),
+  // Monthly-course billing (pay next month, confirm, stop/restart renewing).
+  // `course-billing`, not `billing`: /api/frontend/lms/billing/* is the OWNER's
+  // plan billing (TenantBillingController).
+  courseBilling: api("/api/frontend/lms/course-billing"),
+  courseBillingRenew: api("/api/frontend/lms/course-billing/renew"),
+  courseBillingVerify: api("/api/frontend/lms/course-billing/verify"),
+  courseBillingCancel: api("/api/frontend/lms/course-billing/cancel"),
+  courseBillingResume: api("/api/frontend/lms/course-billing/resume"),
   messages: api("/api/frontend/lms/messages"),
   // Chat composer file picker (any allowed type): upload first, then send the
   // returned url as attachment_url with the next message.

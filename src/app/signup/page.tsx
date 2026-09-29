@@ -303,7 +303,7 @@ function SignupInner() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-site-muted">
-                    Unlimited courses, students &amp; staff · 0% platform fee · everything in Pro, plus API access,
+                    Unlimited courses, students &amp; staff · 5% service charge · everything in Pro, plus API access,
                     white-label &amp; dedicated support.
                   </p>
                 </div>

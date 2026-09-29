@@ -186,6 +186,7 @@ export default function StudentSidebar() {
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState<{ name: string; role?: string; profile_photo_url?: string | null } | null>(null);
   const [chatEnabled, setChatEnabled] = useState(true);
+  const [monthly, setMonthly] = useState(false);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -204,6 +205,8 @@ export default function StudentSidebar() {
         // Chat is a paid-plan feature; gate the Chats link on the tenant plan.
         if (p && typeof p === "object") {
           setChatEnabled((p.plan ?? "free") !== "free");
+          // Billing only means something on a monthly course.
+          setMonthly(!!p.billing?.monthly);
         }
       })
       .catch(() => {});
@@ -257,6 +260,7 @@ export default function StudentSidebar() {
     { href: "/lms/app/materials", label: "Materials" },
     { href: "/lms/app/certificates", label: "Certificates" },
     ...(chatEnabled ? [{ href: "/lms/app/chats", label: "Chats" }] : []),
+    ...(monthly ? [{ href: "/lms/app/billing", label: "Billing" }] : []),
     { href: "/lms/app/profile", label: "Profile" },
   ];
 

@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 import { STUDENT_API } from "../lib/api";
-import { apiFetch } from "../lib/fetch-with-timeout";
+import { apiFetch, STUDENT_BILLING_PATH } from "../lib/fetch-with-timeout";
 import { tenantLoginPath, setTenantCookie, pinTenantFromLocation } from "../lib/tenant-client";
 
 const PUBLIC_PATHS = [
@@ -21,6 +21,9 @@ export default function StudentGuard({ children }: { children: React.ReactNode }
   const pathname = usePathname() ?? "";
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const [loading, setLoading] = useState(!isPublicPath);
+  // Access paused for an unpaid monthly course: only the billing page renders
+  // (the shell stays mounted across the redirect, so this is state, not a return).
+  const [mustPay, setMustPay] = useState(false);
 
   useEffect(() => {
     if (isPublicPath) {
@@ -49,6 +52,12 @@ export default function StudentGuard({ children }: { children: React.ReactNode }
         // falling back to the primary slug (jorsas). The cookie is otherwise
         // only set at fresh-login and goes stale (7-day TTL / incognito).
         if (data?.tenant?.slug) setTenantCookie(data.tenant.slug);
+        // Monthly course unpaid past the grace window: everything but billing
+        // answers 402, so go straight to the page where they can pay.
+        if (data?.billing?.locked) {
+          setMustPay(true);
+          if (!window.location.pathname.startsWith(STUDENT_BILLING_PATH)) router.replace(STUDENT_BILLING_PATH);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -59,6 +68,6 @@ export default function StudentGuard({ children }: { children: React.ReactNode }
     return () => controller.abort();
   }, [isPublicPath, router]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading || (mustPay && !pathname.startsWith(STUDENT_BILLING_PATH))) return <LoadingSpinner />;
   return <>{children}</>;
 }

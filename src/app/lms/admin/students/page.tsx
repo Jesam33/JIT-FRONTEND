@@ -19,6 +19,12 @@ type Student = {
   /** active | deactivated | purge_scheduled | purged */
   lifecycle: LifecycleState;
   purge_after: string | null;
+  /** Monthly-course standing (null on a one-time course). */
+  billing?: {
+    status: "active" | "past_due" | "cancelled" | "ended" | null;
+    paid_until: string | null;
+    locked: boolean;
+  } | null;
   /**
    * Whether this student may be erased at all. False once any successful payment
    * exists against their registration (a paid course or a ₦0 comped invite):
@@ -39,6 +45,24 @@ type OwnerCourse = {
   is_prerecorded_available: boolean;
   is_active: boolean;
 };
+
+// A monthly-course student's payment standing, under their account status.
+function MonthlyBadge({ billing }: { billing: NonNullable<Student["billing"]> }) {
+  const until = billing.paid_until
+    ? new Date(billing.paid_until).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : null;
+  const [text, tone] = billing.locked
+    ? ["Monthly: unpaid, access paused", "bg-rose-500/15 text-rose-300"]
+    : billing.status === "past_due"
+      ? ["Monthly: payment overdue", "bg-amber-500/15 text-amber-300"]
+      : billing.status === "cancelled"
+        ? [`Monthly: stopped${until ? `, ends ${until}` : ""}`, "bg-white/10 text-white/60"]
+        : billing.status === "ended"
+          ? ["Monthly: course finished", "bg-white/10 text-white/60"]
+          : [`Monthly: paid to ${until ?? "?"}`, "bg-sky-500/15 text-sky-300"];
+
+  return <span className={`mt-1 block w-fit rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tone}`}>{text}</span>;
+}
 
 export default function OwnerStudentsPage() {
   const router = useRouter();
@@ -468,6 +492,7 @@ export default function OwnerStudentsPage() {
                         {s.onboarding_completed ? "Active" : "Pending"}
                       </span>
                     )}
+                    {s.billing ? <MonthlyBadge billing={s.billing} /> : null}
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-2">

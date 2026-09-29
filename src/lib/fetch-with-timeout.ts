@@ -144,18 +144,38 @@ export async function okJson<T = any>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// Where a student whose monthly course access has paused is sent to pay.
+export const STUDENT_BILLING_PATH = "/lms/app/billing";
+
+// A monthly-course student who has not paid past the grace window gets 402
+// `payment_required` from every student endpoint except billing/me/profile
+// (EnsureAccountActive). Send them to the billing page from wherever they are,
+// once, rather than letting each page render its own "couldn't load" state.
+async function redirectIfPaymentRequired(response: Response): Promise<void> {
+  if (response.status !== 402 || typeof window === "undefined") return;
+  if (window.location.pathname.startsWith(STUDENT_BILLING_PATH)) return;
+  try {
+    const body = await response.clone().json();
+    if (body?.payment_required) window.location.href = STUDENT_BILLING_PATH;
+  } catch {
+    // Not the billing gate's JSON; leave the response to the caller.
+  }
+}
+
 export async function apiFetch(
   url: string,
   options: RequestInit & { timeout?: number } = {},
 ): Promise<Response> {
   const token = getToken("lms_student_token");
-  return fetchWithTimeout(url, {
+  const response = await fetchWithTimeout(url, {
     ...options,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
+  await redirectIfPaymentRequired(response);
+  return response;
 }
 
 export async function apiFetchStaff(

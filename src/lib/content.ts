@@ -321,7 +321,7 @@ export const pricingPlans: PricingPlan[] = [
       "Academic portal: modules, tasks & grading",
       "Student & staff portals",
       "Your own branded academy page",
-      "5% platform fee on course sales",
+      "5% service charge on course sales",
     ],
   },
   {
@@ -336,7 +336,7 @@ export const pricingPlans: PricingPlan[] = [
       "Pre-recorded video lessons",
       "Admission-Marketer network",
       "Remove “Powered by Jorsastech” branding",
-      "3% platform fee on course sales",
+      "5% service charge on course sales",
     ],
   },
   {
@@ -346,7 +346,7 @@ export const pricingPlans: PricingPlan[] = [
     note: "/month",
     features: [
       "Up to 50 courses, 1,000 students, 25 staff",
-      "0% platform fee on course sales",
+      "5% service charge on course sales",
       "Advanced analytics & reporting",
       "AI training materials",
       "Custom domain & priority support",
@@ -360,7 +360,7 @@ export const pricingPlans: PricingPlan[] = [
     contactSales: true,
     features: [
       "Unlimited courses, students & staff",
-      "0% platform fee on course sales",
+      "5% service charge on course sales",
       "Everything in Pro, plus:",
       "API access & white-label",
       "Dedicated onboarding & support",

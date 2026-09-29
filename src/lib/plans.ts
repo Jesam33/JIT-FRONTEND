@@ -58,7 +58,7 @@ export const FEATURE_LABELS: Record<keyof Features, string> = {
 export const TAGLINES: Record<string, string> = {
   free: "Launch your academy online at no cost.",
   basic: "Live classes, chat & certificates for growing academies.",
-  pro: "Scale with the lowest fees, AI materials & deepest insight.",
+  pro: "Scale with AI materials, custom domains & the deepest insight.",
   enterprise: "Custom limits, full white-label & API for large organisations.",
 };
 

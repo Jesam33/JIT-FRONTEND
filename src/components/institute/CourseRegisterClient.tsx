@@ -34,6 +34,8 @@ type CourseDetail = {
   // the form (see InstituteCourseDetail); kept optional so any older caller
   // still type-checks. The backend independently rejects a direct submit.
   registration_open?: boolean;
+  // "monthly": the price is the first month; the student pays again each month.
+  billing_type?: "one_time" | "monthly";
 };
 
 const qualifications = [
@@ -291,7 +293,9 @@ export default function CourseRegisterClient({
             ? "Processing..."
             : course.price <= 0
               ? "Register Free"
-              : `Register & Pay ${formatPrice(displayPrice, course.display_currency ?? "NGN")}`}
+              : course.billing_type === "monthly"
+                ? `Register & Pay ${formatPrice(displayPrice, course.display_currency ?? "NGN")} for month 1`
+                : `Register & Pay ${formatPrice(displayPrice, course.display_currency ?? "NGN")}`}
         </button>
         {message ? <p className="text-xs text-rose-200">{message}</p> : null}
       </form>

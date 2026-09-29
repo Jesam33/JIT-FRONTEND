@@ -44,6 +44,8 @@ export type StorefrontCourse = {
   rating_count?: number;
   instructor_name?: string | null;
   is_bestseller?: boolean;
+  // "monthly": the price is per month (students pay every month).
+  billing_type?: "one_time" | "monthly";
 };
 
 // The shape returned by /api/frontend/i/{slug} and /api/frontend/institute/primary.
@@ -69,7 +71,7 @@ function coursePrice(course: StorefrontCourse): string {
   if (course.price <= 0) return "Free";
   const amount = course.price_display ?? course.price;
   const currency = course.display_currency ?? "NGN";
-  return formatPrice(amount, currency);
+  return formatPrice(amount, currency) + (course.billing_type === "monthly" ? "/month" : "");
 }
 
 // The struck-through "was" price, rendered ONLY when a real original price was

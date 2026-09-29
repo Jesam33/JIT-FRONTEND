@@ -19,6 +19,8 @@ type Course = {
   // Separate (cheaper) price charged when a student picks pre-recorded. Null =
   // no distinct price, so pre-recorded is charged at the live `price`.
   prerecorded_price?: number | string | null;
+  // "monthly": the prices are per month and students pay again every month.
+  billing_type?: "one_time" | "monthly";
   cover_image_url?: string | null;
   rating_average?: number;
   rating_count?: number;
@@ -43,6 +45,8 @@ type PlanSummary = {
   slug: string;
   limits: { students: number | null };
   features: { pre_recorded_video: boolean };
+  // The platform service charge taken from each student payment.
+  commission_percent?: number;
 };
 
 function formatPrice(price: Course["price"]): string {
@@ -73,6 +77,7 @@ const emptyForm = {
   price: "",
   originalPrice: "",
   prerecordedPrice: "",
+  billingType: "one_time" as "one_time" | "monthly",
   maxStudents: "",
   isLive: true,
   isPrerecorded: false,
@@ -167,6 +172,8 @@ export default function OwnerCoursesPage() {
           slug: String(summary.slug ?? "free"),
           limits: { students: cap },
           features: { pre_recorded_video: !!summary.features.pre_recorded_video },
+          commission_percent:
+            typeof summary.commission_percent === "number" ? summary.commission_percent : undefined,
         });
         // Prefill the capacity default so a new course starts at the plan's
         // student cap (Free = 1), not blank, but only in create mode and only
@@ -229,6 +236,7 @@ export default function OwnerCoursesPage() {
       originalPrice: c.original_price === null || c.original_price === undefined ? "" : String(c.original_price),
       prerecordedPrice:
         c.prerecorded_price === null || c.prerecorded_price === undefined ? "" : String(c.prerecorded_price),
+      billingType: c.billing_type === "monthly" ? "monthly" : "one_time",
       maxStudents: c.max_students ? String(c.max_students) : "",
       isLive: !!c.is_live_available,
       isPrerecorded: !!c.is_prerecorded_available,
@@ -322,6 +330,7 @@ export default function OwnerCoursesPage() {
       // Distinct (cheaper) pre-recorded price. Null when unset or pre-recorded
       // isn't active, the backend then charges the live price for both modes.
       prerecorded_price: prerecordedActive && form.prerecordedPrice !== "" ? Number(form.prerecordedPrice) : null,
+      billing_type: form.billingType,
       is_active: form.isActive,
     };
 
@@ -599,10 +608,47 @@ export default function OwnerCoursesPage() {
               ) : null}
             </p>
           </div>
+          {/* How students pay. Monthly = the price below is charged every month
+              and a student who stops paying has their access paused (3-day grace).
+              A change here only applies to students who register afterwards. */}
+          <div>
+            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+              How do students pay?
+            </span>
+            <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="How do students pay?">
+              {([
+                ["one_time", "One-time payment", "Students pay once for the whole course."],
+                ["monthly", "Monthly payment", "Students pay every month to keep their access."],
+              ] as const).map(([value, title, hint]) => {
+                const selected = form.billingType === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setField("billingType", value)}
+                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                      selected ? "border-white/60 bg-white/15" : "border-white/15 bg-black/20 hover:border-white/30"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-white">{title}</span>
+                    <span className="mt-0.5 block text-[11px] text-white/50">{hint}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {editingId !== null && form.billingType !== (courses.find((x) => x.id === editingId)?.billing_type ?? "one_time") ? (
+              <p className="mt-1.5 text-[11px] text-amber-200/90">
+                This only applies to students who register from now on. Current students keep the way they already pay.
+              </p>
+            ) : null}
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
-                Price (₦) <span className="text-red-300/80">*</span>
+                {form.billingType === "monthly" ? "Price per month (₦)" : "Price (₦)"}{" "}
+                <span className="text-red-300/80">*</span>
               </label>
               <input
                 type="number"
@@ -613,7 +659,10 @@ export default function OwnerCoursesPage() {
                 placeholder="e.g. 15000"
                 className={inputClass}
               />
-              <p className="mt-1 text-[11px] text-white/40">Courses can&apos;t be free, a platform fee applies to each sale.</p>
+              <p className="mt-1 text-[11px] text-white/40">
+                Courses can&apos;t be free. A {plan?.commission_percent ?? 5}% service charge is taken from each
+                payment{form.billingType === "monthly" ? ", every month" : ""}.
+              </p>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
@@ -697,7 +746,7 @@ export default function OwnerCoursesPage() {
           {prerecordedAllowed && form.isPrerecorded ? (
             <div className="sm:max-w-xs">
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
-                Pre-recorded price (₦)
+                {form.billingType === "monthly" ? "Pre-recorded price per month (₦)" : "Pre-recorded price (₦)"}
               </label>
               <input
                 type="number"
@@ -843,7 +892,10 @@ export default function OwnerCoursesPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-site-muted">
-                    <div>{formatPrice(c.price)}</div>
+                    <div>
+                      {formatPrice(c.price)}
+                      {c.billing_type === "monthly" ? <span className="text-[11px] text-white/50"> /month</span> : null}
+                    </div>
                     {c.original_price != null && Number(c.original_price) > Number(c.price ?? 0) ? (
                       <div className="text-[11px] text-white/40 line-through">{formatPrice(c.original_price)}</div>
                     ) : null}

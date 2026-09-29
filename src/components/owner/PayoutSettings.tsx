@@ -279,12 +279,9 @@ export default function PayoutSettings({
 
   const configured = data?.payment.configured;
   const commission = data?.platform_commission_percent ?? 0;
-  const managed = data?.payment.managed ?? false;
-  const linkedSplit = data?.payment.subaccount_commission_percent ?? null;
-  // A managed subaccount's split should track the plan; flag it if it has drifted
-  // (e.g. a sync that didn't confirm). A pasted code's split is unknown to us.
-  const splitDrifted = !!configured && managed && linkedSplit != null && linkedSplit !== commission;
-  const pastedCode = !!configured && !managed;
+  // No split-drift warning any more: every student payment now carries the exact
+  // service charge itself (Paystack transaction_charge), so the subaccount's own
+  // stored split, managed or pasted, no longer decides what the academy is charged.
   // This academy's configurable noun, read synchronously from the shell cookie.
   const label = academyLabel(readOwnerBranding()).singular;
 
@@ -375,26 +372,15 @@ export default function PayoutSettings({
           <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-xs uppercase tracking-wide text-site-muted">
-                Platform fee on course sales
+                Service charge on student payments
               </span>
               <span className="text-lg font-semibold text-white">{commission}%</span>
             </div>
             <p className="mt-1 text-xs text-site-muted">
-              Deducted from each successful course sale on your current plan. The rest settles to your
-              bank.
+              Deducted from every student payment: once for a one-time course, every month for a
+              monthly course. The rest settles to your bank, and you get the breakdown each time a
+              student pays.
             </p>
-            {splitDrifted && (
-              <p className="mt-2 text-xs text-amber-300">
-                Your linked payout split is currently {linkedSplit}%. It updates to {commission}%
-                automatically after a plan change; if it doesn&apos;t, disconnect and relink your bank.
-              </p>
-            )}
-            {pastedCode && (
-              <p className="mt-2 text-xs text-site-muted">
-                This account was linked by subaccount code, so its split is controlled on your Paystack
-                account and may differ from your plan fee.
-              </p>
-            )}
           </div>
 
           <button

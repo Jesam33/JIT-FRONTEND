@@ -46,6 +46,8 @@ export type DetailCourse = {
   rating_count?: number;
   instructor_name?: string | null;
   is_bestseller?: boolean;
+  // "monthly": prices are per month (students pay every month).
+  billing_type?: "one_time" | "monthly";
 };
 
 // The shape returned by /api/frontend/i/{slug}/courses/{courseSlug} and the

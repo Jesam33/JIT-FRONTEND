@@ -19,6 +19,8 @@ function notificationHref(n: NotificationItem): string | null {
   if (n.reference_type === "module") return n.reference_id ? `/lms/app/modules/${n.reference_id}` : "/lms/app/modules";
   if (n.reference_type === "course") return "/lms/app/modules";
   if (n.reference_type === "certificate") return "/lms/app/certificates";
+  // Monthly-course reminders, receipts and "access paused".
+  if (n.reference_type === "billing") return "/lms/app/billing";
   return null;
 }
 

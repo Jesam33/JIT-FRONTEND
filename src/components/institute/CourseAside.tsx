@@ -19,6 +19,7 @@ type PriceCourse = {
   original_price_display?: number | null;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
+  billing_type?: "one_time" | "monthly";
 };
 
 // The price the chosen mode actually costs, in DISPLAY currency. Pre-recorded
@@ -82,12 +83,14 @@ export default function CourseAside({
   // Only worth naming the mode when there IS a choice; on a single-mode course
   // the price can only mean one thing.
   const bothModes = course.is_live_available && course.is_prerecorded_available;
+  const monthly = course.price > 0 && course.billing_type === "monthly";
 
   return (
     <CourseModeContext.Provider value={value}>
       <div className="flex flex-wrap items-baseline gap-2">
         <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)" }}>
           {course.price <= 0 ? "Free" : formatPrice(priceFor(course, mode), course.display_currency ?? "NGN")}
+          {monthly ? <span className="text-base font-medium text-white/60"> /month</span> : null}
         </p>
         {original ? <span className="text-lg text-white/40 line-through">{original}</span> : null}
         {bothModes ? (
@@ -96,6 +99,12 @@ export default function CourseAside({
           </span>
         ) : null}
       </div>
+
+      {monthly ? (
+        <p className="mt-1 text-xs text-white/60">
+          Billed monthly. Pay each month to keep your access, and stop any time.
+        </p>
+      ) : null}
 
       {course.price > 0 && course.is_base_currency === false ? (
         <p className="mt-1 text-xs text-white/60">
