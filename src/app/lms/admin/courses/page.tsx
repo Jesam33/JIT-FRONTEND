@@ -43,6 +43,7 @@ type Course = {
 // default + ceiling). null limit = unlimited (Pro/Enterprise).
 type PlanSummary = {
   slug: string;
+  // `students` here holds the seats ONE course may have (see loadPlan).
   limits: { students: number | null };
   features: { pre_recorded_video: boolean };
   // The platform service charge taken from each student payment.
@@ -55,6 +56,17 @@ function formatPrice(price: Course["price"]): string {
   if (Number.isNaN(n)) return "—";
   if (n === 0) return "Free";
   return `₦${n.toLocaleString()}`;
+}
+
+// The platform-wide ceiling: no course on any plan seats more (Pro and above
+// reach it). Mirrors config saas.max_students_per_course.
+const PLATFORM_SEAT_CEILING = 50;
+
+function seatCapMessage(cap: number): string {
+  if (cap >= PLATFORM_SEAT_CEILING) {
+    return `Up to ${cap} students per course, the most any course can have.`;
+  }
+  return `Your plan allows up to ${cap} student${cap === 1 ? "" : "s"} per course. Upgrade to admit more.`;
 }
 
 // First character of the title, for the branded placeholder when no cover is set.
@@ -167,7 +179,10 @@ export default function OwnerCoursesPage() {
       const json = await res.json();
       const summary = json?.plan_summary;
       if (summary?.features && summary?.limits) {
-        const cap: number | null = summary.limits.students ?? null;
+        // Seats one course may have on this plan (Free 1, Basic 30, Pro and
+        // above 50). Older API responses lack it: fall back to the student cap,
+        // then the platform ceiling of 50, never "unlimited".
+        const cap: number = summary.limits.seats_per_course ?? summary.limits.students ?? 50;
         setPlan({
           slug: String(summary.slug ?? "free"),
           limits: { students: cap },
@@ -284,19 +299,15 @@ export default function OwnerCoursesPage() {
         return;
       }
     }
-    // Capacity is the seats for this course. It must be at least 1 and can't
-    // exceed the plan's student cap (Free = 1 student). Pro/Enterprise have no
-    // cap (plan.limits.students null), so any positive number is fine there.
+    // Capacity is the seats for this course: at least 1, at most the plan's
+    // seats per course (Free 1, Basic 30, Pro and above 50).
     if (form.maxStudents === "" || !Number.isInteger(Number(form.maxStudents)) || Number(form.maxStudents) < 1) {
       setSaveMsg({ kind: "err", text: "Enter a capacity of at least 1 student." });
       return;
     }
     const studentCap = plan?.limits.students ?? null;
     if (studentCap !== null && Number(form.maxStudents) > studentCap) {
-      setSaveMsg({
-        kind: "err",
-        text: `Your plan allows up to ${studentCap} student${studentCap === 1 ? "" : "s"}. Upgrade to admit more.`,
-      });
+      setSaveMsg({ kind: "err", text: seatCapMessage(studentCap) });
       return;
     }
     // A cover is compulsory when creating a course (it fronts the storefront card).
@@ -695,9 +706,7 @@ export default function OwnerCoursesPage() {
                 className={`${inputClass}${studentCap === 1 ? " cursor-not-allowed opacity-60" : ""}`}
               />
               <p className="mt-1 text-[11px] text-white/40">
-                {studentCap !== null
-                  ? `Your plan allows up to ${studentCap} student${studentCap === 1 ? "" : "s"}. Upgrade to admit more.`
-                  : "How many students can enrol in this course."}
+                {studentCap !== null ? seatCapMessage(studentCap) : "How many students can enrol in this course."}
               </p>
             </div>
           </div>

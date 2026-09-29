@@ -331,9 +331,9 @@ export const pricingPlans: PricingPlan[] = [
     note: "/month",
     popular: true,
     features: [
-      "Up to 10 courses, 100 students, 5 staff",
+      "Up to 10 courses, 5 staff",
+      "Unlimited students, up to 30 per class",
       "In-app group chat & certificates",
-      "Pre-recorded video lessons",
       "Admission-Marketer network",
       "Remove “Powered by Jorsastech” branding",
       "5% service charge on course sales",
@@ -345,7 +345,9 @@ export const pricingPlans: PricingPlan[] = [
     price: "₦15,000",
     note: "/month",
     features: [
-      "Up to 50 courses, 1,000 students, 25 staff",
+      "Up to 50 courses, 25 staff",
+      "Unlimited students, up to 50 per class",
+      "Pre-recorded video lessons",
       "5% service charge on course sales",
       "Advanced analytics & reporting",
       "AI training materials",
@@ -360,6 +362,7 @@ export const pricingPlans: PricingPlan[] = [
     contactSales: true,
     features: [
       "Unlimited courses, students & staff",
+      "Up to 50 students per class",
       "5% service charge on course sales",
       "Everything in Pro, plus:",
       "API access & white-label",
