@@ -46,6 +46,13 @@ export const OWNER_API = {
   setStudentActive: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/active`),
   cancelStudentDeletion: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/cancel-deletion`),
   resendStudentInvite: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/resend-invite`),
+  // Stop monthly billing for one student (they keep access, are told, never charged again).
+  stopStudentBilling: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/stop-monthly-billing`),
+  // Assign / change a one-on-one student's teacher.
+  assignOneOnOneTeacher: (id: string | number) => api(`/api/frontend/lms/owner/students/${id}/one-on-one-teacher`),
+  // One-on-one overview for a month (?month=YYYY-MM) and the owner's outcome decision.
+  oneOnOneOverview: (month?: string) => api(`/api/frontend/lms/owner/one-on-one${month ? `?month=${encodeURIComponent(month)}` : ""}`),
+  oneOnOneOutcome: (sessionId: string | number) => api(`/api/frontend/lms/owner/one-on-one/sessions/${sessionId}/outcome`),
   // Invite students straight into a specific course, paid via the academy's
   // own Paystack (pay-first) or comped in. Distinct from importStudents, which
   // only creates course-less accounts.
@@ -94,6 +101,8 @@ export const OWNER_API = {
   storeCourse: api("/api/frontend/lms/owner/courses"),
   updateCourse: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}`),
   deleteCourse: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}`),
+  // Stop monthly billing for every student of a course.
+  stopCourseBilling: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}/stop-monthly-billing`),
   // Upload / remove a course cover image (multipart; POST {remove_cover:true} to clear).
   courseCover: (id: string | number) => api(`/api/frontend/lms/owner/courses/${id}/cover`),
   // Owner cohort management (create + assign/reassign an instructor).
@@ -137,6 +146,11 @@ export const OWNER_API = {
   // settle to its bank (institute collects, not the platform). GET + POST share.
   paymentSettings: api("/api/frontend/lms/owner/payment-settings"),
   paymentSettingsUpdate: api("/api/frontend/lms/owner/payment-settings"),
+  // The academy's country (fixes the currency it sells in) and that country's
+  // banks / bank branches for linking a payout bank (Flutterwave).
+  academyCountry: api("/api/frontend/lms/owner/academy-country"),
+  payoutBanks: (country: string) => api(`/api/frontend/lms/owner/payout-banks?country=${encodeURIComponent(country)}`),
+  payoutBranches: (bankId: string | number) => api(`/api/frontend/lms/owner/payout-banks/${bankId}/branches`),
   // Confirm the account holder's name (Paystack /bank/resolve) before linking,
   // confirmatory only, never blocks linking if the gateway is down.
   resolveAccount: api("/api/frontend/lms/owner/resolve-account"),
@@ -183,6 +197,13 @@ export const STUDENT_API = {
   dismissNotification: (id: string | number) => api(`/api/frontend/lms/notifications/${id}`),
   clearNotifications: api("/api/frontend/lms/notifications/clear"),
   attendance: api("/api/frontend/lms/attendance"),
+  // One-on-one self-booking: GET = slots + my upcoming sessions, POST = book.
+  oneOnOneBooking: api("/api/frontend/lms/one-on-one/booking"),
+  oneOnOneBookingCancel: (sessionId: string | number) => api(`/api/frontend/lms/one-on-one/booking/${sessionId}/cancel`),
+  oneOnOneReportNoShow: (sessionId: string | number) => api(`/api/frontend/lms/one-on-one/booking/${sessionId}/report-no-show`),
+  // Extra sessions: POST {sessions} → Paystack checkout; verify on return.
+  oneOnOneExtras: api("/api/frontend/lms/one-on-one/extras"),
+  oneOnOneExtrasVerify: (reference: string) => api(`/api/frontend/lms/one-on-one/extras/verify?reference=${encodeURIComponent(reference)}`),
   courses: api("/api/frontend/lms/courses"),
   // Rate the course the student is enrolled in (1 to 5). One rating per student per
   // course; re-posting updates it. Returns the fresh {rating_average, rating_count}.
@@ -329,6 +350,17 @@ export const STAFF_API = {
   moduleContent: (moduleId: string | number, contentId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/contents/${contentId}`),
   scheduleClass: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/schedule`),
   scheduledClasses: api("/api/frontend/lms/staff/scheduled-classes"),
+  // One-on-one students and their private sessions.
+  oneOnOne: api("/api/frontend/lms/staff/one-on-one"),
+  oneOnOneSessions: (studentId: string | number) => api(`/api/frontend/lms/staff/one-on-one/${studentId}/sessions`),
+  oneOnOneSession: (sessionId: string | number) => api(`/api/frontend/lms/staff/one-on-one/sessions/${sessionId}`),
+  oneOnOneSessionCancel: (sessionId: string | number) => api(`/api/frontend/lms/staff/one-on-one/sessions/${sessionId}/cancel`),
+  oneOnOneSessionOutcome: (sessionId: string | number) => api(`/api/frontend/lms/staff/one-on-one/sessions/${sessionId}/outcome`),
+  // Self-booking: my weekly availability (GET/PUT), days off, per-student switch.
+  oneOnOneAvailability: api("/api/frontend/lms/staff/one-on-one/availability"),
+  oneOnOneTimeOff: api("/api/frontend/lms/staff/one-on-one/time-off"),
+  oneOnOneTimeOffDelete: (id: string | number) => api(`/api/frontend/lms/staff/one-on-one/time-off/${id}`),
+  oneOnOneSelfBooking: (studentId: string | number) => api(`/api/frontend/lms/staff/one-on-one/${studentId}/self-booking`),
   scheduledClass: (classId: string | number) => api(`/api/frontend/lms/staff/scheduled-classes/${classId}`),
   // Pre-recorded video (Bunny Stream): mint a signed direct-upload envelope, then
   // the browser uploads the file straight to Bunny (bytes never touch our server);
@@ -410,6 +442,8 @@ export const PUBLIC_API = {
   // as avatar cards on jorsastech's own /campuses page.
   campuses: api("/api/frontend/campuses"),
   trainingRegister: api("/api/frontend/training/register"),
+  // Early "already enrolled?" check while the visitor types their email.
+  trainingCheckEnrolment: api("/api/frontend/training/check-enrolment"),
   paystackInitialize: api("/api/frontend/paystack/initialize"),
   paystackVerify: (ref: string) => api(`/api/frontend/paystack/verify?reference=${encodeURIComponent(ref)}`),
 };

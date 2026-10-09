@@ -5,6 +5,8 @@ import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
 import type { LifecycleState } from "@/components/account/AccountDangerZone";
 import { LifecycleBadge } from "@/components/account/lifecycle-label";
+import { currencySymbol } from "@/lib/currency";
+import { useAcademyCurrency } from "@/lib/academy-currency";
 
 type Student = {
   id: number;
@@ -19,9 +21,13 @@ type Student = {
   /** active | deactivated | purge_scheduled | purged */
   lifecycle: LifecycleState;
   purge_after: string | null;
+  /** One-on-one students: their teacher (teacher_id null = needs one). */
+  one_on_one?: { teacher_id: number | null; teacher_name: string | null } | null;
   /** Monthly-course standing (null on a one-time course). */
   billing?: {
     status: "active" | "past_due" | "cancelled" | "ended" | null;
+    /** Why billing stopped, when status is "ended". */
+    end_reason?: string | null;
     paid_until: string | null;
     locked: boolean;
   } | null;
@@ -46,6 +52,16 @@ type OwnerCourse = {
   is_active: boolean;
 };
 
+// Why a monthly student is no longer billed (CourseBilling END_* reasons).
+const ENDED_LABEL: Record<string, string> = {
+  cohort_ended: "Monthly: course finished",
+  stopped_by_academy: "Monthly: billing stopped by you",
+  course_deleted: "Monthly: course deleted",
+  student_inactive: "Monthly: paused while suspended",
+  academy_closed: "Monthly: academy closed",
+  moved_course: "Monthly: moved course",
+};
+
 // A monthly-course student's payment standing, under their account status.
 function MonthlyBadge({ billing }: { billing: NonNullable<Student["billing"]> }) {
   const until = billing.paid_until
@@ -58,7 +74,7 @@ function MonthlyBadge({ billing }: { billing: NonNullable<Student["billing"]> })
       : billing.status === "cancelled"
         ? [`Monthly: stopped${until ? `, ends ${until}` : ""}`, "bg-white/10 text-white/60"]
         : billing.status === "ended"
-          ? ["Monthly: course finished", "bg-white/10 text-white/60"]
+          ? [ENDED_LABEL[billing.end_reason ?? ""] ?? "Monthly: no longer billed", "bg-white/10 text-white/60"]
           : [`Monthly: paid to ${until ?? "?"}`, "bg-sky-500/15 text-sky-300"];
 
   return <span className={`mt-1 block w-fit rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tone}`}>{text}</span>;
@@ -66,6 +82,8 @@ function MonthlyBadge({ billing }: { billing: NonNullable<Student["billing"]> })
 
 export default function OwnerStudentsPage() {
   const router = useRouter();
+  // Course prices are in the academy's own currency.
+  const sym = currencySymbol(useAcademyCurrency());
   const [students, setStudents] = useState<Student[]>([]);
   const [tenantId, setTenantId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +112,54 @@ export default function OwnerStudentsPage() {
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [actionMsg, setActionMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  // Who can teach one-on-one: the academy's staff plus the owner themselves.
+  // Loaded only once there is a one-on-one student to assign.
+  const [teacherChoices, setTeacherChoices] = useState<{ id: number; name: string }[] | null>(null);
+  const hasOneOnOne = students.some((s) => s.one_on_one);
+
+  useEffect(() => {
+    if (!hasOneOnOne || teacherChoices !== null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [sRes, tRes] = await Promise.all([
+          fetch(OWNER_API.staff, { headers: ownerAuthHeaders() }),
+          fetch(OWNER_API.tracks, { headers: ownerAuthHeaders() }),
+        ]);
+        const sJson = sRes.ok ? await sRes.json() : {};
+        const tJson = tRes.ok ? await tRes.json() : {};
+        const list: { id: number; name: string }[] = (sJson.staff ?? [])
+          .filter((s: { lifecycle?: string }) => !s.lifecycle || s.lifecycle === "active")
+          .map((s: { id: number; name: string }) => ({ id: s.id, name: s.name }));
+        if (tJson.self_instructor) list.unshift({ id: tJson.self_instructor.id, name: `${tJson.self_instructor.name} (you)` });
+        if (!cancelled) setTeacherChoices(list);
+      } catch {
+        if (!cancelled) setTeacherChoices([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasOneOnOne, teacherChoices]);
+
+  const assignTeacher = async (s: Student, teacherId: number) => {
+    setTogglingId(s.id);
+    setActionMsg(null);
+    try {
+      const res = await fetch(OWNER_API.assignOneOnOneTeacher(s.id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
+        body: JSON.stringify({ teacher_id: teacherId }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setActionMsg({ kind: res.ok ? "ok" : "err", text: json?.message || (res.ok ? "Teacher assigned." : `Could not assign (HTTP ${res.status}).`) });
+      if (res.ok) load();
+    } catch (err) {
+      setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -312,6 +378,37 @@ export default function OwnerStudentsPage() {
     }
   };
 
+  // Stop one student's monthly billing (scholarship, left the academy...).
+  // They keep their access, are told, and are never charged again.
+  const stopBilling = async (s: Student) => {
+    if (!window.confirm(`Stop monthly billing for ${s.name}? They keep their access and won't be charged again. This can't be undone.`)) {
+      return;
+    }
+    setTogglingId(s.id);
+    setActionMsg(null);
+    try {
+      const res = await fetch(OWNER_API.stopStudentBilling(s.id), {
+        method: "POST",
+        headers: { Accept: "application/json", ...ownerAuthHeaders() },
+      });
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/lms/admin/login");
+        return;
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setActionMsg({ kind: "err", text: json?.message || `Could not stop billing (HTTP ${res.status}).` });
+        return;
+      }
+      setActionMsg({ kind: "ok", text: json?.message || `Monthly billing stopped for ${s.name}.` });
+      load();
+    } catch (err) {
+      setActionMsg({ kind: "err", text: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const resendInvite = async (s: Student) => {
     setResendingId(s.id);
     setActionMsg(null);
@@ -388,7 +485,7 @@ export default function OwnerStudentsPage() {
                 {courses.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.title}
-                    {Number(c.price ?? 0) > 0 ? `, ₦${Number(c.price).toLocaleString()}` : ", Free"}
+                    {Number(c.price ?? 0) > 0 ? `, ${sym}${Number(c.price).toLocaleString()}` : ", Free"}
                   </option>
                 ))}
               </select>
@@ -421,7 +518,7 @@ export default function OwnerStudentsPage() {
                 Requires payment
                 <span className="mt-0.5 block text-xs text-site-muted">
                   {requiresPayment
-                    ? `Students pay ₦${baseFee.toLocaleString()} to enrol, the invite email carries a payment link.`
+                    ? `Students pay ${sym}${baseFee.toLocaleString()} to enrol, the invite email carries a payment link.`
                     : "Comped, students are enrolled free and just set a password."}
                 </span>
               </span>
@@ -477,7 +574,40 @@ export default function OwnerStudentsPage() {
                   <td className="px-5 py-3 text-white">{s.name}</td>
                   <td className="px-5 py-3 text-site-muted">{s.email ?? "—"}</td>
                   <td className="px-5 py-3 text-site-muted">{s.phone ?? "—"}</td>
-                  <td className="px-5 py-3 text-site-muted">{s.course ?? "—"}</td>
+                  <td className="px-5 py-3 text-site-muted">
+                    {s.course ?? "—"}
+                    {s.one_on_one ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        {s.one_on_one.teacher_name ? (
+                          <span className="rounded-full bg-violet-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-violet-300">
+                            One-on-one · {s.one_on_one.teacher_name}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300">
+                            One-on-one · needs a teacher
+                          </span>
+                        )}
+                        {teacherChoices && teacherChoices.length > 0 ? (
+                          <select
+                            aria-label={`Teacher for ${s.name}`}
+                            value=""
+                            disabled={togglingId === s.id}
+                            onChange={(e) => e.target.value && assignTeacher(s, Number(e.target.value))}
+                            className="rounded-md border border-white/15 bg-black/30 px-2 py-0.5 text-[11px] text-white/80"
+                          >
+                            <option value="">{s.one_on_one.teacher_name ? "Change…" : "Assign…"}</option>
+                            {teacherChoices
+                              .filter((t) => t.id !== s.one_on_one?.teacher_id)
+                              .map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name}
+                                </option>
+                              ))}
+                          </select>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </td>
                   <td className="px-5 py-3">
                     {s.lifecycle !== "active" ? (
                       <LifecycleBadge state={s.lifecycle} purgeAfter={s.purge_after} />
@@ -534,6 +664,16 @@ export default function OwnerStudentsPage() {
                               {resendingId === s.id ? "Sending…" : "Resend invite"}
                             </button>
                           )}
+                          {s.billing && s.billing.status !== "ended" && s.billing.status !== null ? (
+                            <button
+                              type="button"
+                              onClick={() => stopBilling(s)}
+                              disabled={togglingId === s.id}
+                              className="rounded-full border border-white/15 px-4 py-1.5 text-xs font-semibold text-amber-200/90 transition hover:bg-amber-400/10 disabled:opacity-60"
+                            >
+                              Stop billing
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => {

@@ -19,7 +19,9 @@ type Track = {
   created_at: string | null;
 };
 
-type CourseOption = { id: number; title: string };
+// billing_type: a monthly course's cohorts must have an end date (billing runs
+// until it), enforced by the backend and asked for up front here.
+type CourseOption = { id: number; title: string; billing_type?: "one_time" | "monthly" };
 type StaffOption = { id: number; name: string };
 // The owner's own teacher row, so an academy that has hired nobody can still
 // name a teacher for its cohorts (see OwnerAdminController::tracks).
@@ -51,6 +53,8 @@ function TracksContent() {
   const isNewFromCourse = searchParams.get("new") === "1";
   const [tracks, setTracks] = useState<Track[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
+  const isMonthlyCourse = (id: string | number | null | undefined) =>
+    !!id && courses.some((c) => String(c.id) === String(id) && c.billing_type === "monthly");
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [selfInstructor, setSelfInstructor] = useState<SelfInstructor | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +123,9 @@ function TracksContent() {
       }
       if (cRes.ok) {
         const cJson = await cRes.json();
-        setCourses((cJson.courses ?? []).map((c: { id: number; title: string }) => ({ id: c.id, title: c.title })));
+        setCourses(
+          (cJson.courses ?? []).map((c: CourseOption) => ({ id: c.id, title: c.title, billing_type: c.billing_type })),
+        );
       }
       if (sRes.ok) {
         const sJson = await sRes.json();
@@ -175,6 +181,13 @@ function TracksContent() {
     }
     if (!courseId) {
       setCreateMsg({ kind: "err", text: "Pick which course this cohort belongs to." });
+      return;
+    }
+    if (isMonthlyCourse(courseId) && !endDate) {
+      setCreateMsg({
+        kind: "err",
+        text: "This is a monthly course, so the cohort needs an end date. Students are billed every month until it ends.",
+      });
       return;
     }
     if (startDate && endDate && endDate < startDate) {
@@ -269,6 +282,10 @@ function TracksContent() {
     const trimmed = editDraft.name.trim();
     if (!trimmed) {
       setError("The cohort name can't be empty.");
+      return;
+    }
+    if (isMonthlyCourse(editDraft.courseId) && !editDraft.endDate) {
+      setError("This cohort belongs to a monthly course, so it needs an end date. Students are billed every month until it ends.");
       return;
     }
     if (editDraft.startDate && editDraft.endDate && editDraft.endDate < editDraft.startDate) {
@@ -484,9 +501,20 @@ function TracksContent() {
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
-                  End date <span className="text-white/30">(optional)</span>
+                  End date{" "}
+                  {isMonthlyCourse(courseId) ? (
+                    <span className="text-red-300/80">* (monthly course)</span>
+                  ) : (
+                    <span className="text-white/30">(optional)</span>
+                  )}
                 </label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  required={isMonthlyCourse(courseId)}
+                  className={inputClass}
+                />
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">

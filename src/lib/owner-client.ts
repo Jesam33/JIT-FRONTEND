@@ -5,6 +5,7 @@
 // (ResolveTenantFromSession), exactly like the student/staff portals.
 
 import { OWNER_BRANDING_COOKIE, OWNER_NAME_COOKIE, parseBrandingCookie, serializeBranding, type OwnerBranding } from "./owner-branding";
+import { deviceHeaders } from "./device-id";
 
 export const OWNER_TOKEN_KEY = "lms_owner_token";
 
@@ -31,7 +32,9 @@ export function clearOwnerToken(): void {
 
 export function ownerAuthHeaders(): Record<string, string> {
   const token = getOwnerToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  // Device id too, so the owner's devices list can tell which entry is "this
+  // device" (lib/device-id).
+  return { ...deviceHeaders(), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 }
 
 const BRANDING_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // ~180 days

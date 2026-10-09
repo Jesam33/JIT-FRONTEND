@@ -7,6 +7,8 @@ import { academyLabel } from "@/lib/owner-branding";
 import { useToast } from "@/components/ToastProvider";
 import StarRating from "@/components/ui/StarRating";
 import CoverPositioner from "@/components/owner/CoverPositioner";
+import { currencySymbol } from "@/lib/currency";
+import { useAcademyCurrency } from "@/lib/academy-currency";
 
 type Course = {
   id: number;
@@ -21,6 +23,11 @@ type Course = {
   prerecorded_price?: number | string | null;
   // "monthly": the prices are per month and students pay again every month.
   billing_type?: "one_time" | "monthly";
+  // Students currently being billed monthly for this course.
+  monthly_billed_count?: number;
+  // Set once any student has paid: the course can't be deleted (anti-scam),
+  // only unpublished. The text says why.
+  delete_blocked_reason?: string | null;
   cover_image_url?: string | null;
   rating_average?: number;
   rating_count?: number;
@@ -31,6 +38,12 @@ type Course = {
   tracks_count: number;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
+  // One-on-one (private sessions with a teacher) at its own price.
+  is_one_on_one_available?: boolean;
+  one_on_one_price?: number | string | null;
+  one_on_one_session_minutes?: number;
+  one_on_one_session_limit?: number | null;
+  one_on_one_extra_session_price?: number | string | null;
   // Whether pre-recorded lessons exist yet. The toggle above can be on with
   // nothing behind it, and the storefront then hides the mode (the backend
   // gates on this too, so a student can never pick an empty mode).
@@ -45,17 +58,18 @@ type PlanSummary = {
   slug: string;
   // `students` here holds the seats ONE course may have (see loadPlan).
   limits: { students: number | null };
-  features: { pre_recorded_video: boolean };
+  features: { pre_recorded_video: boolean; one_on_one?: boolean };
   // The platform service charge taken from each student payment.
   commission_percent?: number;
 };
 
-function formatPrice(price: Course["price"]): string {
+// Prices are in the academy's own currency (useAcademyCurrency).
+function formatPrice(price: Course["price"], currency: string): string {
   if (price === null || price === undefined || price === "") return "—";
   const n = typeof price === "string" ? Number(price) : price;
   if (Number.isNaN(n)) return "—";
   if (n === 0) return "Free";
-  return `₦${n.toLocaleString()}`;
+  return `${currencySymbol(currency)}${n.toLocaleString()}`;
 }
 
 // The platform-wide ceiling: no course on any plan seats more (Pro and above
@@ -93,12 +107,23 @@ const emptyForm = {
   maxStudents: "",
   isLive: true,
   isPrerecorded: false,
+  isOneOnOne: false,
+  oneOnOnePrice: "",
+  // Self-booking: session length (minutes) and sessions per month (monthly
+  // course) or in total (one-time); "" = unlimited.
+  oneOnOneMinutes: "60",
+  oneOnOneLimit: "",
+  // Price of one extra session once the limit is used; "" = not sold.
+  oneOnOneExtraPrice: "",
   isActive: true,
 };
 
 export default function OwnerCoursesPage() {
   const router = useRouter();
   const { toast } = useToast();
+  // The academy's currency: prices are typed and shown in it.
+  const currency = useAcademyCurrency();
+  const sym = currencySymbol(currency).trim();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -186,7 +211,10 @@ export default function OwnerCoursesPage() {
         setPlan({
           slug: String(summary.slug ?? "free"),
           limits: { students: cap },
-          features: { pre_recorded_video: !!summary.features.pre_recorded_video },
+          features: {
+            pre_recorded_video: !!summary.features.pre_recorded_video,
+            one_on_one: !!summary.features.one_on_one,
+          },
           commission_percent:
             typeof summary.commission_percent === "number" ? summary.commission_percent : undefined,
         });
@@ -255,6 +283,12 @@ export default function OwnerCoursesPage() {
       maxStudents: c.max_students ? String(c.max_students) : "",
       isLive: !!c.is_live_available,
       isPrerecorded: !!c.is_prerecorded_available,
+      isOneOnOne: !!c.is_one_on_one_available,
+      oneOnOnePrice: c.one_on_one_price === null || c.one_on_one_price === undefined ? "" : String(c.one_on_one_price),
+      oneOnOneMinutes: String(c.one_on_one_session_minutes ?? 60),
+      oneOnOneLimit: c.one_on_one_session_limit ? String(c.one_on_one_session_limit) : "",
+      oneOnOneExtraPrice:
+        c.one_on_one_extra_session_price === null || c.one_on_one_extra_session_price === undefined ? "" : String(c.one_on_one_extra_session_price),
       isActive: !!c.is_active,
     });
     setCoverUrl(c.cover_image_url ?? null);
@@ -277,7 +311,7 @@ export default function OwnerCoursesPage() {
       return;
     }
     if (Number.isNaN(Number(form.price)) || Number(form.price) <= 0) {
-      setSaveMsg({ kind: "err", text: "Enter a price greater than ₦0. Courses can't be free." });
+      setSaveMsg({ kind: "err", text: "Enter a price greater than 0. Courses can't be free." });
       return;
     }
     if (form.originalPrice !== "" && (Number.isNaN(Number(form.originalPrice)) || Number(form.originalPrice) < 0)) {
@@ -291,11 +325,25 @@ export default function OwnerCoursesPage() {
     const prerecordedActive = prerecordedAllowed && form.isPrerecorded;
     if (prerecordedActive && form.prerecordedPrice !== "") {
       if (Number.isNaN(Number(form.prerecordedPrice)) || Number(form.prerecordedPrice) <= 0) {
-        setSaveMsg({ kind: "err", text: "Pre-recorded price must be greater than ₦0." });
+        setSaveMsg({ kind: "err", text: "Pre-recorded price must be greater than 0." });
         return;
       }
       if (form.price !== "" && Number(form.prerecordedPrice) >= Number(form.price)) {
         setSaveMsg({ kind: "err", text: "Pre-recorded price should be lower than the live price." });
+        return;
+      }
+    }
+    if (oneOnOneAllowed && form.isOneOnOne) {
+      if (form.oneOnOnePrice === "" || Number.isNaN(Number(form.oneOnOnePrice)) || Number(form.oneOnOnePrice) <= 0) {
+        setSaveMsg({ kind: "err", text: "Enter a price for one-on-one classes (greater than 0)." });
+        return;
+      }
+      if (form.oneOnOneLimit !== "" && (!Number.isInteger(Number(form.oneOnOneLimit)) || Number(form.oneOnOneLimit) < 1 || Number(form.oneOnOneLimit) > 100)) {
+        setSaveMsg({ kind: "err", text: "Sessions included must be a whole number from 1 to 100, or left empty for unlimited." });
+        return;
+      }
+      if (form.oneOnOneExtraPrice !== "" && (Number.isNaN(Number(form.oneOnOneExtraPrice)) || Number(form.oneOnOneExtraPrice) <= 0)) {
+        setSaveMsg({ kind: "err", text: "The extra session price must be greater than 0, or left empty to not sell extras." });
         return;
       }
     }
@@ -341,9 +389,31 @@ export default function OwnerCoursesPage() {
       // Distinct (cheaper) pre-recorded price. Null when unset or pre-recorded
       // isn't active, the backend then charges the live price for both modes.
       prerecorded_price: prerecordedActive && form.prerecordedPrice !== "" ? Number(form.prerecordedPrice) : null,
+      // One-on-one only on plans that include it; its price only while it's on.
+      is_one_on_one_available: oneOnOneAllowed && form.isOneOnOne,
+      one_on_one_price: oneOnOneAllowed && form.isOneOnOne && form.oneOnOnePrice !== "" ? Number(form.oneOnOnePrice) : null,
+      one_on_one_session_minutes: Number(form.oneOnOneMinutes) || 60,
+      one_on_one_session_limit: form.oneOnOneLimit === "" ? null : Number(form.oneOnOneLimit),
+      // Extras only make sense with a limit to go over.
+      one_on_one_extra_session_price:
+        form.oneOnOneLimit !== "" && form.oneOnOneExtraPrice !== "" ? Number(form.oneOnOneExtraPrice) : null,
       billing_type: form.billingType,
       is_active: form.isActive,
     };
+
+    // Switching a monthly course to one-time: students already paying monthly
+    // would otherwise keep being billed until their cohort ends, so ask.
+    const editingCourse = editingId !== null ? courses.find((x) => x.id === editingId) : undefined;
+    const payingMonthly = editingCourse?.monthly_billed_count ?? 0;
+    const stopExisting =
+      editingCourse?.billing_type === "monthly" &&
+      form.billingType === "one_time" &&
+      payingMonthly > 0 &&
+      window.confirm(
+        `${payingMonthly} student${payingMonthly === 1 ? " is" : "s are"} paying monthly for this course.\n\n` +
+          "OK: stop their monthly billing now (they keep access and are told).\n" +
+          "Cancel: they keep paying monthly until their cohort ends.",
+      );
 
     setSaving(true);
     setSaveMsg(null);
@@ -351,7 +421,7 @@ export default function OwnerCoursesPage() {
       const res = await fetch(editingId ? OWNER_API.updateCourse(editingId) : OWNER_API.storeCourse, {
         method: editingId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json", ...ownerAuthHeaders() },
-        body: JSON.stringify(body),
+        body: JSON.stringify(stopExisting ? { ...body, stop_existing_billing: true } : body),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -361,6 +431,9 @@ export default function OwnerCoursesPage() {
       if (editingId) {
         setSaveMsg({ kind: "ok", text: `Updated “${title}”.` });
         toast(`Course “${title}” updated.`, "success");
+        if (json?.billing_stopped > 0) {
+          toast(`Monthly billing stopped for ${json.billing_stopped} student${json.billing_stopped === 1 ? "" : "s"}.`, "success");
+        }
         resetForm();
       } else {
         const created: Course | undefined = json?.course;
@@ -492,6 +565,35 @@ export default function OwnerCoursesPage() {
     }
   };
 
+  // Stop billing every monthly student of this course (course cancelled,
+  // teacher gone...). Students keep access, are told, and are never charged again.
+  const stopBilling = async (c: Course) => {
+    const n = c.monthly_billed_count ?? 0;
+    if (
+      !window.confirm(
+        `Stop monthly billing for ${n} student${n === 1 ? "" : "s"} of “${c.title}”?\n\n` +
+          "They keep their access, are told, and will not be charged again. This can't be undone.",
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch(OWNER_API.stopCourseBilling(c.id), {
+        method: "POST",
+        headers: { Accept: "application/json", ...ownerAuthHeaders() },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json?.message || `Could not stop billing (HTTP ${res.status}).`);
+        return;
+      }
+      toast(json?.message || "Monthly billing stopped.", "success");
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   const remove = async (c: Course) => {
     setDeletingId(c.id);
     try {
@@ -529,6 +631,8 @@ export default function OwnerCoursesPage() {
   // not allowed (safe default), so a Free academy never sees a live checkbox
   // flash. The plan's student cap also bounds the capacity field below.
   const prerecordedAllowed = plan?.features.pre_recorded_video ?? false;
+  // One-on-one classes: Basic plan and up.
+  const oneOnOneAllowed = plan?.features.one_on_one ?? false;
   const studentCap = plan?.limits.students ?? null;
 
   return (
@@ -620,7 +724,8 @@ export default function OwnerCoursesPage() {
             </p>
           </div>
           {/* How students pay. Monthly = the price below is charged every month
-              and a student who stops paying has their access paused (3-day grace).
+              and a student who stops paying has their access paused (reminder email a week
+              before, 2-day grace after).
               A change here only applies to students who register afterwards. */}
           <div>
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
@@ -639,12 +744,23 @@ export default function OwnerCoursesPage() {
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setField("billingType", value)}
-                    className={`rounded-xl border px-4 py-3 text-left transition ${
+                    className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition ${
                       selected ? "border-white/60 bg-white/15" : "border-white/15 bg-black/20 hover:border-white/30"
                     }`}
                   >
-                    <span className="block text-sm font-semibold text-white">{title}</span>
-                    <span className="mt-0.5 block text-[11px] text-white/50">{hint}</span>
+                    {/* Radio dot, so each box reads as a choice to click. */}
+                    <span
+                      aria-hidden="true"
+                      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                        selected ? "border-white" : "border-white/40"
+                      }`}
+                    >
+                      {selected ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-white">{title}</span>
+                      <span className="mt-0.5 block text-[11px] text-white/50">{hint}</span>
+                    </span>
                   </button>
                 );
               })}
@@ -658,7 +774,7 @@ export default function OwnerCoursesPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
-                {form.billingType === "monthly" ? "Price per month (₦)" : "Price (₦)"}{" "}
+                {form.billingType === "monthly" ? `Price per month (${sym})` : `Price (${sym})`}{" "}
                 <span className="text-red-300/80">*</span>
               </label>
               <input
@@ -677,7 +793,7 @@ export default function OwnerCoursesPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
-                Original price (₦)
+                Original price ({sym})
               </label>
               <input
                 type="number"
@@ -730,6 +846,19 @@ export default function OwnerCoursesPage() {
                 <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">Pro</span>
               </label>
             )}
+            {oneOnOneAllowed ? (
+              <label className="flex items-center gap-2 text-sm text-white/80">
+                <input type="checkbox" checked={form.isOneOnOne} onChange={(e) => setField("isOneOnOne", e.target.checked)} className="h-4 w-4 accent-[color:var(--color-primary)]" />
+                One-on-one available
+              </label>
+            ) : (
+              // Basic and up: shown disabled with an upgrade hint, like pre-recorded.
+              <label className="flex items-center gap-2 text-sm text-white/40" title="One-on-one classes are available on Basic and above.">
+                <input type="checkbox" checked={false} disabled className="h-4 w-4 accent-[color:var(--color-primary)]" />
+                One-on-one available
+                <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">Basic</span>
+              </label>
+            )}
             <label className="flex items-center gap-2 text-sm text-white/80">
               <input type="checkbox" checked={form.isActive} onChange={(e) => setField("isActive", e.target.checked)} className="h-4 w-4 accent-[color:var(--color-primary)]" />
               Published (visible on your public page)
@@ -755,7 +884,7 @@ export default function OwnerCoursesPage() {
           {prerecordedAllowed && form.isPrerecorded ? (
             <div className="sm:max-w-xs">
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
-                {form.billingType === "monthly" ? "Pre-recorded price per month (₦)" : "Pre-recorded price (₦)"}
+                {form.billingType === "monthly" ? `Pre-recorded price per month (${sym})` : `Pre-recorded price (${sym})`}
               </label>
               <input
                 type="number"
@@ -769,6 +898,80 @@ export default function OwnerCoursesPage() {
               <p className="mt-1 text-[11px] text-white/40">
                 Charged when a student picks pre-recorded. Usually lower than the live price.
               </p>
+            </div>
+          ) : null}
+
+          {/* One-on-one price, only while one-on-one is on. Required: there is
+              no sensible default, private teaching costs the academy more. */}
+          {oneOnOneAllowed && form.isOneOnOne ? (
+            <div className="sm:max-w-xs">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                {form.billingType === "monthly" ? `One-on-one price per month (${sym})` : `One-on-one price (${sym})`}{" "}
+                <span className="text-red-300/80">*</span>
+              </label>
+              <input
+                type="number"
+                min={1}
+                step="0.01"
+                value={form.oneOnOnePrice}
+                onChange={(e) => setField("oneOnOnePrice", e.target.value)}
+                placeholder="e.g. 90000"
+                className={inputClass}
+              />
+              <p className="mt-1 text-[11px] text-white/40">
+                Private live sessions with a teacher, same course content. Each student is given a teacher
+                (the cohort&apos;s instructor by default). Students book from their teacher&apos;s available times,
+                or the teacher schedules for them.
+              </p>
+            </div>
+          ) : null}
+
+          {oneOnOneAllowed && form.isOneOnOne ? (
+            <div className="grid gap-4 sm:grid-cols-2 sm:max-w-xl">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">Session length</label>
+                <select value={form.oneOnOneMinutes} onChange={(e) => setField("oneOnOneMinutes", e.target.value)} className={inputClass}>
+                  {["30", "45", "60", "90", "120"].map((m) => (
+                    <option key={m} value={m}>{m} minutes</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
+                  {form.billingType === "monthly" ? "Sessions per month" : "Sessions included"}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  value={form.oneOnOneLimit}
+                  onChange={(e) => setField("oneOnOneLimit", e.target.value)}
+                  placeholder="Unlimited"
+                  className={inputClass}
+                />
+                <p className="mt-1 text-[11px] text-white/40">
+                  How many sessions a student can book {form.billingType === "monthly" ? "each month" : "for the whole course"}. Leave empty for no limit.
+                </p>
+              </div>
+              {form.oneOnOneLimit !== "" ? (
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">Extra session price ({sym})</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step="0.01"
+                    value={form.oneOnOneExtraPrice}
+                    onChange={(e) => setField("oneOnOneExtraPrice", e.target.value)}
+                    placeholder="Not sold"
+                    className={inputClass}
+                  />
+                  <p className="mt-1 text-[11px] text-white/40">
+                    Students who use up their sessions can buy more at this price each
+                    {form.billingType === "monthly" ? " (for that month)" : ""}. Leave empty to not sell extras.
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -902,14 +1105,17 @@ export default function OwnerCoursesPage() {
                   </td>
                   <td className="px-5 py-3 text-site-muted">
                     <div>
-                      {formatPrice(c.price)}
+                      {formatPrice(c.price, currency)}
                       {c.billing_type === "monthly" ? <span className="text-[11px] text-white/50"> /month</span> : null}
                     </div>
                     {c.original_price != null && Number(c.original_price) > Number(c.price ?? 0) ? (
-                      <div className="text-[11px] text-white/40 line-through">{formatPrice(c.original_price)}</div>
+                      <div className="text-[11px] text-white/40 line-through">{formatPrice(c.original_price, currency)}</div>
                     ) : null}
                     {c.is_prerecorded_available && c.prerecorded_price != null ? (
-                      <div className="text-[11px] text-white/50">Pre-rec {formatPrice(c.prerecorded_price)}</div>
+                      <div className="text-[11px] text-white/50">Pre-rec {formatPrice(c.prerecorded_price, currency)}</div>
+                    ) : null}
+                    {c.is_one_on_one_available && c.one_on_one_price != null ? (
+                      <div className="text-[11px] text-white/50">1:1 {formatPrice(c.one_on_one_price, currency)}</div>
                     ) : null}
                   </td>
                   <td className="px-5 py-3 text-site-muted">{c.students_count}</td>
@@ -967,13 +1173,36 @@ export default function OwnerCoursesPage() {
                           >
                             Edit
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmingId(c.id)}
-                            className="rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300"
-                          >
-                            Delete
-                          </button>
+                          {(c.monthly_billed_count ?? 0) > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => stopBilling(c)}
+                              title={`${c.monthly_billed_count} student(s) currently billed monthly`}
+                              className="rounded-full border border-white/15 px-4 py-1.5 text-xs font-semibold text-amber-200/90 transition hover:bg-amber-400/10"
+                            >
+                              Stop monthly billing ({c.monthly_billed_count})
+                            </button>
+                          ) : null}
+                          {c.delete_blocked_reason ? (
+                            // Paid for: not deletable (anti-scam). The button stays
+                            // visible but disabled so the owner can see why.
+                            <button
+                              type="button"
+                              disabled
+                              title={c.delete_blocked_reason}
+                              className="cursor-not-allowed rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-white/30"
+                            >
+                              Delete
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(c.id)}
+                              className="rounded-full border border-white/10 px-4 py-1.5 text-xs font-semibold text-red-300/80 transition hover:bg-red-500/10 hover:text-red-300"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </>
                       )}
                     </div>

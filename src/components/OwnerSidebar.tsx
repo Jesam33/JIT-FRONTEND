@@ -43,6 +43,7 @@ const groups: SidebarGroup[] = [
       { href: "/lms/admin/students", label: "All Students" },
       { href: "/lms/admin/courses", label: "Courses" },
       { href: "/lms/admin/tracks", label: "Tracks & Cohorts" },
+      { href: "/lms/admin/one-on-one", label: "One-on-one", badge: "Basic", gatedFeature: "one_on_one" },
       { href: "/lms/admin/certificates", label: "Certificates" },
     ],
   },

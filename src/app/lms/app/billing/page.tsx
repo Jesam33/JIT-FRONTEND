@@ -20,6 +20,8 @@ type Billing = {
   amount?: number;
   currency?: string;
   status?: "active" | "past_due" | "cancelled" | "ended" | null;
+  // Why billing stopped, when status is "ended".
+  end_reason?: string | null;
   paid_until?: string | null;
   access_ends_at?: string | null;
   grace_days?: number;
@@ -171,7 +173,16 @@ function StudentBilling() {
   const statusLine = (() => {
     switch (billing.status) {
       case "ended":
-        return "Your course has finished, so there are no more payments.";
+        switch (billing.end_reason) {
+          case "stopped_by_academy":
+            return "Your academy has stopped monthly billing for this course. You won't be charged again.";
+          case "course_deleted":
+            return "This course is no longer offered, so there are no more payments.";
+          case "academy_closed":
+            return "Your academy has closed, so there are no more payments.";
+          default:
+            return "Your course has finished, so there are no more payments.";
+        }
       case "cancelled":
         return billing.locked
           ? "You stopped your monthly payments and the month you paid for has ended."
@@ -263,7 +274,8 @@ function StudentBilling() {
         {billing.status !== "ended" ? (
           <p className="mt-4 text-xs text-white/50">
             Paying by card lets us renew automatically each month. If a payment is missed, your access pauses{" "}
-            {billing.grace_days ?? 3} days after the due date and comes back as soon as you pay.
+            {billing.grace_days ?? 2} days after the due date and comes back as soon as you pay. We&apos;ll email you a
+            reminder a week before each payment is due.
           </p>
         ) : null}
       </div>

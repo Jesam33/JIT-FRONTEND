@@ -16,6 +16,7 @@ import { getOwnerToken, clearOwnerToken, ownerAuthHeaders, writeBrandingCookie, 
 import { brandingStyle, storefrontBackgroundStyle, type OwnerBranding } from "@/lib/owner-branding";
 import { tenantLoginPath, setTenantCookie, getTenantSlug } from "@/lib/tenant-client";
 import { writeCachedBranding } from "@/lib/branding-cache";
+import { setAcademyCurrency } from "@/lib/academy-currency";
 import IdleLogout from "./IdleLogout";
 
 // Pages that render before the owner has a session, no sidebar, no auth guard.
@@ -134,6 +135,8 @@ export default function OwnerLayoutClient({
       // layout's generateMetadata renders <title>{name}</title> on the next
       // render instead of inheriting the root's "Jorsas Tech".
       writeOwnerNameCookie(j?.tenant?.name ?? null);
+      // The currency every owner page labels prices with.
+      setAcademyCurrency(j?.tenant?.currency ?? "NGN");
       // Pin the tenant cookie + per-institute localStorage cache so the
       // global pre-paint script (app/layout.tsx) keys off this institute
       //, self-heals owners logged in before the cookie fix shipped.

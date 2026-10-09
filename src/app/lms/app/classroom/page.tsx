@@ -12,6 +12,9 @@ import { getTenantSlug } from "@/lib/tenant-client";
 type TimetableItem = {
   id: number;
   class_type?: "classroom" | "scheduled";
+  // A private one-on-one session, and who teaches it.
+  is_private?: boolean;
+  teacher_name?: string | null;
   title: string;
   starts_at: string;
   ends_at: string | null;
@@ -653,7 +656,11 @@ export default function StudentClassroomPage() {
                   <div>
                     <h3 className="font-semibold">{c.title}</h3>
                     <p className="mt-1 text-sm text-white/70">{classWindow(c)}</p>
-                    {c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
+                    {c.is_private ? (
+                      <span className="mt-1 inline-block rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] text-violet-200">
+                        One-on-one{c.teacher_name ? ` with ${c.teacher_name}` : ""}
+                      </span>
+                    ) : c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
                   </div>
                   {/* Upcoming classes are info-only, the live room opens (in-portal) once the
                       class is active, so no external join link here. */}
@@ -684,7 +691,9 @@ export default function StudentClassroomPage() {
                     <div>
                       <h4 className="font-semibold">{c.title}</h4>
                       <p className="mt-1 text-sm text-white/70">{classWindow(c)}</p>
-                      {c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
+                      {c.is_private ? (
+                        <span className="mt-1 inline-block rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] text-violet-200">One-on-one</span>
+                      ) : c.class_type === "scheduled" ? <span className="mt-1 inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">Module Class</span> : null}
                     </div>
                     <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] tabular-nums ${att ? (att.status === "present" ? "bg-emerald-500/20 text-emerald-300" : "bg-orange-500/20 text-orange-300") : "border border-white/15 text-white/45"}`}>
                       {att ? `${att.attended_minutes ?? Math.floor((att.total_seconds ?? 0) / 60)} / ${att.duration_minutes ?? 60} min` : "No record"}

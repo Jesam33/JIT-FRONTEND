@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
+import { readCookie } from "@/lib/currency";
 import { ACADEMY_NICHES, OTHER_NICHE } from "@/lib/niches";
 import { isContactSalesPlan, type Plan } from "@/lib/plans";
 import PlanCardBody from "@/components/plans/PlanCardBody";
@@ -13,7 +14,7 @@ import PlanCardBody from "@/components/plans/PlanCardBody";
 // publicly at /api/plans), so prices, limits, commission and the feature
 // checklist can never drift between the two surfaces. Registering is still free
 // to start: owners can pick the free tier (no payment, provisioned instantly)
-// or a paid plan and pay via Paystack up front.
+// or a paid plan and pay up front, in their country's currency.
 const DEFAULT_PLAN = "free";
 
 // Minimal offline fallback if /api/plans is unreachable, mirroring the config
@@ -37,6 +38,38 @@ function SignupInner() {
   // The plan catalogue from /api/plans (same source as the billing cards);
   // falls back to the config-mirrored list if the fetch fails.
   const [plans, setPlans] = useState<Plan[] | null>(null);
+  // Where the academy is based: fixes the currency it sells in and pays its
+  // plan in. The list (and plan prices in that currency) come from /api/plans.
+  const [country, setCountry] = useState("NG");
+  const [countries, setCountries] = useState<{ code: string; name: string; currency: string }[]>([]);
+  // Start on the visitor's own country (a US visitor sees dollars, not naira):
+  // the saved `country` cookie, else the same best-effort location check the
+  // storefront uses. Only when it's a supported country; the owner can still change it.
+  const [countryTouched, setCountryTouched] = useState(false);
+  const [detectedCountry, setDetectedCountry] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let detected = readCookie("country").toUpperCase();
+      if (!detected) {
+        try {
+          const r = await fetch("/api/geo", { cache: "no-store" });
+          const j = await r.json().catch(() => ({}));
+          detected = String(j?.country ?? "").toUpperCase();
+        } catch {
+          detected = "";
+        }
+      }
+      if (!cancelled && /^[A-Z]{2}$/.test(detected)) setDetectedCountry(detected);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  // Apply the detected country once the supported list is known (never over
+  // the owner's own choice).
+  const effectiveCountry =
+    !countryTouched && detectedCountry && countries.some((c) => c.code === detectedCountry) ? detectedCountry : country;
   const [subdomain, setSubdomain] = useState("");
   // What the academy teaches, drives the public Campuses directory filter.
   // "Other" swaps the dropdown for the free-text field below it.
@@ -60,16 +93,22 @@ function SignupInner() {
   // (Enterprise) are excluded from the selectable grid, they stay in the
   // contact-sales tile below it. If the requested ?plan= slug isn't a
   // selectable tier once the catalogue lands, fall back to free.
+  // Re-fetched when the country changes, so the cards show what this academy
+  // will actually pay, in its own currency.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       let loaded: Plan[] = FALLBACK_PLANS;
+      let loadedCountries: { code: string; name: string; currency: string }[] = [];
       try {
-        const res = await fetch(OWNER_API.plans, { headers: { Accept: "application/json" } });
+        const res = await fetch(`${OWNER_API.plans}?country=${encodeURIComponent(effectiveCountry)}`, { headers: { Accept: "application/json" } });
         if (res.ok) {
           const json = await res.json();
           if (Array.isArray(json?.plans) && json.plans.length > 0) {
             loaded = json.plans as Plan[];
+          }
+          if (Array.isArray(json?.countries)) {
+            loadedCountries = json.countries;
           }
         }
       } catch {
@@ -77,6 +116,7 @@ function SignupInner() {
       }
       if (!cancelled) {
         setPlans(loaded);
+        if (loadedCountries.length > 0) setCountries(loadedCountries);
         setPlan((current) =>
           loaded.some((p) => p.slug === current && !isContactSalesPlan(p)) ? current : DEFAULT_PLAN,
         );
@@ -85,7 +125,7 @@ function SignupInner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [effectiveCountry]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +149,7 @@ function SignupInner() {
       // No password here, the owner sets it via the emailed setup link after payment.
       plan: String(form.get("plan") || DEFAULT_PLAN),
       niche: resolvedNiche,
+      country: effectiveCountry,
     };
 
     try {
@@ -221,6 +262,28 @@ function SignupInner() {
             <input name="email" required type="email" placeholder="you@example.com" className={inputCls} />
             <p className="mt-2 text-xs text-site-muted">
               After payment we&apos;ll email a setup link to this address so you can choose your password and sign in.
+            </p>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm text-white/80" htmlFor="signup-country">Where is your academy based?</label>
+            <select
+              id="signup-country"
+              value={effectiveCountry}
+              onChange={(e) => {
+                setCountry(e.target.value);
+                setCountryTouched(true);
+              }}
+              className={inputCls}
+            >
+              {(countries.length > 0 ? countries : [{ code: "NG", name: "Nigeria", currency: "NGN" }]).map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name} ({c.currency})
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-site-muted">
+              Your plan, your course prices and your payouts are all in this country&apos;s currency.
             </p>
           </div>
 

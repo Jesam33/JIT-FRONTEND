@@ -1,3 +1,5 @@
+import { deviceHeaders } from "./device-id";
+
 // Tenant header for UNAUTHENTICATED browser requests, login, password reset,
 // and public course intake. The backend's ResolveTenant middleware reads
 // `X-Tenant-Slug` to bind the organisation before any credential is known.
@@ -24,7 +26,9 @@ export function getTenantSlug(): string {
 
 export function tenantHeaders(): Record<string, string> {
   const slug = getTenantSlug();
-  return slug ? { "X-Tenant-Slug": slug } : {};
+  // Every login form sends these, so the device id rides along: it is what the
+  // backend's login alerts recognise a returning device by (lib/device-id).
+  return { ...deviceHeaders(), ...(slug ? { "X-Tenant-Slug": slug } : {}) };
 }
 
 // Pin the `tenant` cookie to an explicit institute slug. Called on successful

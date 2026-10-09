@@ -29,6 +29,8 @@ const groups: SidebarGroup[] = [
       { href: "/lms/staff/students", label: "Students", section: "students" },
       { href: "/lms/staff/classroom", label: "Classroom", section: "classroom" },
       { href: "/lms/staff/timetable", label: "Timetable", section: "timetable" },
+      // Only shown to staff who have one-on-one students (see below).
+      { href: "/lms/staff/one-on-one", label: "One-on-one students", section: "timetable" },
       { href: "/lms/staff/attendance", label: "Attendance", section: "attendance" },
       { href: "/lms/staff/leaderboard", label: "Leaderboard", section: "leaderboard" },
     ],
@@ -198,6 +200,8 @@ export default function StaffSidebar() {
   // slow /staff/me never hides a link the person actually has — the endpoint
   // behind the link is what refuses them, and it refuses them either way.
   const [sections, setSections] = useState<string[] | null>(null);
+  // "One-on-one students" only for staff who teach any (staff/me count).
+  const [hasOneOnOne, setHasOneOnOne] = useState(false);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -221,6 +225,7 @@ export default function StaffSidebar() {
           setChatEnabled(enabled);
           const ai = p.ai_materials !== false;
           setAiEnabled(ai);
+          setHasOneOnOne((p.one_on_one_students ?? 0) > 0);
           if (Array.isArray(p.sections)) setSections(p.sections as string[]);
         }
       })
@@ -307,6 +312,7 @@ export default function StaffSidebar() {
         (i) =>
           (chatEnabled || i.href !== "/lms/staff/chats") &&
           (aiEnabled || i.href !== "/lms/staff/ai-materials") &&
+          (hasOneOnOne || i.href !== "/lms/staff/one-on-one") &&
           (sections === null || !i.section || sections.includes(i.section)),
       ),
     }))

@@ -6,6 +6,7 @@ import AgentBanner from "@/components/landing/AgentBanner";
 import InstituteContactFooter from "@/components/institute/InstituteContactFooter";
 import ShareAcademy from "@/components/institute/ShareAcademy";
 import CurrencySwitcher from "@/components/institute/CurrencySwitcher";
+import EnrolledBadge from "@/components/institute/EnrolledBadge";
 import { brandingStyle, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { formatPrice } from "@/lib/currency";
 import type { InstituteProfile } from "@/lib/institute-profile";
@@ -23,7 +24,7 @@ export type StorefrontCourse = {
   is_full: boolean;
   is_live_available: boolean;
   is_prerecorded_available: boolean;
-  // Localized DISPLAY pricing (cosmetic, money is still charged in NGN/USD).
+  // Localized DISPLAY pricing (cosmetic; money is charged in the academy's own currency).
   // Present on every course from the backend; optional here so a partially
   // built view (e.g. the apex empty-shell fallback) still type-checks.
   currency?: string;
@@ -46,6 +47,7 @@ export type StorefrontCourse = {
   is_bestseller?: boolean;
   // "monthly": the price is per month (students pay every month).
   billing_type?: "one_time" | "monthly";
+  is_one_on_one_available?: boolean;
 };
 
 // The shape returned by /api/frontend/i/{slug} and /api/frontend/institute/primary.
@@ -66,7 +68,7 @@ export type StorefrontData = {
 // Render a course's price in the visitor's display currency. Free courses (base
 // NGN price ≤ 0 are free everywhere) always read "Free". A converted price is
 // shown plainly, no "≈" estimate prefix, since the course detail page carries
-// the "Approx. shown in {currency} · you'll be charged {NGN/USD}" disclosure.
+// the "Approx. shown in {currency} · you'll be charged {academy currency}" disclosure.
 function coursePrice(course: StorefrontCourse): string {
   if (course.price <= 0) return "Free";
   const amount = course.price_display ?? course.price;
@@ -245,6 +247,8 @@ export default function InstituteStorefront({
                       Full
                     </span>
                   ) : null}
+                  {/* "Enrolled" for a logged-in student of this academy (client-side). */}
+                  <EnrolledBadge courseId={course.id} academySlug={institute.slug} />
                 </div>
 
                 <div className="flex flex-1 flex-col p-4">
@@ -281,6 +285,9 @@ export default function InstituteStorefront({
                     ) : null}
                     {course.is_prerecorded_available ? (
                       <span className="rounded-full border border-site-border/20 px-2 py-0.5 text-[11px] text-site-text/70">Pre-recorded</span>
+                    ) : null}
+                    {course.is_one_on_one_available ? (
+                      <span className="rounded-full border border-site-border/20 px-2 py-0.5 text-[11px] text-site-text/70">One-on-one</span>
                     ) : null}
                     {!course.is_full && course.max_students > 0 ? (
                       <span className="ml-auto text-[11px] font-medium" style={{ color: "#059669" }}>

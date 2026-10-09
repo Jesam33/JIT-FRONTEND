@@ -1,3 +1,5 @@
+import { formatPrice } from "@/lib/currency";
+
 // The plan catalogue contract, shared by the billing portal (/lms/admin/billing)
 // and the signup page (/signup) so both render identical plan cards from one
 // source. The shapes mirror App\Support\PlanCatalogue (the PHP single source
@@ -29,7 +31,12 @@ export type Plan = {
   slug: string;
   name: string;
   label?: string | null;
+  // Naira base price.
   price: number | null;
+  // The same plan priced in the academy's own currency (what is charged), when
+  // the catalogue was asked for one (/api/plans?country=, billing status).
+  local_price?: number | null;
+  currency?: string;
   contact_sales?: boolean;
   commission_percent?: number;
   limits?: Limits;
@@ -62,10 +69,12 @@ export const TAGLINES: Record<string, string> = {
   enterprise: "Custom limits, full white-label & API for large organisations.",
 };
 
-// The price line: Enterprise is contact-sales (no self-serve price); ₦0 is Free.
+// The price line: Enterprise is contact-sales (no self-serve price); 0 is Free.
+// Shown in the academy's own currency when the catalogue carries one.
 export function priceText(plan: Plan): string {
   if (plan.contact_sales || plan.price == null) return "Contact sales";
-  return plan.price <= 0 ? "Free" : `₦${plan.price.toLocaleString()}`;
+  const amount = plan.local_price ?? plan.price;
+  return amount <= 0 ? "Free" : formatPrice(amount, plan.currency ?? "NGN");
 }
 
 // A plan limit rendered for humans: null (or missing) means unlimited.

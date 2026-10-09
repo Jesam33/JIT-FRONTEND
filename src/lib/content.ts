@@ -334,6 +334,7 @@ export const pricingPlans: PricingPlan[] = [
       "Up to 10 courses, 5 staff",
       "Unlimited students, up to 30 per class",
       "In-app group chat & certificates",
+      "One-on-one classes",
       "Admission-Marketer network",
       "Remove “Powered by Jorsastech” branding",
       "5% service charge on course sales",

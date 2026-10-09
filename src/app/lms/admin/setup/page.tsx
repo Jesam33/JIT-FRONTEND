@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
 import { setOwnerToken } from "@/lib/owner-client";
+import { deviceHeaders } from "@/lib/device-id";
 import { resetBrandingToDefault, clearCachedBranding } from "@/lib/branding-cache";
 import { getTenantSlug } from "@/lib/tenant-client";
 import { AuthPasswordField, AuthSubmitButton, AuthMessage } from "@/components/auth/AuthLayout";
@@ -68,7 +69,8 @@ function SetupInner() {
     try {
       const res = await fetch(AUTH_API.ownerSetup, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        // Device id: this first sign-in registers the browser for login alerts.
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...deviceHeaders() },
         body: JSON.stringify({ token, password, password_confirmation: confirm }),
       });
       const json = await res.json().catch(() => ({}));

@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API } from "@/lib/api";
+import { deviceHeaders } from "@/lib/device-id";
 import AuthLayout, { AuthPasswordField, AuthSubmitButton, AuthMessage } from "@/components/auth/AuthLayout";
 
 function PageContent() {
@@ -24,7 +25,8 @@ function PageContent() {
     setSubmitting(true);
     const response = await fetch(AUTH_API.setupPassword, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // Device id: this first sign-in registers the browser for login alerts.
+      headers: { "Content-Type": "application/json", ...deviceHeaders() },
       body: JSON.stringify({ token, password, password_confirmation: password }),
     });
     const data = await response.json().catch(() => ({}));

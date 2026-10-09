@@ -3,9 +3,11 @@ export type DashboardPayload = {
     first_name: string;
     last_name: string;
     email: string;
-    learning_mode: "live" | "pre_recorded" | null;
+    learning_mode: "live" | "pre_recorded" | "one_on_one" | null;
     course_title: string | null;
   };
+  // One-on-one students: their teacher (null name = not assigned yet).
+  one_on_one?: { teacher_name: string | null; can_book?: boolean } | null;
   summary?: {
     classes_total: number;
     classes_attended: number;
@@ -25,6 +27,8 @@ export type DashboardPayload = {
   upcoming_class?: {
     id: number;
     class_type?: "classroom" | "scheduled";
+    // A private one-on-one session (shown as such).
+    is_private?: boolean;
     title: string;
     starts_at: string;
     ends_at: string | null;
@@ -42,6 +46,9 @@ export type DashboardPayload = {
   timetable?: Array<{
     id: number;
     class_type?: "classroom" | "scheduled";
+    // A private one-on-one session, and who teaches it.
+    is_private?: boolean;
+    teacher_name?: string | null;
     title: string;
     starts_at: string;
     ends_at: string | null;
@@ -113,8 +120,11 @@ export type ChatMessage = {
 
 export type ChatBootstrap = {
   track: { id: number; name: string };
-  group_chat: { id: number; track_id: number };
-  dm_thread: { id: number; instructor_id: number; instructor_name?: string | null };
+  // One-on-one students chat only with their teacher: no group chat (null).
+  one_on_one?: boolean;
+  group_chat: { id: number; track_id: number } | null;
+  // Null while there is no instructor yet (unassigned cohort / teacher).
+  dm_thread: { id: number; instructor_id: number; instructor_name?: string | null } | null;
 };
 
 export type AttendanceItem = {

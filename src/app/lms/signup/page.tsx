@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AUTH_API, PUBLIC_API } from "@/lib/api";
+import { deviceHeaders } from "@/lib/device-id";
+import { currencySymbol } from "@/lib/currency";
 import InstitutePublicShell from "@/components/institute/InstitutePublicShell";
 
 export default function LmsSignupPage() {
@@ -60,7 +62,8 @@ function PageContent() {
     setSubmitting(true);
     const response = await fetch(AUTH_API.signup, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // Device id: this first sign-in registers the browser for login alerts.
+      headers: { "Content-Type": "application/json", ...deviceHeaders() },
       body: JSON.stringify({
         token,
         password,
@@ -82,10 +85,8 @@ function PageContent() {
     router.push("/lms/app");
   }
 
-  // Format the invite fee. Owner invites charge in NGN (₦); currency is carried
-  // through in case that ever changes.
-  const money = (n: number) =>
-    `${currency === "NGN" ? "₦" : ""}${n.toLocaleString()}${currency !== "NGN" ? ` ${currency}` : ""}`;
+  // Format the invite fee, in the academy's own currency.
+  const money = (n: number) => `${currencySymbol(currency)}${n.toLocaleString()}`;
 
   // Paid invite: kick off Paystack against the pending registration (the tenant
   // is bound server-side from the row), then hand off to the academy's checkout.

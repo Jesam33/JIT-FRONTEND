@@ -17,6 +17,8 @@ type ScheduledClass = {
   meeting_id: string | null;
   meeting_password: string | null;
   status: string;
+  // Set on one-on-one sessions (null for group classes).
+  student?: { id: number; first_name: string; last_name: string | null } | null;
   module?: {
     id: number;
     title: string;
@@ -37,7 +39,15 @@ export default function StaffTimetablePage() {
     try {
       const res = await apiFetchStaff(STAFF_API.scheduledClasses);
       const d = await res.json();
-      setClasses(Array.isArray(d) ? d : []);
+      // One-on-one sessions carry their student: label them so the teacher can
+      // tell a private session from a group class at a glance.
+      setClasses(
+        (Array.isArray(d) ? d : []).map((c: ScheduledClass) =>
+          c.student
+            ? { ...c, title: `1:1 with ${[c.student.first_name, c.student.last_name].filter(Boolean).join(" ")} · ${c.title}` }
+            : c,
+        ),
+      );
     } catch { /* ignore */ }
     setLoading(false);
   }, [token]);

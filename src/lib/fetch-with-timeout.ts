@@ -1,6 +1,17 @@
 import { tenantLoginPath } from "./tenant-client";
+import { getDeviceId } from "./device-id";
 
 type Portal = "student" | "staff" | "owner";
+
+// Every portal request carries this browser's device id (lib/device-id), so the
+// devices list can mark "this device" and "sign out everywhere else" spares it.
+// Never overrides an id a caller set itself.
+function withDeviceId(headers: HeadersInit | undefined): Headers {
+  const merged = new Headers(headers);
+  const id = getDeviceId();
+  if (id && !merged.has("X-Device-Id")) merged.set("X-Device-Id", id);
+  return merged;
+}
 
 function getToken(key: string): string {
   if (typeof window === "undefined") return "";
@@ -47,7 +58,8 @@ export function onUnauthorized(portal: Portal = "student") {
   if (portal === "owner") localStorage.removeItem("lms_owner_token");
   const path = tenantLoginPath(portal);
   const sep = path.includes("?") ? "&" : "?";
-  window.location.href = `${path}${sep}expired=1`;
+  // Resolved to an absolute URL (a bare relative assignment is ambiguous).
+  window.location.href = new URL(`${path}${sep}expired=1`, window.location.origin).toString();
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -95,7 +107,7 @@ export async function fetchWithTimeout(
     }
     const id = setTimeout(() => controller.abort(new DOMException("Request timed out", "TimeoutError")), timeout);
     try {
-      const response = await fetch(input, { ...rest, signal: controller.signal });
+      const response = await fetch(input, { ...rest, headers: withDeviceId(rest.headers), signal: controller.signal });
       if (response.status === 401) {
         onUnauthorized(portal);
         throw new Error("Unauthorized");
@@ -156,7 +168,9 @@ async function redirectIfPaymentRequired(response: Response): Promise<void> {
   if (window.location.pathname.startsWith(STUDENT_BILLING_PATH)) return;
   try {
     const body = await response.clone().json();
-    if (body?.payment_required) window.location.href = STUDENT_BILLING_PATH;
+    if (body?.payment_required) {
+      window.location.href = new URL(STUDENT_BILLING_PATH, window.location.origin).toString();
+    }
   } catch {
     // Not the billing gate's JSON; leave the response to the caller.
   }

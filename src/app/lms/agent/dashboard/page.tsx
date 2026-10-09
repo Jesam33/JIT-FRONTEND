@@ -6,6 +6,7 @@ import { AGENT_API } from "../../../../lib/api";
 import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
 import { useToast } from "../../../../components/ToastProvider";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
+import { currencySymbol } from "../../../../lib/currency";
 
 type DashboardData = {
   total_referred: number;
@@ -22,6 +23,8 @@ type DashboardData = {
   has_bank_details: boolean;
   recent_referrals: { id: number; name: string; email: string; course: string; enrolled_at: string }[];
   recent_transactions: { id: number; amount: number; type: string; status: string; notes: string; created_at: string }[];
+  // The academy's own currency (commissions are in it).
+  currency?: string;
 };
 
 function getToken() { return typeof window !== "undefined" ? localStorage.getItem("lms_agent_token") ?? "" : ""; }
@@ -73,6 +76,7 @@ export default function AgentDashboardPage() {
 
   if (loading) return <LoadingSpinner />;
   if (!data) return <p className="text-sm text-white/60">Failed to load dashboard.</p>;
+  const sym = currencySymbol(data.currency ?? "NGN");
 
   return (
     <div className="space-y-6">
@@ -128,19 +132,19 @@ export default function AgentDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-white/15 bg-black/30 p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-white/60">Total Earned</p>
-          <p className="mt-2 text-3xl font-bold text-white tabular-nums">₦{data.total_earned.toLocaleString()}</p>
+          <p className="mt-2 text-3xl font-bold text-white tabular-nums">{sym}{data.total_earned.toLocaleString()}</p>
         </div>
         <div className="rounded-2xl border border-white/15 bg-black/30 p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-white/60">Pending Withdrawal</p>
-          <p className="mt-2 text-3xl font-bold text-amber-400 tabular-nums">₦{data.pending_withdrawal.toLocaleString()}</p>
+          <p className="mt-2 text-3xl font-bold text-amber-400 tabular-nums">{sym}{data.pending_withdrawal.toLocaleString()}</p>
         </div>
         <div className="rounded-2xl border border-white/15 bg-black/30 p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-white/60">Available Balance</p>
-          <p className="mt-2 text-3xl font-bold text-emerald-400 tabular-nums">₦{data.balance.toLocaleString()}</p>
+          <p className="mt-2 text-3xl font-bold text-emerald-400 tabular-nums">{sym}{data.balance.toLocaleString()}</p>
         </div>
         <div className="rounded-2xl border border-white/15 bg-black/30 p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-white/60">Paid Out</p>
-          <p className="mt-2 text-3xl font-bold text-white/50 tabular-nums">₦{data.paid_commission.toLocaleString()}</p>
+          <p className="mt-2 text-3xl font-bold text-white/50 tabular-nums">{sym}{data.paid_commission.toLocaleString()}</p>
         </div>
       </div>
 

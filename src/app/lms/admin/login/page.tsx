@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AUTH_API } from "@/lib/api";
 import { getTenantSlug, setTenantCookie } from "@/lib/tenant-client";
 import { setOwnerToken } from "@/lib/owner-client";
+import { deviceHeaders } from "@/lib/device-id";
 import AuthLayout, { AuthField, AuthPasswordField, AuthSubmitButton, AuthMessage } from "@/components/auth/AuthLayout";
 
 export default function OwnerLoginPage() {
@@ -38,7 +39,8 @@ function OwnerLoginInner() {
     try {
       const res = await fetch(AUTH_API.ownerLogin, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        // Device id: lets login alerts recognise this browser (lib/device-id).
+        headers: { "Content-Type": "application/json", Accept: "application/json", ...deviceHeaders() },
         body: JSON.stringify({
           email: email.trim(),
           password,

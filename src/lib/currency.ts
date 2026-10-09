@@ -15,6 +15,8 @@ const SYMBOLS: Record<string, string> = {
   JPY: "¥", CNY: "¥", KRW: "₩", SGD: "S$",
   AED: "AED ", SAR: "SAR ", BRL: "R$", CHF: "CHF ",
   TRY: "₺", RUB: "₽", PHP: "₱", THB: "฿",
+  UGX: "USh ", TZS: "TSh ", RWF: "RF ", ZMW: "ZK ", MWK: "MK ",
+  XAF: "FCFA ", XOF: "CFA ",
 };
 
 export function currencySymbol(code: string): string {

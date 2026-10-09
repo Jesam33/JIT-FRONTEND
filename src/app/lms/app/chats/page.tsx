@@ -102,7 +102,13 @@ export default function StudentChatsPage() {
     // object-shape reads on r.ok (okJson) so a tenant/auth hiccup never spreads an
     // error body into state, 401s redirect upstream in fetchWithTimeout.
     const bootstrapPromise = apiFetch(STUDENT_API.chatBootstrap)
-      .then(okJson).then((p) => setChatBootstrap(p)).catch(() => {});
+      .then(okJson)
+      .then((p: ChatBootstrap) => {
+        setChatBootstrap(p);
+        // One-on-one students have only the private chat with their teacher.
+        if (p?.one_on_one) setChatTab("dm");
+      })
+      .catch(() => {});
 
     apiFetch(STUDENT_API.profile)
       .then(okJson).then((p) => setProfile(p)).catch(() => {});
@@ -404,17 +410,20 @@ export default function StudentChatsPage() {
   return (
     <section className="flex h-[calc(100dvh-10rem)] min-h-[420px] w-full flex-col overflow-hidden">
       <div className="mb-4 flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1 w-fit">
-        <button
-          onClick={() => switchTab("track")}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium transition ${tab_active("track", chatTab)}`}
-        >
-          Class Group
-          {unreadGroup > 0 && chatTab !== "track" ? (
-            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-[#fff]">
-              {unreadGroup > 99 ? "99+" : unreadGroup}
-            </span>
-          ) : null}
-        </button>
+        {/* No group chat for one-on-one students: they chat with their teacher only. */}
+        {!chatBootstrap?.one_on_one ? (
+          <button
+            onClick={() => switchTab("track")}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium transition ${tab_active("track", chatTab)}`}
+          >
+            Class Group
+            {unreadGroup > 0 && chatTab !== "track" ? (
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-primary px-1 text-[10px] font-bold text-[#fff]">
+                {unreadGroup > 99 ? "99+" : unreadGroup}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
         <button
           onClick={() => switchTab("dm")}
           className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-medium transition ${tab_active("dm", chatTab)}`}

@@ -9,6 +9,8 @@ import { formatPrice } from "@/lib/currency";
 // DetailCourse) so this file and the page stay independent.
 type PriceCourse = {
   price: number;
+  // The academy's own currency: `price` and the *_price fields are in it.
+  currency?: string;
   display_currency?: string;
   price_display?: number;
   is_base_currency?: boolean;
@@ -20,6 +22,16 @@ type PriceCourse = {
   is_live_available: boolean;
   is_prerecorded_available: boolean;
   billing_type?: "one_time" | "monthly";
+  // One-on-one (private sessions) at its own price, when the course offers it.
+  is_one_on_one_available?: boolean;
+  one_on_one_price?: number | null;
+  one_on_one_price_display?: number | null;
+};
+
+const MODE_LABEL: Record<LearningMode, string> = {
+  live: "Live",
+  pre_recorded: "Pre-recorded",
+  one_on_one: "One-on-one",
 };
 
 // The price the chosen mode actually costs, in DISPLAY currency. Pre-recorded
@@ -28,6 +40,10 @@ function priceFor(course: PriceCourse, mode: LearningMode): number {
   if (mode === "pre_recorded") {
     const pre = course.prerecorded_price_display ?? course.prerecorded_price ?? null;
     if (pre != null) return pre;
+  }
+  if (mode === "one_on_one") {
+    const one = course.one_on_one_price_display ?? course.one_on_one_price ?? null;
+    if (one != null) return one;
   }
 
   return course.price_display ?? course.price;
@@ -39,6 +55,9 @@ function priceFor(course: PriceCourse, mode: LearningMode): number {
 function basePriceFor(course: PriceCourse, mode: LearningMode): number {
   if (mode === "pre_recorded" && course.prerecorded_price != null) {
     return course.prerecorded_price;
+  }
+  if (mode === "one_on_one" && course.one_on_one_price != null) {
+    return course.one_on_one_price;
   }
 
   return course.price;
@@ -82,7 +101,8 @@ export default function CourseAside({
   const original = originalPriceFor(course, mode);
   // Only worth naming the mode when there IS a choice; on a single-mode course
   // the price can only mean one thing.
-  const bothModes = course.is_live_available && course.is_prerecorded_available;
+  const bothModes =
+    [course.is_live_available, course.is_prerecorded_available, !!course.is_one_on_one_available].filter(Boolean).length > 1;
   const monthly = course.price > 0 && course.billing_type === "monthly";
 
   return (
@@ -95,7 +115,7 @@ export default function CourseAside({
         {original ? <span className="text-lg text-white/40 line-through">{original}</span> : null}
         {bothModes ? (
           <span className="rounded-full border border-white/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-white/60">
-            {mode === "pre_recorded" ? "Pre-recorded" : "Live"}
+            {MODE_LABEL[mode]}
           </span>
         ) : null}
       </div>
@@ -109,9 +129,7 @@ export default function CourseAside({
       {course.price > 0 && course.is_base_currency === false ? (
         <p className="mt-1 text-xs text-white/60">
           Approx. shown in {course.display_currency} · you&apos;ll be charged{" "}
-          {course.charge_currency === "USD"
-            ? "in USD"
-            : formatPrice(basePriceFor(course, mode), "NGN")}
+          {formatPrice(basePriceFor(course, mode), course.charge_currency ?? course.currency ?? "NGN")}
         </p>
       ) : null}
 

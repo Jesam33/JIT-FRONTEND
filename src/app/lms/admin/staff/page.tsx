@@ -51,7 +51,7 @@ export default function OwnerStaffPage() {
   // absolute menu would be clipped, we anchor a fixed one to the button instead).
   // `confirmingId` switches the open menu to a Remove-confirm step. In-flight state
   // (deleting/resending/toggling) drives the spinners; `actionMsg` is the outcome
-  // banner, importantly the cohort-guard warning when a Remove is refused, and
+  // banner, including the "reassign their cohorts" note after a Remove, and
   // whether a resend email actually left the server.
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
@@ -189,8 +189,9 @@ export default function OwnerStaffPage() {
         return;
       }
       if (!res.ok) {
-        // 422 here is the cohort-guard: the staff still leads a cohort and must be
-        // reassigned on Tracks & Cohorts first. Surface that message verbatim.
+        // Surface the server's reason verbatim. (Leading a cohort no longer blocks
+        // removal: the cohort becomes Unassigned once the deletion completes, and
+        // the success message tells the owner to reassign it.)
         const json = await res.json().catch(() => ({}));
         setActionMsg({ kind: "err", text: json?.message || `Could not remove staff (HTTP ${res.status}).` });
         return;

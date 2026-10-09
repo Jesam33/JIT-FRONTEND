@@ -30,7 +30,9 @@ export default function StudentDashboardPage() {
   }, [data.profile?.first_name, data.profile?.last_name]);
 
   const learningMode = data.profile?.learning_mode ?? null;
-  const isLiveStudent = learningMode === "live";
+  // One-on-one is live too (private live sessions), so it gets the class card.
+  const isLiveStudent = learningMode === "live" || learningMode === "one_on_one";
+  const isOneOnOne = learningMode === "one_on_one";
   const isPrerecordedStudent = learningMode === "pre_recorded";
 
   const continueLearning = useMemo(() => {
@@ -317,7 +319,16 @@ export default function StudentDashboardPage() {
 
         {isLiveStudent ? (
           <article className="rounded-2xl border border-white/15 bg-black/30 p-6 xl:col-span-5 xl:min-h-[220px]">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/60">Upcoming Class</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-white/60">
+              {isOneOnOne ? "Your next one-on-one session" : "Upcoming Class"}
+            </p>
+            {isOneOnOne ? (
+              <p className="mt-2 text-sm text-white/70">
+                {data.one_on_one?.teacher_name
+                  ? <>Your teacher: <span className="font-semibold text-white">{data.one_on_one.teacher_name}</span></>
+                  : "Your academy is assigning you a teacher."}
+              </p>
+            ) : null}
             {data.upcoming_class ? (
               <>
                 <h2 className="mt-3 text-2xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>{data.upcoming_class.title}</h2>
@@ -341,7 +352,11 @@ export default function StudentDashboardPage() {
                 ) : null}
               </>
             ) : (
-              <p className="mt-4 text-sm text-white/75">No more classes scheduled right now.</p>
+              <p className="mt-4 text-sm text-white/75">
+                {isOneOnOne
+                  ? "No session scheduled yet. Your teacher will schedule one with you."
+                  : "No more classes scheduled right now."}
+              </p>
             )}
           </article>
         ) : (

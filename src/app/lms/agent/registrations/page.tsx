@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AGENT_API } from "../../../../lib/api";
 import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
+import { currencySymbol } from "../../../../lib/currency";
 
 type Registration = {
   id: number;
@@ -18,6 +19,8 @@ type Registration = {
   student_id: number | null;
   payment_status: string;
   commission: number;
+  // The academy's own currency.
+  currency?: string;
   commission_status: string | null;
   created_at: string;
 };
@@ -178,7 +181,7 @@ function RegistrationsContent() {
                   </td>
                   <td className="px-5 py-3.5 text-right">
                     {r.commission > 0 ? (
-                      <span className="text-sm font-semibold text-emerald-400 tabular-nums">₦{r.commission.toLocaleString()}</span>
+                      <span className="text-sm font-semibold text-emerald-400 tabular-nums">{currencySymbol(r.currency ?? "NGN")}{r.commission.toLocaleString()}</span>
                     ) : (
                       <span className="text-xs text-white/30">&mdash;</span>
                     )}

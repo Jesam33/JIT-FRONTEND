@@ -187,6 +187,7 @@ export default function StudentSidebar() {
   const [student, setStudent] = useState<{ name: string; role?: string; profile_photo_url?: string | null } | null>(null);
   const [chatEnabled, setChatEnabled] = useState(true);
   const [monthly, setMonthly] = useState(false);
+  const [oneOnOne, setOneOnOne] = useState(false);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -207,6 +208,7 @@ export default function StudentSidebar() {
           setChatEnabled((p.plan ?? "free") !== "free");
           // Billing only means something on a monthly course.
           setMonthly(!!p.billing?.monthly);
+          setOneOnOne(p.learning_mode === "one_on_one");
         }
       })
       .catch(() => {});
@@ -254,6 +256,7 @@ export default function StudentSidebar() {
     { href: "/lms/app", label: "Dashboard" },
     { href: "/lms/app/attendance", label: "Attendance" },
     { href: "/lms/app/classroom", label: "Classroom" },
+    ...(oneOnOne ? [{ href: "/lms/app/book", label: "Book a session" }] : []),
     { href: "/lms/app/timetable", label: "Timetable" },
     { href: "/lms/app/modules", label: "Modules" },
     { href: "/lms/app/tasks", label: "Tasks" },

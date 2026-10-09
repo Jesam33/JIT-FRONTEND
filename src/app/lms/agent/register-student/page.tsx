@@ -6,7 +6,8 @@ import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
 import { formatPrice } from "../../../../lib/currency";
 import { useAgent } from "../../../../components/AgentContext";
 
-type Course = { id: number; title: string; price: number };
+// `currency` = the academy's own currency (the price is in it).
+type Course = { id: number; title: string; price: number; currency?: string };
 
 const qualifications = [
   "SSCE / WAEC / NECO", "GCE / O-Level", "ND / OND", "NCE", "HND",
@@ -158,7 +159,7 @@ export default function AgentRegisterStudentPage() {
         <select required value={form.course_id} onChange={(e) => set("course_id", e.target.value)} className="w-full rounded-xl border border-white/15 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-white/30">
           <option value="">Select course</option>
           {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.title} &mdash; {formatPrice(Number(c.price), "NGN")}</option>
+            <option key={c.id} value={c.id}>{c.title} &mdash; {formatPrice(Number(c.price), c.currency ?? "NGN")}</option>
           ))}
         </select>
 

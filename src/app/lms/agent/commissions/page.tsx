@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AGENT_API } from "../../../../lib/api";
 import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
+import { currencySymbol } from "../../../../lib/currency";
 
 type Commission = {
   id: number; course_price: string; commission_amount: string;
@@ -15,12 +16,16 @@ function headers() { return { Authorization: `Bearer ${getToken()}` }; }
 export default function AgentCommissionsPage() {
   const [items, setItems] = useState<Commission[]>([]);
   const [loading, setLoading] = useState(true);
+  // Commissions are in the academy's own currency.
+  const [currency, setCurrency] = useState("NGN");
+  const sym = currencySymbol(currency);
 
   const load = useCallback(async () => {
     try {
       const res = await fetchWithTimeout(AGENT_API.commissions, { headers: headers() });
       const d = await res.json();
       setItems(d.data ?? (Array.isArray(d) ? d : []));
+      if (typeof d?.currency === "string") setCurrency(d.currency);
     } catch { /* ignore */ }
     setLoading(false);
   }, []);
@@ -39,8 +44,8 @@ export default function AgentCommissionsPage() {
           {items.map((c) => (
             <div key={c.id} className="rounded-lg border border-site-border bg-site-surface-soft px-4 py-3 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">&#8358;{parseFloat(c.commission_amount).toLocaleString()}</p>
-                <p className="text-xs text-site-text/50">Course price: &#8358;{parseFloat(c.course_price).toLocaleString()} &middot; {c.type}</p>
+                <p className="text-sm font-medium">{sym}{parseFloat(c.commission_amount).toLocaleString()}</p>
+                <p className="text-xs text-site-text/50">Course price: {sym}{parseFloat(c.course_price).toLocaleString()} &middot; {c.type}</p>
                 <p className="text-[10px] text-site-text/40">{new Date(c.created_at).toLocaleDateString()}</p>
               </div>
               <span className={`rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider ${

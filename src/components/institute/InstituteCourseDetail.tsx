@@ -48,6 +48,10 @@ export type DetailCourse = {
   is_bestseller?: boolean;
   // "monthly": prices are per month (students pay every month).
   billing_type?: "one_time" | "monthly";
+  // One-on-one: private sessions at their own price.
+  is_one_on_one_available?: boolean;
+  one_on_one_price?: number | null;
+  one_on_one_price_display?: number | null;
 };
 
 // The shape returned by /api/frontend/i/{slug}/courses/{courseSlug} and the
@@ -171,7 +175,7 @@ export default function InstituteCourseDetail({
                     ) : null}
                   </div>
                 ) : (
-                  <CourseRegisterClient course={course} slug={registerSlug} branding={branding} />
+                  <CourseRegisterClient course={course} slug={registerSlug} academySlug={institute.slug} branding={branding} />
                 )
               }
             >
