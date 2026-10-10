@@ -58,14 +58,22 @@ function ProfilePageInner() {
         </p>
       </div>
 
-      {/* Tab switcher */}
-      <div className="flex gap-1 rounded-full border border-white/15 bg-white/5 p-1 text-sm font-semibold sm:w-fit">
+      {/* Tab switcher. Four long labels don't fit a phone, so on small screens
+          the row scrolls sideways instead of squashing the text; each tab keeps
+          its label on one line. */}
+      <div
+        role="tablist"
+        aria-label="Profile sections"
+        className="-mx-1 flex max-w-full gap-1 overflow-x-auto rounded-full border border-white/15 bg-white/5 p-1 text-sm font-semibold [scrollbar-width:none] sm:mx-0 sm:w-fit [&::-webkit-scrollbar]:hidden"
+      >
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-full px-5 py-2 transition sm:flex-none ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 transition sm:px-5 ${
               tab === t.key
                 ? "bg-site-primary text-[#fff]"
                 : "text-white/60 hover:text-white"

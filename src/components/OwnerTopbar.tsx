@@ -201,8 +201,11 @@ export default function OwnerTopbar({
             </span>
           )}
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45 [html.light_&]:text-black/45">
-              {academyLabel(branding).singular} Admin
+            {/* One line always: just "Admin" on phones (the full "Online Academy
+                Admin" wrapped onto three lines there), the full label from sm: up. */}
+            <p className="truncate whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45 [html.light_&]:text-black/45">
+              <span className="sm:hidden">Admin</span>
+              <span className="hidden sm:inline">{academyLabel(branding).singular} Admin</span>
             </p>
             <p className="truncate text-sm font-semibold text-white [html.light_&]:text-black">
               {instituteName}

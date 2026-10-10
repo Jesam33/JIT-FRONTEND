@@ -12,6 +12,7 @@ import { OWNER_API } from "@/lib/api";
 import { getOwnerToken, ownerAuthHeaders } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import StorefrontPreview from "@/components/institute/StorefrontPreview";
+import CoverPositioner from "@/components/owner/CoverPositioner";
 import {
   academyLabel,
   DEFAULT_BRANDING,
@@ -34,6 +35,8 @@ export default function BrandingEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // The picked logo waiting in the preview/position step.
+  const [pendingLogo, setPendingLogo] = useState<File | null>(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -239,9 +242,21 @@ export default function BrandingEditor() {
     }
   };
 
-  const onPickLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Picking a file opens the preview/position step (like the course cover);
+  // nothing is uploaded until the owner confirms it there.
+  const onPickLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = "";
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMsg({ kind: "err", text: "Choose an image file (PNG or JPG)." });
+      return;
+    }
+    setMsg(null);
+    setPendingLogo(file);
+  };
+
+  const uploadLogo = async (file: File) => {
     setUploading(true);
     setMsg(null);
     try {
@@ -266,11 +281,11 @@ export default function BrandingEditor() {
         emitBranding(j.branding);
       }
       setMsg({ kind: "ok", text: "Logo updated." });
+      setPendingLogo(null);
     } catch {
       setMsg({ kind: "err", text: "Network error while uploading." });
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -398,7 +413,7 @@ export default function BrandingEditor() {
               (favicon) across your portal and public page. PNG or JPG, up to 2MB. A square image works best and is shown as a circle.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/5">
                 {logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={logoUrl} alt={`${loadedLabel} logo`} className="h-full w-full object-contain" />
@@ -429,6 +444,22 @@ export default function BrandingEditor() {
               <input ref={fileRef} type="file" accept="image/*" onChange={onPickLogo} className="hidden" />
             </div>
           </section>
+
+          {pendingLogo ? (
+            <CoverPositioner
+              file={pendingLogo}
+              aspect={1}
+              shape="circle"
+              title="Position your logo"
+              confirmLabel="Use logo"
+              maxWidth={512}
+              format="image/png"
+              allowFit
+              busy={uploading}
+              onCancel={() => setPendingLogo(null)}
+              onConfirm={(processed) => uploadLogo(processed)}
+            />
+          ) : null}
 
           {/* Colors */}
           <section className={cardClass}>

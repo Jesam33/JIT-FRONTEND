@@ -253,7 +253,10 @@ export default function OwnerLayoutClient({
           academy from the owner session, so only the category, the message and
           the page are sent. */}
       <FeedbackButton submit={submitOwnerFeedback} />
-      <div className="container-wide grid items-start gap-4 md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
+      {/* grid-cols-1 = minmax(0,1fr): on phones the single column is pinned to
+          the screen width. Without it the column grows to its widest child and
+          every page scrolls sideways. */}
+      <div className="container-wide grid grid-cols-1 items-start [&>*]:min-w-0 gap-4 md:gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <OwnerSidebar identity={identity} />
         <main className="relative min-w-0 pb-8">
           <OwnerTopbar name={identity?.name} branding={branding ?? null} />

@@ -190,7 +190,8 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
       )}
       <FeedbackButton submit={submitFeedback} />
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
-        <div className={`container-wide grid items-start gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
+        {/* grid-cols-1 pins the phone column to the screen width (see OwnerLayoutClient). */}
+        <div className={`container-wide grid grid-cols-1 items-start [&>*]:min-w-0 gap-4 md:gap-6 ${hideSidebar ? "" : "lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
           {!hideSidebar && <StaffSidebar />}
           <main className={`relative min-w-0 ${hideSidebar ? "" : "pb-8"}`}>
             {!hideSidebar && (

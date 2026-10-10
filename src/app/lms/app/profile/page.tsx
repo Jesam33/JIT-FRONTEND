@@ -126,21 +126,21 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row">
-        <aside className="w-full shrink-0 p-3 md:w-56">
+        <aside className="w-full min-w-0 shrink-0 p-3 md:w-56">
           <div className="mb-3 hidden items-center gap-2 text-sm font-medium text-white/80 md:flex">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             My profile
           </div>
-          <nav className="flex flex-nowrap gap-1 overflow-x-auto md:flex-col md:overflow-x-visible">
+          <nav className="flex flex-nowrap gap-1 overflow-x-auto [scrollbar-width:none] md:flex-col md:overflow-x-visible [&::-webkit-scrollbar]:hidden">
             {tabs.map((t) => (
-              <button key={t.key} onClick={() => setActiveTab(t.key)} className={`shrink-0 rounded-lg px-3 py-2 text-sm transition md:w-full md:text-left ${activeTab === t.key ? "bg-white/10 text-white font-medium" : "text-white/60 hover:text-white hover:bg-white/5"}`}>
+              <button key={t.key} onClick={() => setActiveTab(t.key)} className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition md:w-full md:whitespace-normal md:text-left ${activeTab === t.key ? "bg-white/10 text-white font-medium" : "text-white/60 hover:text-white hover:bg-white/5"}`}>
                 {t.label}
               </button>
             ))}
           </nav>
         </aside>
 
-        <div className="flex-1 space-y-6">
+        <div className="min-w-0 flex-1 space-y-6">
           {activeTab === "basic-info" && (
             <>
               <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">

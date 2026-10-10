@@ -679,7 +679,7 @@ function TracksContent() {
                             ))}
                           </select>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 sm:col-span-2 lg:col-span-1">
+                        <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:col-span-2 lg:col-span-1">
                           <div>
                             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-white/50">
                               Start

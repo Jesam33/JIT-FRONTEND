@@ -89,10 +89,12 @@ function CopyRow({ label, url }: { label: string; url: string }) {
     }
   };
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-      <div className="min-w-0">
-        <div className="text-xs uppercase tracking-wide text-site-muted">{label}</div>
-        <div className="truncate text-sm text-white">{url}</div>
+    // min-w-0 at every level: without it a long URL won't shrink (grid/flex items
+    // default to their content's width) and pushes the card off a phone screen.
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-xs uppercase tracking-wide text-site-muted">{label}</div>
+        <div className="truncate text-sm text-white" title={url}>{url}</div>
       </div>
       <button
         onClick={copy}
@@ -315,7 +317,7 @@ export default function OwnerDashboardPage() {
           </div>
 
           {/* Stat cards, each shows used / plan limit (∞ when unlimited). */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
             {STAT_CARDS.map((card) => {
               const key = card.key;
               const count = data.counts[key];
@@ -346,14 +348,14 @@ export default function OwnerDashboardPage() {
             <section className="space-y-4">
               <h2 className="text-lg font-semibold text-white">Analytics</h2>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
                 <KpiCard label="Revenue (all-time)" value={money(analytics.totals.revenue, currency)} />
                 <KpiCard label="Enrolments" value={analytics.totals.enrollments.toLocaleString()} />
                 <KpiCard label="Registrations" value={analytics.registrations.total.toLocaleString()} />
                 <KpiCard label="Active courses" value={analytics.totals.active_courses.toLocaleString()} />
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
                 {/* Trend charts are advanced analytics (Pro+). On plans without
                     it the backend sends empty series, so show one upgrade card
                     in their place, the funnel below stays on every plan. */}
@@ -429,9 +431,9 @@ export default function OwnerDashboardPage() {
             </section>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
             {/* Plan */}
-            <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+            <div className="min-w-0 rounded-[20px] border border-white/20 bg-white/[0.04] p-5 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-sm text-site-muted">Current plan</div>
@@ -457,7 +459,7 @@ export default function OwnerDashboardPage() {
             </div>
 
             {/* Recent students */}
-            <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+            <div className="min-w-0 rounded-[20px] border border-white/20 bg-white/[0.04] p-5 sm:p-8">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Recent students</h2>
                 <Link href="/lms/admin/students" className="text-xs font-semibold text-site-muted hover:text-white">
@@ -497,7 +499,7 @@ export default function OwnerDashboardPage() {
 
           {/* Share links */}
           {links && (
-            <div className="rounded-[20px] border border-white/20 bg-white/[0.04] p-8">
+            <div className="min-w-0 rounded-[20px] border border-white/20 bg-white/[0.04] p-5 sm:p-8">
               <h2 className="mb-1 text-lg font-semibold text-white">Share with your people</h2>
               <p className="mb-4 text-sm text-site-muted">
                 Your public page is where new students browse your courses and register on their own.
@@ -506,7 +508,7 @@ export default function OwnerDashboardPage() {
               <div className="mb-3">
                 <CopyRow label="Public page for new students" url={tenantStorefrontUrl(data.tenant.slug)} />
               </div>
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 [&>*]:min-w-0">
                 <CopyRow label="Students" url={links.student} />
                 <CopyRow label="Staff" url={links.staff} />
                 <CopyRow label="Owners / admins" url={links.owner} />

@@ -93,7 +93,7 @@ export default function LmsNavbar({
       {/* Theme/Portal Metadata & Notification Bell */}
       <div className="flex items-center justify-end gap-3 sm:gap-4">
         {/* Portal Tag */}
-        <span className="text-[10px] font-bold text-white/80 [html.light_&]:text-black/80 bg-white/[0.04] [html.light_&]:bg-black/[0.04] px-3 py-2 rounded-xl border border-white/10 [html.light_&]:border-black/10 uppercase tracking-widest">
+        <span className="whitespace-nowrap text-[10px] font-bold text-white/80 [html.light_&]:text-black/80 bg-white/[0.04] [html.light_&]:bg-black/[0.04] px-3 py-2 rounded-xl border border-white/10 [html.light_&]:border-black/10 uppercase tracking-widest">
           {portalName}
         </span>
 

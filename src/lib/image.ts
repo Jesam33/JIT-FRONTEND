@@ -43,13 +43,15 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
  * pass `focus` (0..1 fractions, like CSS object-position) to let the owner
  * choose which part of an over-wide / over-tall image the frame keeps.
  * Transparent areas flatten to white (JPEG has no alpha), irrelevant for the
- * typical opaque cover photo.
+ * typical opaque cover photo; pass format "image/png" to keep transparency
+ * (logos).
  */
 export async function cropImageToAspect(
   file: File,
   aspect: number,
   maxWidth = 1600,
   focus: CropFocus = { x: 0.5, y: 0.5 },
+  format: "image/jpeg" | "image/png" = "image/jpeg",
 ): Promise<File> {
   const img = await loadImage(await readAsDataUrl(file));
 
@@ -84,13 +86,49 @@ export async function cropImageToAspect(
   canvas.height = outH;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Your browser can't process images.");
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, outW, outH);
+  if (format === "image/jpeg") {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, outW, outH);
+  }
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, sx, sy, cropW, cropH, 0, 0, outW, outH);
 
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  return canvasToFile(canvas, file, format);
+}
+
+/**
+ * Fit the WHOLE of `file` inside an `aspect` frame (letterboxed, nothing cut
+ * off), centred on a transparent background, at most `maxWidth` wide. For
+ * logos that are wider than the circle they're shown in.
+ */
+export async function fitImageInAspect(file: File, aspect: number, maxWidth = 512): Promise<File> {
+  const img = await loadImage(await readAsDataUrl(file));
+  const srcW = img.naturalWidth;
+  const srcH = img.naturalHeight;
+  if (!srcW || !srcH) throw new Error("That image has no dimensions.");
+
+  const outW = Math.min(maxWidth, Math.max(srcW, Math.round(srcH * aspect)));
+  const outH = Math.round(outW / aspect);
+  const scale = Math.min(outW / srcW, outH / srcH);
+  const drawW = Math.round(srcW * scale);
+  const drawH = Math.round(srcH * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Your browser can't process images.");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, Math.round((outW - drawW) / 2), Math.round((outH - drawH) / 2), drawW, drawH);
+
+  return canvasToFile(canvas, file, "image/png");
+}
+
+async function canvasToFile(canvas: HTMLCanvasElement, file: File, format: "image/jpeg" | "image/png"): Promise<File> {
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, format, format === "image/jpeg" ? 0.85 : undefined),
+  );
   if (!blob) throw new Error("Could not process that image.");
-  const base = (file.name || "cover").replace(/\.[^.]+$/, "");
-  return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+  const base = (file.name || "image").replace(/\.[^.]+$/, "");
+  return new File([blob], `${base}.${format === "image/png" ? "png" : "jpg"}`, { type: format });
 }
