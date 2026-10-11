@@ -7,20 +7,34 @@
 // (billing: carousel card with badges + CTA; signup: a selectable button with
 // its own select indicator) and renders this inside.
 
-import { FEATURE_LABELS, TAGLINES, isContactSalesPlan, limitSummary, priceText, type Features, type Plan } from "@/lib/plans";
+import {
+  FEATURE_LABELS,
+  TAGLINES,
+  isContactSalesPlan,
+  limitSummary,
+  priceText,
+  yearlyPerMonthText,
+  type BillingCycle,
+  type Features,
+  type Plan,
+} from "@/lib/plans";
 
-export default function PlanCardBody({ plan }: { plan: Plan }) {
+export default function PlanCardBody({ plan, cycle = "monthly" }: { plan: Plan; cycle?: BillingCycle }) {
   const isContact = isContactSalesPlan(plan);
   const isPaid = !isContact && (plan.price ?? 0) > 0;
+  const yearly = isPaid && cycle === "yearly";
   const features = plan.features;
 
   return (
     <>
       <div className="text-sm uppercase tracking-wide text-site-muted">{plan.name}</div>
-      <div className="mt-2 text-3xl font-semibold text-white">{priceText(plan)}</div>
+      <div className="mt-2 text-3xl font-semibold text-white">{priceText(plan, cycle)}</div>
       <div className="text-xs text-site-muted">
-        {isContact ? "tailored to you" : isPaid ? "per month" : "forever"}
+        {isContact ? "tailored to you" : yearly ? "per year" : isPaid ? "per month" : "forever"}
       </div>
+      {yearly && yearlyPerMonthText(plan) ? (
+        <div className="mt-1 text-xs font-medium text-emerald-300">{yearlyPerMonthText(plan)}</div>
+      ) : null}
 
       {TAGLINES[plan.slug] ? <p className="mt-3 text-xs text-site-muted">{TAGLINES[plan.slug]}</p> : null}
 

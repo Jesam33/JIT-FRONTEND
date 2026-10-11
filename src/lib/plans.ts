@@ -37,6 +37,11 @@ export type Plan = {
   // The same plan priced in the academy's own currency (what is charged), when
   // the catalogue was asked for one (/api/plans?country=, billing status).
   local_price?: number | null;
+  // A year paid up front (12x monthly less yearly_discount_percent): naira
+  // base, and in the academy's own currency when the catalogue carries one.
+  yearly_price?: number | null;
+  local_yearly_price?: number | null;
+  yearly_discount_percent?: number;
   currency?: string;
   contact_sales?: boolean;
   commission_percent?: number;
@@ -71,12 +76,39 @@ export const TAGLINES: Record<string, string> = {
   enterprise: "Custom limits, full white-label & API for large organisations.",
 };
 
+// How a plan is paid for: a month at a time, or a discounted year up front.
+export type BillingCycle = "monthly" | "yearly";
+
+// What one cycle of this plan costs (academy currency when known), or null for
+// contact-sales tiers. Yearly falls back to monthly if an older API omits it.
+export function cycleAmount(plan: Plan, cycle: BillingCycle): number | null {
+  if (plan.contact_sales || plan.price == null) return null;
+  if (cycle === "yearly") {
+    const yearly = plan.local_yearly_price ?? plan.yearly_price;
+    if (yearly != null) return yearly;
+  }
+  return plan.local_price ?? plan.price;
+}
+
 // The price line: Enterprise is contact-sales (no self-serve price); 0 is Free.
 // Shown in the academy's own currency when the catalogue carries one.
-export function priceText(plan: Plan): string {
-  if (plan.contact_sales || plan.price == null) return "Contact sales";
-  const amount = plan.local_price ?? plan.price;
+export function priceText(plan: Plan, cycle: BillingCycle = "monthly"): string {
+  const amount = cycleAmount(plan, cycle);
+  if (amount == null) return "Contact sales";
   return amount <= 0 ? "Free" : formatPrice(amount, plan.currency ?? "NGN");
+}
+
+// The small line under a yearly price: what it works out to per month.
+export function yearlyPerMonthText(plan: Plan): string | null {
+  const yearly = cycleAmount(plan, "yearly");
+  if (yearly == null || yearly <= 0) return null;
+  return `${formatPrice(Math.round(yearly / 12), plan.currency ?? "NGN")}/month, billed yearly`;
+}
+
+// The yearly discount as shown on the toggle ("Save 20%"), from the catalogue.
+export function yearlySaveText(plans: Plan[]): string | null {
+  const pct = plans.find((p) => typeof p.yearly_discount_percent === "number")?.yearly_discount_percent;
+  return pct && pct > 0 ? `Save ${Math.round(pct)}%` : null;
 }
 
 // A plan limit rendered for humans: null (or missing) means unlimited.

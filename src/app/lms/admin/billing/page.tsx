@@ -5,8 +5,9 @@ import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, getOwnerToken } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
-import { isContactSalesPlan, type Features, type Limits, type Plan } from "@/lib/plans";
+import { isContactSalesPlan, yearlySaveText, type BillingCycle, type Features, type Limits, type Plan } from "@/lib/plans";
 import PlanCardBody from "@/components/plans/PlanCardBody";
+import CycleToggle from "@/components/plans/CycleToggle";
 
 // The resolved current plan + live usage (from Tenant::planSummaryArray).
 type PlanSummary = {
@@ -45,6 +46,10 @@ type BillingStatus = {
   plan_summary?: PlanSummary;
   plans: Plan[];
   billing_configured: boolean;
+  // How the current plan is billed, and (while a paid year runs) the date
+  // monthly checkouts open up again (Tenant::cycleIsLocked).
+  billing_cycle?: BillingCycle;
+  monthly_locked_until?: string | null;
 };
 
 // Human labels for the plan feature flags (keys mirror config/saas.php features).
@@ -85,6 +90,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Monthly / Yearly toggle: the owner's pick, else how they're billed now.
+  const [pickedCycle, setPickedCycle] = useState<BillingCycle | null>(null);
   // The horizontal plan carousel, used to arrow-scroll on desktop and to
   // auto-centre the owner's current (elevated) plan when the page loads.
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -129,7 +136,11 @@ export default function BillingPage() {
         // Tell the backend which origin we're on so Paystack returns us HERE. The
         // owner token (localStorage) and tenant cookie are per-origin, so a return
         // to any other host drops both and lands on a bare "jorsas" login.
-        body: JSON.stringify({ plan: plan.slug, return_origin: typeof window !== "undefined" ? window.location.origin : undefined }),
+        body: JSON.stringify({
+          plan: plan.slug,
+          billing_cycle: cycle,
+          return_origin: typeof window !== "undefined" ? window.location.origin : undefined,
+        }),
       });
       const json = await res.json().catch(() => ({}));
 
@@ -165,6 +176,10 @@ export default function BillingPage() {
       setBusyPlan(null);
     }
   };
+
+  const cycle: BillingCycle = pickedCycle ?? status?.billing_cycle ?? "monthly";
+  const currentCycle: BillingCycle = status?.billing_cycle ?? "monthly";
+  const monthlyLockDate = status?.monthly_locked_until ? new Date(status.monthly_locked_until).toLocaleDateString() : null;
 
   const summary = status?.plan_summary;
   // Resolve current plan from the summary (which maps the primary institute to
@@ -268,7 +283,7 @@ export default function BillingPage() {
                 ) : null}
                 {status.current_period_end && currentPlan !== "free" ? (
                   <div>
-                    {periodRunning ? "Ends" : "Ended"}{" "}
+                    Billed {currentCycle} &middot; {periodRunning ? "ends" : "ended"}{" "}
                     {new Date(status.current_period_end).toLocaleDateString()} &middot; no auto-renewal
                   </div>
                 ) : null}
@@ -295,6 +310,15 @@ export default function BillingPage() {
               highlight the active tier. Cards are wide and peek at the edges so
               it reads as a swiper: arrows scroll on desktop, touch/trackpad on
               the rest. No carousel library, native scroll-snap. */}
+          <div className="flex flex-col items-center gap-2">
+            <CycleToggle value={cycle} onChange={setPickedCycle} saveText={yearlySaveText(status.plans)} />
+            {cycle === "monthly" && monthlyLockDate ? (
+              <p className="text-center text-xs text-site-muted">
+                You&apos;re on a yearly plan until {monthlyLockDate}. You can renew or upgrade yearly now, and switch to monthly after that.
+              </p>
+            ) : null}
+          </div>
+
           <div className="relative">
             <button
               type="button"
@@ -326,7 +350,14 @@ export default function BillingPage() {
                 // period ends, and the backend refuses the switch outright (422)
                 // if it's forced. Picking a higher tier stays available.
                 const isLocked = lockedSlugs.includes(plan.slug);
-                const disabled = isCurrent || isLocked || (isPaid && !status.billing_configured) || busyPlan !== null;
+                // The plan + period you already have running. The same tier on
+                // the other cycle (or once the period is over) can be bought:
+                // that's a switch to yearly/monthly, or a renewal.
+                const isActiveChoice = isCurrent && (!isPaid || (periodRunning && cycle === currentCycle));
+                // A running yearly plan only renews/upgrades yearly.
+                const monthlyLocked = isPaid && cycle === "monthly" && !!monthlyLockDate;
+                const disabled =
+                  isActiveChoice || isLocked || monthlyLocked || (isPaid && !status.billing_configured) || busyPlan !== null;
                 const lockDate = status.downgrade_lock?.until
                   ? new Date(status.downgrade_lock.until).toLocaleDateString()
                   : null;
@@ -355,7 +386,7 @@ export default function BillingPage() {
                     ) : null}
 
                     {/* Shared card body, identical to the signup plan cards. */}
-                    <PlanCardBody plan={plan} />
+                    <PlanCardBody plan={plan} cycle={cycle} />
 
                     {isContact ? (
                       <a
@@ -376,15 +407,21 @@ export default function BillingPage() {
                             isCurrent ? "border border-white/20 text-white" : "bg-white text-black hover:brightness-90"
                           }`}
                         >
-                          {isCurrent
+                          {isActiveChoice
                             ? "Current plan"
                             : busyPlan === plan.slug
                               ? "Starting…"
                               : isLocked
                                 ? "Locked until period ends"
-                                : isPaid
-                                  ? `Upgrade to ${plan.name}`
-                                  : `Switch to ${plan.name}`}
+                                : monthlyLocked
+                                  ? "Yearly only for now"
+                                  : isCurrent && isPaid
+                                    ? cycle !== currentCycle && periodRunning
+                                      ? `Switch to ${cycle}`
+                                      : `Renew ${plan.name}`
+                                    : isPaid
+                                      ? `Upgrade to ${plan.name}`
+                                      : `Switch to ${plan.name}`}
                         </button>
                         {isLocked ? (
                           <p className="mt-2 text-center text-[11px] leading-snug text-site-muted">
@@ -404,10 +441,11 @@ export default function BillingPage() {
 
           <p className="text-xs text-site-muted">
             The applicable platform fee is deducted from each eligible successful course sale,
-            never an upfront charge. Prices are in Naira. A plan runs for one month from the day
-            you pay and does not renew on its own, so nothing is charged again until you choose
-            to renew. You can move up to a higher plan at any time; a cheaper plan unlocks when
-            the period you paid for ends.
+            never an upfront charge. A plan runs for one month, or one year if you pay yearly, from
+            the day you pay and does not renew on its own, so nothing is charged again until you
+            choose to renew. Paying yearly saves you money. You can move up to a higher plan at any
+            time; a cheaper plan, or monthly billing after a yearly plan, unlocks when the period
+            you paid for ends.
           </p>
         </>
       )}

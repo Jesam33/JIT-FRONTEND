@@ -5,8 +5,9 @@ import Link from "next/link";
 import { OWNER_API } from "@/lib/api";
 import { readCookie } from "@/lib/currency";
 import { ACADEMY_NICHES, OTHER_NICHE } from "@/lib/niches";
-import { isContactSalesPlan, type Plan } from "@/lib/plans";
+import { isContactSalesPlan, yearlySaveText, type BillingCycle, type Plan } from "@/lib/plans";
 import PlanCardBody from "@/components/plans/PlanCardBody";
+import CycleToggle from "@/components/plans/CycleToggle";
 
 // The plan cards here are the SAME cards as the billing page (/lms/admin/billing):
 // both render the shared PlanCardBody from the shared lib/plans helpers, and the
@@ -35,6 +36,8 @@ function SignupInner() {
   const requestedPlan = (params.get("plan") || DEFAULT_PLAN).toLowerCase();
 
   const [plan, setPlan] = useState(requestedPlan);
+  // Pay monthly or a discounted year up front (?billing=yearly from the pricing page).
+  const [cycle, setCycle] = useState<BillingCycle>(params.get("billing") === "yearly" ? "yearly" : "monthly");
   // The plan catalogue from /api/plans (same source as the billing cards);
   // falls back to the config-mirrored list if the fetch fails.
   const [plans, setPlans] = useState<Plan[] | null>(null);
@@ -150,6 +153,7 @@ function SignupInner() {
       plan: String(form.get("plan") || DEFAULT_PLAN),
       niche: resolvedNiche,
       country: effectiveCountry,
+      billing_cycle: cycle,
     };
 
     try {
@@ -288,7 +292,10 @@ function SignupInner() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-2 block text-sm text-white/80">Choose your plan</label>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <label className="block text-sm text-white/80">Choose your plan</label>
+              {plans ? <CycleToggle value={cycle} onChange={setCycle} saveText={yearlySaveText(plans)} /> : null}
+            </div>
             {plans === null ? (
               // Skeleton while the catalogue loads.
               <div className="grid gap-4 sm:grid-cols-3">
@@ -321,7 +328,7 @@ function SignupInner() {
                         ) : null}
 
                         {/* Shared card body, identical to the billing plan cards. */}
-                        <PlanCardBody plan={p} />
+                        <PlanCardBody plan={p} cycle={cycle} />
 
                         <span
                           className={`mt-5 inline-flex items-center gap-2 text-xs font-semibold ${
@@ -350,7 +357,9 @@ function SignupInner() {
             <p className="mt-3 text-xs text-site-muted">
               {isFreePlan
                 ? "Free forever, no card required. Upgrade any time from your dashboard."
-                : "Billed monthly. You can change plans any time from your dashboard."}{" "}
+                : cycle === "yearly"
+                  ? "Billed once for the year, at a discount. You can upgrade any time from your dashboard."
+                  : "Billed monthly. You can change plans any time from your dashboard."}{" "}
               The applicable platform fee is deducted from each eligible successful course sale.
             </p>
 

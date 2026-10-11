@@ -43,6 +43,9 @@ export type PricingPlan = {
   slug: string;
   name: string;
   price: string;
+  // Monthly naira price as a number for paid plans, so the pricing page can
+  // show the yearly figure (live values come from /api/plans when reachable).
+  amount?: number;
   // Price period / qualifier shown under the amount ("/month", "forever", "contact sales").
   note?: string;
   features: string[];
@@ -328,6 +331,7 @@ export const pricingPlans: PricingPlan[] = [
     slug: "basic",
     name: "Basic",
     price: "₦5,000",
+    amount: 5000,
     note: "/month",
     popular: true,
     features: [
@@ -344,6 +348,7 @@ export const pricingPlans: PricingPlan[] = [
     slug: "pro",
     name: "Pro",
     price: "₦15,000",
+    amount: 15000,
     note: "/month",
     features: [
       "Up to 50 courses, 25 staff",
