@@ -6,6 +6,8 @@ import { useState } from "react";
 import { clearOwnerToken } from "@/lib/owner-client";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
+import SideNav, { SideNavLogout, type NavGroup } from "@/components/nav/SideNav";
+import type { IconName } from "@/components/nav/NavIcon";
 
 export type OwnerIdentity = {
   name?: string | null;
@@ -23,22 +25,27 @@ export type OwnerIdentity = {
 // the backend gate → 402 → UpgradeModal), rather than being hidden. When the item
 // names a `gatedFeature`, the badge is dropped once the current plan includes it, 
 // so an owner already on Pro doesn't see a "Pro" tag on a feature they now own.
-type SidebarItem = { href: string; label: string; badge?: string; gatedFeature?: string };
+type SidebarItem = { href: string; label: string; icon?: IconName; badge?: string; gatedFeature?: string };
 
+// A group with a `label` is a dropdown (one open at a time; the one holding the
+// current page opens by itself). A group without one is plain top-level links.
+// Rendering lives in components/nav/SideNav (shared with staff + student).
 type SidebarGroup = {
-  label: string;
+  label?: string;
+  icon?: IconName;
   items: SidebarItem[];
 };
 
-// Institute-scoped navigation, echoing the reference admin panel: a top-level
-// Dashboard, then grouped operations for students / staff, then settings.
+// Institute-scoped navigation: Dashboard, then dropdowns for students, the
+// owner's Teaching area (split into three so none is a wall of links), staff
+// and settings.
 const groups: SidebarGroup[] = [
   {
-    label: "Menu",
-    items: [{ href: "/lms/admin", label: "Dashboard" }],
+    items: [{ href: "/lms/admin", label: "Dashboard", icon: "home" }],
   },
   {
-    label: "Student operations",
+    label: "Students",
+    icon: "users",
     items: [
       { href: "/lms/admin/students", label: "All Students" },
       { href: "/lms/admin/courses", label: "Courses" },
@@ -47,31 +54,40 @@ const groups: SidebarGroup[] = [
       { href: "/lms/admin/certificates", label: "Certificates" },
     ],
   },
+  // The owner's Teaching area: the staff portal's own features, re-implemented
+  // inside the admin portal at /lms/admin/teaching/* so the owner never has to
+  // leave it. The backend accepts the owner token on every staff endpoint and
+  // scopes it to the WHOLE academy (BaseLmsController::staffActor +
+  // actorCourseIds), so these pages cover every course and cohort.
   {
-    label: "Content tools",
-    // Visible to every plan; the Gamma generator itself is Pro+ (the page shows the
-    // upgrade prompt when a lower-plan owner tries to generate). The "Pro" badge is
-    // hidden once the current plan already includes ai_materials (see gatedFeature).
-    items: [{ href: "/lms/admin/ai-materials", label: "Create with AI", badge: "Pro", gatedFeature: "ai_materials" }],
-  },
-  {
-    // The owner's Teaching area: the staff portal's own features (modules,
-    // materials, tasks, attendance, chats…), re-implemented inside the admin
-    // portal at /lms/admin/teaching/* so the owner never has to leave it. The
-    // backend accepts the owner token on every staff endpoint and scopes it to
-    // the WHOLE academy (BaseLmsController::staffActor + actorCourseIds), so
-    // these pages cover every course and cohort rather than one instructor's.
     label: "Teaching",
+    icon: "graduation",
     items: [
       { href: "/lms/admin/teaching/app", label: "Teaching dashboard" },
-      { href: "/lms/admin/teaching/modules", label: "Modules" },
-      { href: "/lms/admin/teaching/materials", label: "Materials" },
-      { href: "/lms/admin/teaching/tasks", label: "Tasks" },
       { href: "/lms/admin/teaching/classroom", label: "Classroom" },
       { href: "/lms/admin/teaching/timetable", label: "Timetable" },
       { href: "/lms/admin/teaching/attendance", label: "Attendance" },
       { href: "/lms/admin/teaching/leaderboard", label: "Leaderboard" },
       { href: "/lms/admin/teaching/reports", label: "Reports" },
+    ],
+  },
+  {
+    label: "Content",
+    icon: "book",
+    items: [
+      { href: "/lms/admin/teaching/modules", label: "Modules" },
+      { href: "/lms/admin/teaching/materials", label: "Materials" },
+      // Visible to every plan; the Gamma generator itself is Pro+ (the page shows
+      // the upgrade prompt). The badge hides once the plan includes ai_materials.
+      { href: "/lms/admin/ai-materials", label: "Create with AI", badge: "Pro", gatedFeature: "ai_materials" },
+      { href: "/lms/admin/teaching/tasks", label: "Tasks" },
+      { href: "/lms/admin/teaching/quizzes", label: "Quizzes", badge: "Basic", gatedFeature: "quizzes" },
+    ],
+  },
+  {
+    label: "Communication",
+    icon: "message",
+    items: [
       // Chat is a paid-plan feature and its endpoints 402 on a plan without it
       // (EnsureChatEnabled), so it carries the badge like Agents does.
       { href: "/lms/admin/teaching/chats", label: "Chats", badge: "Basic", gatedFeature: "chat" },
@@ -80,7 +96,8 @@ const groups: SidebarGroup[] = [
     ],
   },
   {
-    label: "Staff operations",
+    label: "Staff",
+    icon: "briefcase",
     items: [
       { href: "/lms/admin/staff", label: "Staff Accounts" },
       // Admission Marketer network (Basic+): every agent advertising the academy,
@@ -90,11 +107,11 @@ const groups: SidebarGroup[] = [
     ],
   },
   {
-    label: "Community",
-    items: [{ href: "/lms/admin/forum", label: "CEO's Forum" }],
+    items: [{ href: "/lms/admin/forum", label: "CEO's Forum", icon: "forum" }],
   },
   {
     label: "Settings",
+    icon: "sliders",
     items: [
       { href: "/lms/admin/branding", label: "Customisation" },
       { href: "/lms/admin/domains", label: "Custom domain", badge: "Pro", gatedFeature: "custom_domain" },
@@ -146,6 +163,39 @@ function IdentityCard({ identity }: { identity: OwnerIdentity | null }) {
   );
 }
 
+// The plan card at the foot of the sidebar: which plan the academy is on, one
+// line on what the next tier adds, and a way into Billing & Plan.
+function PlanCard({ plan, onNavigate }: { plan?: string | null; onNavigate?: () => void }) {
+  // Nothing until the plan has loaded, so a Pro academy never flashes "Free".
+  if (!plan) return null;
+  const key = plan.toLowerCase();
+  const top = key === "pro" || key === "enterprise";
+  const name = key.charAt(0).toUpperCase() + key.slice(1);
+  const blurb =
+    key === "free"
+      ? "Upgrade to unlock live classes, chat, quizzes and more."
+      : key === "basic"
+        ? "Go Pro for AI materials and your own domain."
+        : "Every feature is unlocked for your academy.";
+
+  return (
+    <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.04] p-3.5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">Your plan</p>
+      <p className="mt-0.5 text-sm font-semibold text-white">{name} plan</p>
+      <p className="mt-1 text-xs leading-relaxed text-white/55">{blurb}</p>
+      <Link
+        href="/lms/admin/billing"
+        onClick={onNavigate}
+        className={`mt-3 flex h-8 items-center justify-center rounded-lg text-xs font-semibold transition ${
+          top ? "border border-white/15 text-white hover:bg-white/10" : "bg-site-primary text-[#fff] hover:brightness-110"
+        }`}
+      >
+        {top ? "Manage plan" : "Upgrade"}
+      </Link>
+    </div>
+  );
+}
+
 export default function OwnerSidebar({
   identity,
 }: {
@@ -167,64 +217,31 @@ export default function OwnerSidebar({
     return pathname.startsWith(href);
   }
 
-  const NavList = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex-1 space-y-5 overflow-y-auto">
-      {groups.map((group) => (
-        <div key={group.label}>
-          <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
-            {group.label}
-          </p>
-          <div className="space-y-2">
-            {group.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClick}
-                className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
-                  isActive(item.href)
-                    ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"
-                    : "border-white/6 bg-white/5 text-white/80 hover:border-white/12 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <span className="flex-1">{item.label}</span>
-                {item.badge && !(item.gatedFeature && identity?.features?.[item.gatedFeature]) ? (
-                  <span className="ml-2 shrink-0 rounded-full border border-amber-300/40 bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-200">
-                    {item.badge}
-                  </span>
-                ) : null}
-              </Link>
-            ))}
-          </div>
-        </div>
-      ))}
-    </nav>
-  );
-
-  const LogoutButton = ({ onClick }: { onClick?: () => void }) => (
-    <button
-      onClick={() => {
-        onClick?.();
-        handleLogout();
-      }}
-      className="flex min-h-[48px] w-full items-center rounded-xl border border-white/6 bg-white/5 px-4 py-3 text-sm text-red-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-3 shrink-0">
-        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      Log Out
-    </button>
-  );
+  // Plan pills drop once the current plan includes the feature.
+  const navGroups: NavGroup[] = groups.map((g) => ({
+    label: g.label,
+    icon: g.icon,
+    items: g.items.map((i) => ({
+      href: i.href,
+      label: i.label,
+      icon: i.icon,
+      tag: i.badge && !(i.gatedFeature && identity?.features?.[i.gatedFeature]) ? i.badge : undefined,
+    })),
+  }));
 
   return (
     <>
       {/* DESKTOP SIDEBAR */}
-      <aside className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col rounded-2xl border border-white/20 bg-[#0b0b0b]/95 p-5 max-lg:hidden lg:min-h-[760px]">
+      <aside className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col self-start rounded-2xl border border-white/20 bg-[#0b0b0b]/95 p-5 max-lg:hidden">
         <div className="mb-5">
           <IdentityCard identity={identity} />
         </div>
-        <NavList />
-        <div className="mt-6 border-t border-white/10 pt-4">
-          <LogoutButton />
+        <SideNav storageKey="owner" groups={navGroups} isActive={isActive} />
+        <div className="mt-4">
+          <PlanCard plan={identity?.plan} />
+        </div>
+        <div className="border-t border-white/10 pt-3">
+          <SideNavLogout onClick={handleLogout} />
         </div>
       </aside>
 
@@ -265,9 +282,12 @@ export default function OwnerSidebar({
                   </svg>
                 </button>
               </div>
-              <NavList onClick={() => setOpen(false)} />
-              <div className="mt-6 border-t border-white/10 pt-4">
-                <LogoutButton onClick={() => setOpen(false)} />
+              <SideNav storageKey="owner" groups={navGroups} isActive={isActive} onNavigate={() => setOpen(false)} />
+              <div className="mt-4">
+                <PlanCard plan={identity?.plan} onNavigate={() => setOpen(false)} />
+              </div>
+              <div className="border-t border-white/10 pt-3">
+                <SideNavLogout onClick={() => { setOpen(false); handleLogout(); }} />
               </div>
             </aside>
           </div>

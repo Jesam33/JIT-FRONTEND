@@ -7,12 +7,17 @@ import { STUDENT_API } from "@/lib/api";
 import { apiFetch } from "@/lib/fetch-with-timeout";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
+import SideNav, { SideNavLogout } from "@/components/nav/SideNav";
+import type { IconName } from "@/components/nav/NavIcon";
 
 type SidebarItem = {
   href: string;
   label: string;
+  icon: IconName;
 };
 
+// A short flat list (no dropdowns), drawn by the shared components/nav/SideNav
+// so it matches the owner and staff sidebars.
 function StudentSidebarNav({
   items,
   pathname,
@@ -24,39 +29,19 @@ function StudentSidebarNav({
   badge?: Record<string, number>;
   onItemClick?: () => void;
 }) {
+  const isActive = (href: string) =>
+    href === "/lms/app"
+      ? pathname === "/lms/app" || pathname === "/lms"
+      : href === "/lms/app/tasks"
+        ? pathname.startsWith("/lms/app/tasks") || pathname.startsWith("/lms/tasks")
+        : pathname.startsWith(href);
+
   return (
-    <nav className="space-y-2.5">
-      {items.map((item) => {
-        const active =
-          item.href === "/lms/app"
-            ? pathname === "/lms/app" || pathname === "/lms"
-            : item.href === "/lms/app/tasks"
-              ? pathname.startsWith("/lms/app/tasks") || pathname.startsWith("/lms/tasks")
-              : pathname.startsWith(item.href);
-
-        const count = badge?.[item.href] ?? 0;
-
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => onItemClick?.()}
-            className={`flex min-h-[52px] items-center rounded-xl border px-4 py-3 text-sm transition ${
-              active
-                ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"
-                : "border-white/6 bg-white/5 text-white/80 hover:border-white/12 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <span className="flex-1">{item.label}</span>
-            {count > 0 && (
-              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white">
-                {count > 99 ? "99+" : count}
-              </span>
-            )}
-          </Link>
-        );
-      })}
-    </nav>
+    <SideNav storageKey="student"
+      groups={[{ items: items.map((i) => ({ ...i, count: badge?.[i.href] ?? 0 })) }]}
+      isActive={isActive}
+      onNavigate={onItemClick}
+    />
   );
 }
 
@@ -188,6 +173,7 @@ export default function StudentSidebar() {
   const [chatEnabled, setChatEnabled] = useState(true);
   const [monthly, setMonthly] = useState(false);
   const [oneOnOne, setOneOnOne] = useState(false);
+  const [quizzes, setQuizzes] = useState(false);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -209,6 +195,8 @@ export default function StudentSidebar() {
           // Billing only means something on a monthly course.
           setMonthly(!!p.billing?.monthly);
           setOneOnOne(p.learning_mode === "one_on_one");
+          // Module quizzes are Basic+.
+          setQuizzes(!!p.quizzes);
         }
       })
       .catch(() => {});
@@ -253,18 +241,19 @@ export default function StudentSidebar() {
   };
 
   const items: SidebarItem[] = [
-    { href: "/lms/app", label: "Dashboard" },
-    { href: "/lms/app/attendance", label: "Attendance" },
-    { href: "/lms/app/classroom", label: "Classroom" },
-    ...(oneOnOne ? [{ href: "/lms/app/book", label: "Book a session" }] : []),
-    { href: "/lms/app/timetable", label: "Timetable" },
-    { href: "/lms/app/modules", label: "Modules" },
-    { href: "/lms/app/tasks", label: "Tasks" },
-    { href: "/lms/app/materials", label: "Materials" },
-    { href: "/lms/app/certificates", label: "Certificates" },
-    ...(chatEnabled ? [{ href: "/lms/app/chats", label: "Chats" }] : []),
-    ...(monthly ? [{ href: "/lms/app/billing", label: "Billing" }] : []),
-    { href: "/lms/app/profile", label: "Profile" },
+    { href: "/lms/app", label: "Dashboard", icon: "home" },
+    { href: "/lms/app/attendance", label: "Attendance", icon: "check" },
+    { href: "/lms/app/classroom", label: "Classroom", icon: "video" },
+    ...(oneOnOne ? [{ href: "/lms/app/book", label: "Book a session", icon: "calendarPlus" as const }] : []),
+    { href: "/lms/app/timetable", label: "Timetable", icon: "calendar" },
+    { href: "/lms/app/modules", label: "Modules", icon: "layers" },
+    { href: "/lms/app/tasks", label: "Tasks", icon: "clipboard" },
+    ...(quizzes ? [{ href: "/lms/app/quizzes", label: "Quizzes", icon: "quiz" as const }] : []),
+    { href: "/lms/app/materials", label: "Materials", icon: "folder" },
+    { href: "/lms/app/certificates", label: "Certificates", icon: "award" },
+    ...(chatEnabled ? [{ href: "/lms/app/chats", label: "Chats", icon: "message" as const }] : []),
+    ...(monthly ? [{ href: "/lms/app/billing", label: "Billing", icon: "card" as const }] : []),
+    { href: "/lms/app/profile", label: "Profile", icon: "user" },
   ];
 
   return (
@@ -280,16 +269,8 @@ export default function StudentSidebar() {
         </div>
         <StudentSidebarNav items={items} pathname={pathname} badge={badge} />
 
-        <div className="mt-6 border-t border-white/10 pt-4">
-          <button
-            onClick={handleLogout}
-            className="flex min-h-[52px] w-full items-center rounded-xl border border-white/6 bg-white/5 px-4 py-3 text-sm text-red-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-3 shrink-0">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Log Out
-          </button>
+        <div className="mt-4 border-t border-white/10 pt-3">
+          <SideNavLogout onClick={handleLogout} />
         </div>
       </aside>
 
@@ -351,16 +332,8 @@ export default function StudentSidebar() {
                 <StudentSidebarNav items={items} pathname={pathname} badge={badge} onItemClick={() => setOpen(false)} />
               </div>
 
-              <div className="border-t border-white/10 pt-4">
-                <button
-                  onClick={() => { setOpen(false); handleLogout(); }}
-                  className="flex min-h-[52px] w-full items-center rounded-xl border border-white/6 bg-white/5 px-4 py-3 text-sm text-red-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-3 shrink-0">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Log Out
-                </button>
+              <div className="border-t border-white/10 pt-3">
+                <SideNavLogout onClick={() => { setOpen(false); handleLogout(); }} />
               </div>
             </aside>
           </div>

@@ -7,23 +7,31 @@ import { STAFF_API } from "@/lib/api";
 import { apiFetchStaff, getStaffAuth, getStaffToken } from "@/lib/fetch-with-timeout";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
+import SideNav, { SideNavLogout, type NavGroup } from "@/components/nav/SideNav";
+import type { IconName } from "@/components/nav/NavIcon";
 
 // `section` is the RBAC key this item belongs to (see App\Support\StaffPermissions
 // on the backend). It is the same string the owner's role picker grants, and the
 // endpoint behind each link enforces it independently — this filter only decides
 // what is worth showing, never what is allowed. Profile has no section: everyone
 // can always reach their own profile.
-type SidebarItem = { href: string; label: string; section?: string };
+type SidebarItem = { href: string; label: string; icon?: IconName; section?: string };
+// A labelled group is a dropdown; an unlabelled one is plain top-level links.
+// Rendering lives in components/nav/SideNav (shared with owner + student).
 type SidebarGroup = {
-  label: string;
+  label?: string;
+  icon?: IconName;
   items: SidebarItem[];
 };
 
 const groups: SidebarGroup[] = [
   {
+    items: [{ href: "/lms/staff/app", label: "Dashboard", icon: "home", section: "dashboard" }],
+  },
+  {
     label: "Teaching",
+    icon: "graduation",
     items: [
-      { href: "/lms/staff/app", label: "Dashboard", section: "dashboard" },
       { href: "/lms/staff/courses", label: "Courses", section: "courses" },
       { href: "/lms/staff/tracks", label: "Tracks", section: "tracks" },
       { href: "/lms/staff/students", label: "Students", section: "students" },
@@ -37,6 +45,7 @@ const groups: SidebarGroup[] = [
   },
   {
     label: "Content",
+    icon: "book",
     items: [
       { href: "/lms/staff/modules", label: "Modules", section: "modules" },
       { href: "/lms/staff/materials", label: "Materials", section: "materials" },
@@ -47,10 +56,13 @@ const groups: SidebarGroup[] = [
       // doesn't include the feature.
       { href: "/lms/staff/ai-materials", label: "Create with AI", section: "ai_materials" },
       { href: "/lms/staff/tasks", label: "Tasks", section: "tasks" },
+      // Module quizzes (Basic+): dropped below when the plan lacks them.
+      { href: "/lms/staff/quizzes", label: "Quizzes", section: "tasks" },
     ],
   },
   {
     label: "Communication",
+    icon: "message",
     items: [
       { href: "/lms/staff/chats", label: "Chats", section: "chats" },
       { href: "/lms/staff/notifications", label: "Notifications", section: "notifications" },
@@ -58,10 +70,9 @@ const groups: SidebarGroup[] = [
     ],
   },
   {
-    label: "Admin",
     items: [
-      { href: "/lms/staff/reports", label: "Reports", section: "reports" },
-      { href: "/lms/staff/profile", label: "Profile" },
+      { href: "/lms/staff/reports", label: "Reports", icon: "chart", section: "reports" },
+      { href: "/lms/staff/profile", label: "Profile", icon: "user" },
     ],
   },
 ];
@@ -202,6 +213,7 @@ export default function StaffSidebar() {
   const [sections, setSections] = useState<string[] | null>(null);
   // "One-on-one students" only for staff who teach any (staff/me count).
   const [hasOneOnOne, setHasOneOnOne] = useState(false);
+  const [quizzesEnabled, setQuizzesEnabled] = useState(false);
   const [badge, setBadge] = useState<Record<string, number>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -226,6 +238,7 @@ export default function StaffSidebar() {
           const ai = p.ai_materials !== false;
           setAiEnabled(ai);
           setHasOneOnOne((p.one_on_one_students ?? 0) > 0);
+          setQuizzesEnabled(!!p.quizzes);
           if (Array.isArray(p.sections)) setSections(p.sections as string[]);
         }
       })
@@ -313,15 +326,21 @@ export default function StaffSidebar() {
           (chatEnabled || i.href !== "/lms/staff/chats") &&
           (aiEnabled || i.href !== "/lms/staff/ai-materials") &&
           (hasOneOnOne || i.href !== "/lms/staff/one-on-one") &&
+          (quizzesEnabled || i.href !== "/lms/staff/quizzes") &&
           (sections === null || !i.section || sections.includes(i.section)),
       ),
     }))
     .filter((g) => g.items.length > 0);
 
+  const navGroups: NavGroup[] = visibleGroups.map((g) => ({
+    ...g,
+    items: g.items.map((i) => ({ ...i, count: badge[i.href] ?? 0 })),
+  }));
+
   return (
     <>
       {/* DESKTOP SIDEBAR (lg and up: tablets get the slide-out menu below) */}
-      <aside className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col rounded-2xl border border-white/20 bg-[#0b0b0b]/95 p-5 max-lg:hidden lg:min-h-[760px]">
+      <aside className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col self-start rounded-2xl border border-white/20 bg-[#0b0b0b]/95 p-5 max-lg:hidden">
         <div className="mb-5">
           <AccountDropdown
             teacher={teacher}
@@ -330,47 +349,10 @@ export default function StaffSidebar() {
           />
         </div>
 
-        <nav className="flex-1 space-y-5 overflow-y-auto">
-          {visibleGroups.map((group) => (
-            <div key={group.label}>
-              <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">{group.label}</p>
-              <div className="space-y-2">
-                {group.items.map((item) => {
-                  const count = badge?.[item.href] ?? 0;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
-                        isActive(item.href)
-                          ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"
-                          : "border-white/6 bg-white/5 text-white/80 hover:border-white/12 hover:bg-white/10 hover:text-white"
-                      }`}
-                    >
-                      <span className="flex-1">{item.label}</span>
-                      {count > 0 && (
-                        <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white">
-                          {count > 99 ? "99+" : count}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
+        <SideNav storageKey="staff" groups={navGroups} isActive={isActive} />
 
-        <div className="mt-6 border-t border-white/10 pt-4">
-          <button
-            onClick={handleLogout}
-            className="flex min-h-[48px] w-full items-center rounded-xl border border-white/6 bg-white/5 px-4 py-3 text-sm text-red-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-3 shrink-0">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Log Out
-          </button>
+        <div className="mt-4 border-t border-white/10 pt-3">
+          <SideNavLogout onClick={handleLogout} />
         </div>
       </aside>
 
@@ -428,47 +410,9 @@ export default function StaffSidebar() {
                 </button>
               </div>
 
-              <nav className="flex-1 space-y-5 overflow-y-auto pr-0.5">
-                {visibleGroups.map((group) => (
-                  <div key={group.label}>
-                    <p className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">{group.label}</p>
-                    <div className="space-y-2">
-                      {group.items.map((item) => {
-                        const count = badge?.[item.href] ?? 0;
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setOpen(false)}
-                            className={`flex min-h-[44px] items-center rounded-xl border px-4 py-2.5 text-sm transition ${
-                              isActive(item.href)
-                                ? "border-white/18 bg-white/12 text-white shadow-[0_12px_30px_rgba(255,255,255,0.08)]"
-                                : "border-white/6 bg-white/5 text-white/80 hover:border-white/12 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            <span className="flex-1">{item.label}</span>
-                            {count > 0 && (
-                              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white">
-                                {count > 99 ? "99+" : count}
-                              </span>
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </nav>
-              <div className="mt-6 border-t border-white/10 pt-4">
-                <button
-                  onClick={() => { setOpen(false); handleLogout(); }}
-                  className="flex min-h-[48px] w-full items-center rounded-xl border border-white/6 bg-white/5 px-4 py-3 text-sm text-red-400 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-3 shrink-0">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  Log Out
-                </button>
+              <SideNav storageKey="staff" groups={navGroups} isActive={isActive} onNavigate={() => setOpen(false)} />
+              <div className="mt-4 border-t border-white/10 pt-3">
+                <SideNavLogout onClick={() => { setOpen(false); handleLogout(); }} />
               </div>
             </aside>
           </div>

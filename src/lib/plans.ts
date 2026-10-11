@@ -14,6 +14,7 @@ export type Features = {
   chat: boolean;
   certificates: boolean;
   pre_recorded_video: boolean;
+  quizzes?: boolean;
   admission_marketer: boolean;
   remove_branding: boolean;
   advanced_analytics: boolean;
@@ -49,6 +50,7 @@ export const FEATURE_LABELS: Record<keyof Features, string> = {
   chat: "Group chat",
   certificates: "Certificates",
   pre_recorded_video: "Pre-recorded video lessons",
+  quizzes: "Module quizzes & scoreboard",
   admission_marketer: "Admission-Marketer network",
   remove_branding: "Remove “Powered by Jorsastech” badge",
   advanced_analytics: "Advanced analytics",

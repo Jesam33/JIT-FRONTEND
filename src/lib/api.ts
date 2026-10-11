@@ -201,6 +201,13 @@ export const STUDENT_API = {
   oneOnOneBooking: api("/api/frontend/lms/one-on-one/booking"),
   oneOnOneBookingCancel: (sessionId: string | number) => api(`/api/frontend/lms/one-on-one/booking/${sessionId}/cancel`),
   oneOnOneReportNoShow: (sessionId: string | number) => api(`/api/frontend/lms/one-on-one/booking/${sessionId}/report-no-show`),
+  // Module quizzes: list, one quiz, start, save answers, submit, scoreboard.
+  quizzes: api("/api/frontend/lms/quizzes"),
+  quiz: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}`),
+  quizStart: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/start`),
+  quizAnswers: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/answers`),
+  quizSubmit: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/submit`),
+  quizScoreboard: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/scoreboard`),
   // Extra sessions: POST {sessions} → Paystack checkout; verify on return.
   oneOnOneExtras: api("/api/frontend/lms/one-on-one/extras"),
   oneOnOneExtrasVerify: (reference: string) => api(`/api/frontend/lms/one-on-one/extras/verify?reference=${encodeURIComponent(reference)}`),
@@ -356,6 +363,14 @@ export const STAFF_API = {
   oneOnOneSession: (sessionId: string | number) => api(`/api/frontend/lms/staff/one-on-one/sessions/${sessionId}`),
   oneOnOneSessionCancel: (sessionId: string | number) => api(`/api/frontend/lms/staff/one-on-one/sessions/${sessionId}/cancel`),
   oneOnOneSessionOutcome: (sessionId: string | number) => api(`/api/frontend/lms/staff/one-on-one/sessions/${sessionId}/outcome`),
+  // Module quizzes: list (modules + their quiz), write/save a module's quiz,
+  // publish / close / delete, and results.
+  quizzes: api("/api/frontend/lms/staff/quizzes"),
+  moduleQuiz: (moduleId: string | number) => api(`/api/frontend/lms/staff/modules/${moduleId}/quiz`),
+  quizPublish: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/publish`),
+  quizClose: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/close`),
+  quizDelete: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}`),
+  quizResults: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/results`),
   // Self-booking: my weekly availability (GET/PUT), days off, per-student switch.
   oneOnOneAvailability: api("/api/frontend/lms/staff/one-on-one/availability"),
   oneOnOneTimeOff: api("/api/frontend/lms/staff/one-on-one/time-off"),
