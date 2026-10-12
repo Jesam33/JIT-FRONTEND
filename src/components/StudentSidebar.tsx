@@ -7,7 +7,7 @@ import { STUDENT_API } from "@/lib/api";
 import { apiFetch } from "@/lib/fetch-with-timeout";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
-import SideNav, { SideNavLogout } from "@/components/nav/SideNav";
+import SideNav, { SideNavInstall, SideNavLogout } from "@/components/nav/SideNav";
 import type { IconName } from "@/components/nav/NavIcon";
 
 type SidebarItem = {
@@ -270,6 +270,7 @@ export default function StudentSidebar() {
         <StudentSidebarNav items={items} pathname={pathname} badge={badge} />
 
         <div className="mt-4 border-t border-white/10 pt-3">
+          <SideNavInstall />
           <SideNavLogout onClick={handleLogout} />
         </div>
       </aside>
@@ -333,6 +334,7 @@ export default function StudentSidebar() {
               </div>
 
               <div className="border-t border-white/10 pt-3">
+                <SideNavInstall />
                 <SideNavLogout onClick={() => { setOpen(false); handleLogout(); }} />
               </div>
             </aside>

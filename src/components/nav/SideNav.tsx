@@ -8,8 +8,10 @@
 // desktop aside is lg+, the drawer below lg). The current page gets a soft tint.
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import NavIcon, { type IconName } from "./NavIcon";
+import { ManualInstallSteps } from "@/components/AppInstallPrompt";
+import { isMobileDevice, isStandalone, manualInstallKind, promptInstall, useInstallState } from "@/lib/install-state";
 
 export type NavLinkItem = {
   href: string;
@@ -174,6 +176,47 @@ export default function SideNav({
         );
       })}
     </nav>
+  );
+}
+
+/**
+ * "Install app" row (above Log Out): installs the academy's own app, on a
+ * computer as a desktop app. Always available, unlike the dismissable banner.
+ * Chrome / Edge open their install dialog; Safari (iPhone, Mac) shows the
+ * manual steps. Hidden inside the installed app, and where the browser offers
+ * no way to install (e.g. Firefox).
+ */
+export function SideNavInstall() {
+  const { canPrompt, installed } = useInstallState();
+  const [env, setEnv] = useState<{ standalone: boolean; manual: "ios" | "mac-safari" | null; mobile: boolean } | null>(null);
+  const [showSteps, setShowSteps] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setEnv({ standalone: isStandalone(), manual: manualInstallKind(), mobile: isMobileDevice() });
+    })();
+  }, []);
+
+  if (!env || env.standalone || installed || (!canPrompt && !env.manual)) return null;
+
+  const label = env.mobile ? "Install app" : "Install desktop app";
+
+  return (
+    <div className="mb-1">
+      <button
+        type="button"
+        onClick={() => (canPrompt ? void promptInstall() : setShowSteps((s) => !s))}
+        className="flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/65 outline-none transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:ring-2 focus-visible:ring-white/25 lg:min-h-[40px]"
+      >
+        <NavIcon name="install" className="h-[18px] w-[18px] text-white/50" />
+        {label}
+      </button>
+      {showSteps && env.manual ? (
+        <div className="mt-1 px-1">
+          <ManualInstallSteps kind={env.manual} />
+        </div>
+      ) : null}
+    </div>
   );
 }
 

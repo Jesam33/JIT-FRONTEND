@@ -7,7 +7,7 @@ import { STAFF_API } from "@/lib/api";
 import { apiFetchStaff, getStaffAuth, getStaffToken } from "@/lib/fetch-with-timeout";
 import { tenantLoginPath } from "@/lib/tenant-client";
 import { savedAccounts, isPickerEnabled } from "@/lib/saved-accounts";
-import SideNav, { SideNavLogout, type NavGroup } from "@/components/nav/SideNav";
+import SideNav, { SideNavInstall, SideNavLogout, type NavGroup } from "@/components/nav/SideNav";
 import type { IconName } from "@/components/nav/NavIcon";
 
 // `section` is the RBAC key this item belongs to (see App\Support\StaffPermissions
@@ -352,6 +352,7 @@ export default function StaffSidebar() {
         <SideNav storageKey="staff" groups={navGroups} isActive={isActive} />
 
         <div className="mt-4 border-t border-white/10 pt-3">
+          <SideNavInstall />
           <SideNavLogout onClick={handleLogout} />
         </div>
       </aside>
@@ -412,6 +413,7 @@ export default function StaffSidebar() {
 
               <SideNav storageKey="staff" groups={navGroups} isActive={isActive} onNavigate={() => setOpen(false)} />
               <div className="mt-4 border-t border-white/10 pt-3">
+                <SideNavInstall />
                 <SideNavLogout onClick={() => { setOpen(false); handleLogout(); }} />
               </div>
             </aside>

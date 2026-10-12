@@ -1,5 +1,6 @@
 "use client";
 
+import { hostClassUrl } from "@/lib/jitsi-host";
 import { useCallback, useEffect, useState } from "react";
 import { STAFF_API } from "../../../../lib/api";
 import CalendarTimetable from "../../../../components/CalendarTimetable";
@@ -83,7 +84,7 @@ export default function StaffTimetablePage() {
         setHostMessage(p?.message ?? "Could not start the live class.");
         return;
       }
-      const url = `https://${p.domain}/${p.app_id}/${p.room}?jwt=${encodeURIComponent(p.jwt)}`;
+      const url = hostClassUrl(p);
       if (win) win.location.href = url;
       else window.open(url, "_blank", "noopener,noreferrer");
     } catch {

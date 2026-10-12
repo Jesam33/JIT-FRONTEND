@@ -1,5 +1,6 @@
 "use client";
 
+import { hostClassUrl } from "@/lib/jitsi-host";
 import { useCallback, useEffect, useState } from "react";
 
 import { STAFF_API } from "../../../../lib/api";
@@ -176,7 +177,9 @@ export default function StaffClassroomPage() {
       // The URL fragment is the only config channel on the plain JaaS page (no
       // external_api.js there): hideConferenceSubject removes the raw "jit-..."
       // room-name label Jitsi shows at the top of the call.
-      const url = `https://${p.domain}/${p.app_id}/${p.room}?jwt=${encodeURIComponent(p.jwt)}#config.hideConferenceSubject=true`;
+      // Shared host link: hides the room name and lets the teacher Record to
+      // their own computer (see lib/jitsi-host).
+      const url = hostClassUrl(p);
       if (win) win.location.href = url;
       else window.open(url, "_blank", "noopener,noreferrer");
     } catch {

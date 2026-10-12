@@ -100,6 +100,7 @@ const ICONS = {
     </>
   ),
   logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
+  install: <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof ICONS;
