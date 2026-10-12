@@ -69,7 +69,11 @@ export default function StudentClassroomPage() {
   // The id of the class whose live room the student is currently inside. It
   // pins that class as "active" so its scheduled end time can no longer tear
   // the session down: the class ends when the teacher ends the meeting.
-  const [liveClassId, setLiveClassId] = useState<number | null>(null);
+  // The class the student is inside, by id AND type: ids are only unique within
+  // a delivery type (a module class #5 and a legacy classroom #5 can coexist),
+  // so matching on the id alone could jump to the wrong class once the call
+  // connects, and the live quiz overlay would follow the wrong class.
+  const [liveClass, setLiveClass] = useState<{ id: number; classType: string } | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fullscreenWrapRef = useRef<HTMLDivElement>(null);
   // Which class is currently live in the embed, so the leave / class-ended /
@@ -199,12 +203,12 @@ export default function StudentClassroomPage() {
       // Keep the class the student is currently inside pinned as active even
       // once its scheduled end time passes: a live class ends when the teacher
       // ends the meeting (the iframe posts jitsi-left), not on the clock.
-      if (isClassLive && liveClassId === item.id) return true;
+      if (isClassLive && liveClass && liveClass.id === item.id && liveClass.classType === (item.class_type ?? "classroom")) return true;
       const date = new Date(item.starts_at);
       const now = new Date(currentTime);
       return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate() && !isClassEnded(item.starts_at, item.ends_at, currentTime);
     });
-  }, [sortedTimetable, currentTime, isClassLive, liveClassId]);
+  }, [sortedTimetable, currentTime, isClassLive, liveClass]);
 
   const upcomingClasses = useMemo(() => {
     return sortedTimetable.filter((item) => new Date(item.starts_at).getTime() > currentTime);
@@ -264,7 +268,7 @@ export default function StudentClassroomPage() {
   const teardownEmbed = useCallback(() => {
     setIsClassLive(false);
     setIframeUrl(null);
-    setLiveClassId(null);
+    setLiveClass(null);
     clearLiveSession();
     const live = liveClassRef.current;
     if (live) closeOutAttendance(live.id, live.classType);
@@ -418,7 +422,7 @@ export default function StudentClassroomPage() {
       // attendance for it, and pin it as active so its scheduled end time can't
       // tear the session down. Reset the dedupe guard for this fresh session.
       liveClassRef.current = { id: classroomId, classType };
-      setLiveClassId(classroomId);
+      setLiveClass({ id: classroomId, classType });
       attendanceClosedRef.current = null;
       setIframeUrl(url.toString());
 
@@ -639,8 +643,12 @@ export default function StudentClassroomPage() {
                     allowFullScreen
                     title="Live Session"
                   />
-                  {/* The teacher's live quiz pops up over the video (fullscreen too). */}
-                  {activeClass ? (
+                  {/* The teacher's live quiz pops up over the video (fullscreen
+                      too). Pinned to the class the student actually joined, not
+                      to whatever the timetable currently calls "active". */}
+                  {liveClass ? (
+                    <LiveQuizOverlay classType={liveClass.classType} classId={liveClass.id} />
+                  ) : activeClass ? (
                     <LiveQuizOverlay classType={activeClass.class_type ?? "classroom"} classId={activeClass.id} />
                   ) : null}
                 </div>

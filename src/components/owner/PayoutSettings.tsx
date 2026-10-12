@@ -467,20 +467,23 @@ export default function PayoutSettings({
         </div>
       )}
 
-      {/* RE-LINK (linked on Paystack before the move to Flutterwave) */}
-      {data && data.gateway_ready && configured && data.payment.needs_relink && !showForm && (
+      {/* RE-LINK: linked on Paystack before the move to Flutterwave. Payments
+          only go through Flutterwave now, so until they link again students
+          can't pay for their courses. */}
+      {data && data.gateway_ready && data.payment.needs_relink && !showForm && (
         <div className="rounded-[20px] border border-amber-400/30 bg-amber-400/10 p-6">
-          <h2 className="text-base font-semibold text-amber-100">Please re-link your bank</h2>
+          <h2 className="text-base font-semibold text-amber-100">Link your bank again to keep selling courses</h2>
           <p className="mt-1 max-w-2xl text-sm text-amber-100/80">
-            We&apos;ve moved to a new payment provider that supports more countries and currencies. Your
-            current bank still works for now, but please re-link it so payments keep reaching you.
+            We&apos;ve moved student payments to Flutterwave, which pays academies in their own currency in many
+            countries. Your old bank link no longer works, so students can&apos;t pay for your courses until you link
+            your bank again. It only takes a minute.
           </p>
           <button
             type="button"
             onClick={() => setShowForm(true)}
             className="mt-4 rounded-full bg-site-primary px-6 py-2.5 text-sm font-semibold text-[#fff] transition hover:brightness-110"
           >
-            Re-link my bank
+            Link my bank
           </button>
         </div>
       )}
