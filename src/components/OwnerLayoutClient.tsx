@@ -1,5 +1,6 @@
 "use client";
 
+import { RecordingBar } from "@/components/ClassRecorder";
 import React, { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import OwnerSidebar, { type OwnerIdentity } from "./OwnerSidebar";
@@ -253,6 +254,8 @@ export default function OwnerLayoutClient({
           academy from the owner session, so only the category, the message and
           the page are sent. */}
       <FeedbackButton submit={submitOwnerFeedback} />
+      {/* A class recording (Teaching → Classroom) keeps running on every page. */}
+      <RecordingBar />
       {/* grid-cols-1 = minmax(0,1fr): on phones the single column is pinned to
           the screen width. Without it the column grows to its widest child and
           every page scrolls sideways. */}

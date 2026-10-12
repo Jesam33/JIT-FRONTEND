@@ -1,5 +1,6 @@
 "use client";
 
+import { RecordingBar } from "@/components/ClassRecorder";
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import StaffSidebar from "./StaffSidebar";
@@ -188,6 +189,8 @@ export default function StaffLayoutClient({ children }: { children: React.ReactN
       {!hideSidebar && (
         <AppInstallPrompt role="staff" name={branding?.name ?? null} logoUrl={branding?.logo_url ?? null} />
       )}
+      {/* A class recording keeps running (and shows its Stop bar) on every page. */}
+      {!hideSidebar && <RecordingBar />}
       <FeedbackButton submit={submitFeedback} />
       <div className="section-divider pt-6" style={{ ...brandingStyle(branding), ...storefrontBackgroundStyle(branding) }} data-branded={isBranded(branding) ? "" : undefined}>
         {/* grid-cols-1 pins the phone column to the screen width (see OwnerLayoutClient). */}

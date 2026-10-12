@@ -378,6 +378,8 @@ export const STAFF_API = {
   quizClose: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/close`),
   quizDelete: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}`),
   quizResults: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/results`),
+  // "This class is being recorded" (the teacher's free in-browser recorder).
+  classRecording: api("/api/frontend/lms/staff/class-recording"),
   // Live quiz control panel (Kahoot-style rounds inside a live class).
   liveQuizClass: (classType: string, classId: string | number) =>
     api(`/api/frontend/lms/staff/live-quiz/class?class_type=${encodeURIComponent(classType)}&class_id=${classId}`),

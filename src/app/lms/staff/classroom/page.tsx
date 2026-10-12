@@ -1,6 +1,7 @@
 "use client";
 
 import { hostClassUrl } from "@/lib/jitsi-host";
+import { ClassRecordButton } from "@/components/ClassRecorder";
 import { useCallback, useEffect, useState } from "react";
 
 import { STAFF_API } from "../../../../lib/api";
@@ -256,6 +257,7 @@ export default function StaffClassroomPage() {
                   <div className="flex items-center gap-2">
                     <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
                     <Link href={liveQuizHref(c.id, "scheduled")} className="rounded border border-white/20 px-3 py-1 text-xs font-medium text-white hover:border-white/40">🎯 Live quiz</Link>
+                    <ClassRecordButton classType="scheduled" classId={c.id} title={c.title} />
                     <span className="rounded-full bg-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-200">Live</span>
                   </div>
                 </div>
@@ -400,6 +402,7 @@ export default function StaffClassroomPage() {
                     <Link href={liveQuizHref(c.id, "classroom")} className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40">
                       🎯 Live quiz
                     </Link>
+                    <ClassRecordButton classType="classroom" classId={c.id} title={c.title} />
                     <button type="button" onClick={() => handleMarkEnded(c.id)} disabled={markingEndedId === c.id} className="rounded-full border border-amber-400/30 px-3 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 disabled:opacity-40">
                       {markingEndedId === c.id ? "Marking..." : "Mark Ended"}
                     </button>

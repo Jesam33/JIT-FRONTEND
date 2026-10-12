@@ -44,6 +44,8 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function LiveQuizOverlay({ classType, classId }: { classType: string; classId: number }) {
   const [run, setRun] = useState<StudentRun | null>(null);
+  // The teacher is recording the class (their free in-browser recorder).
+  const [recording, setRecording] = useState(false);
   const [offset, setOffset] = useState(0); // server clock minus browser clock
   const [now, setNow] = useState(() => Date.now());
   const [minimized, setMinimized] = useState(false);
@@ -67,6 +69,7 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
           const json = await res.json();
           const next: StudentRun | null = json?.run ?? null;
           if (!cancelled) {
+            setRecording(!!json?.recording);
             if (next) setOffset(new Date(next.server_now).getTime() - Date.now());
             setRun(next);
             // A new question (or phase) pops the panel back open.
@@ -100,7 +103,15 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
     return () => clearInterval(t);
   }, [questionOpen]);
 
-  if (!run || dismissedRun === run.id) return null;
+  // Everyone in the class can see when it's being recorded.
+  const recordingBadge = recording ? (
+    <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-1 text-[11px] font-semibold text-[#fff] shadow-lg">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-[#fff]" aria-hidden="true" />
+      Recording
+    </div>
+  ) : null;
+
+  if (!run || dismissedRun === run.id) return recordingBadge;
 
   // The answer to show as picked: this screen's latest tap for this question
   // wins over a poll that left before it, else what the server has.
@@ -140,17 +151,22 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
   // ── Minimized pill ────────────────────────────────────────────────────
   if (minimized) {
     return (
-      <button
-        type="button"
-        onClick={() => setMinimized(false)}
-        className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-site-primary px-4 py-2 text-sm font-semibold text-[#fff] shadow-xl"
-      >
-        🎯 Live quiz · {run.phase === "question" ? (myChoice != null ? `answered · ${secondsLeft}s left` : `${secondsLeft}s to answer`) : qLabel} · Open
-      </button>
+      <>
+        {recordingBadge}
+        <button
+          type="button"
+          onClick={() => setMinimized(false)}
+          className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-site-primary px-4 py-2 text-sm font-semibold text-[#fff] shadow-xl"
+        >
+          🎯 Live quiz · {run.phase === "question" ? (myChoice != null ? `answered · ${secondsLeft}s left` : `${secondsLeft}s to answer`) : qLabel} · Open
+        </button>
+      </>
     );
   }
 
   return (
+    <>
+    {recordingBadge}
     <div className="absolute inset-x-0 bottom-0 z-20 max-h-[75%] overflow-y-auto rounded-t-2xl border-t border-white/15 bg-[#0b0b0b]/95 p-4 text-white shadow-2xl backdrop-blur sm:inset-x-auto sm:bottom-4 sm:right-4 sm:w-[440px] sm:rounded-2xl sm:border">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -279,6 +295,7 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
         </>
       ) : null}
     </div>
+    </>
   );
 }
 
