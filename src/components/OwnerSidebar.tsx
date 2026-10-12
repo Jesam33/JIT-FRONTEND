@@ -52,6 +52,7 @@ const groups: SidebarGroup[] = [
       { href: "/lms/admin/tracks", label: "Tracks & Cohorts" },
       { href: "/lms/admin/one-on-one", label: "One-on-one", badge: "Basic", gatedFeature: "one_on_one" },
       { href: "/lms/admin/certificates", label: "Certificates" },
+      { href: "/lms/admin/reviews", label: "Reviews" },
     ],
   },
   // The owner's Teaching area: the staff portal's own features, re-implemented

@@ -6,6 +6,8 @@ import { STAFF_API } from "../../../../lib/api";
 import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
 import { isClassEnded } from "../../../../lib/lms-utils";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
+import Link from "next/link";
+import { useTeachingBase } from "@/lib/teaching-base";
 
 function toLocalDatetimeString(iso: string): string {
   const d = new Date(iso);
@@ -53,6 +55,7 @@ const emptyForm = {
 
 export default function StaffClassroomPage() {
   const token = getStaffToken();
+  const teachingBase = useTeachingBase();
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +155,9 @@ export default function StaffClassroomPage() {
   // click gesture) so popup blockers don't kill it, then redirected to the JaaS
   // room once the moderator token is minted. Handles both class kinds: "scheduled"
   // (per-module LmsScheduledClass) and "classroom" (per-course LmsClassroom).
+  // The live quiz control panel for a class (kept open beside the Jitsi tab).
+  const liveQuizHref = (id: number, classType: string) => `${teachingBase}/live-quiz?class_type=${classType}&class_id=${id}`;
+
   const hostClass = async (id: number, classType: string) => {
     setMessage("");
     const win = window.open("about:blank", "_blank");
@@ -246,6 +252,7 @@ export default function StaffClassroomPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
+                    <Link href={liveQuizHref(c.id, "scheduled")} className="rounded border border-white/20 px-3 py-1 text-xs font-medium text-white hover:border-white/40">🎯 Live quiz</Link>
                     <span className="rounded-full bg-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-200">Live</span>
                   </div>
                 </div>
@@ -268,7 +275,10 @@ export default function StaffClassroomPage() {
                     <p className="text-sm font-medium">{c.title}</p>
                     <p className="text-xs text-white/60">{formatClassWindow(c.starts_at, c.ends_at)}{c.module ? ` - ${c.module.title}` : ""}</p>
                   </div>
-                  <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => hostClass(c.id, "scheduled")} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">Host</button>
+                    <Link href={liveQuizHref(c.id, "scheduled")} className="rounded border border-white/20 px-3 py-1 text-xs font-medium text-white hover:border-white/40">🎯 Live quiz</Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -384,6 +394,9 @@ export default function StaffClassroomPage() {
                     >
                       Host
                     </button>
+                    <Link href={liveQuizHref(c.id, "classroom")} className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40">
+                      🎯 Live quiz
+                    </Link>
                     <button type="button" onClick={() => handleMarkEnded(c.id)} disabled={markingEndedId === c.id} className="rounded-full border border-amber-400/30 px-3 py-1 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 disabled:opacity-40">
                       {markingEndedId === c.id ? "Marking..." : "Mark Ended"}
                     </button>

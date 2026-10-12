@@ -8,6 +8,7 @@ import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STUDENT_MODULE_API, STUDENT_API } from "../../../../lib/api";
 import { apiFetch, okJson } from "../../../../lib/fetch-with-timeout";
 import { getTenantSlug } from "@/lib/tenant-client";
+import LiveQuizOverlay from "@/components/quiz/LiveQuizOverlay";
 
 type TimetableItem = {
   id: number;
@@ -638,6 +639,10 @@ export default function StudentClassroomPage() {
                     allowFullScreen
                     title="Live Session"
                   />
+                  {/* The teacher's live quiz pops up over the video (fullscreen too). */}
+                  {activeClass ? (
+                    <LiveQuizOverlay classType={activeClass.class_type ?? "classroom"} classId={activeClass.id} />
+                  ) : null}
                 </div>
               </>
             ) : !isClassLive && !isScheduledClass ? (

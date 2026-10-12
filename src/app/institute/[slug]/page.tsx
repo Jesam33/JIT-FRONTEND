@@ -47,6 +47,7 @@ export default async function CourseDetailPage({ params }: Props) {
       branding={data.branding}
       profile={data.profile}
       course={data.course}
+      reviews={data.reviews}
       registerSlug={data.institute.slug}
     />
   );

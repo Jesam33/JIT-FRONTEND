@@ -6,6 +6,7 @@ import InstituteContactFooter from "@/components/institute/InstituteContactFoote
 import CourseDescription from "@/components/institute/CourseDescription";
 import CourseRequirements from "@/components/institute/CourseRequirements";
 import StarRating from "@/components/ui/StarRating";
+import CourseReviews, { type CourseReviewsData } from "@/components/institute/CourseReviews";
 
 export type DetailCourse = {
   id: number;
@@ -64,6 +65,8 @@ export type CourseDetailData = {
   // Optional: powers the shared contact footer at the foot of the mini-site.
   profile?: InstituteProfile;
   course: DetailCourse;
+  // Verified-learner reviews (star breakdown + latest reviews with proof).
+  reviews?: CourseReviewsData | null;
 };
 
 // The big headline price, the struck-through "was" price and the charge note all
@@ -85,6 +88,7 @@ export default function InstituteCourseDetail({
   branding,
   profile,
   course,
+  reviews,
   registerSlug,
 }: CourseDetailData & { registerSlug?: string }) {
   return (
@@ -123,7 +127,12 @@ export default function InstituteCourseDetail({
             {/* Rating summary (real reviews only) + instructor line. */}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
               {(course.rating_count ?? 0) > 0 ? (
-                <StarRating value={course.rating_average ?? 0} count={course.rating_count ?? 0} size="md" labelClassName="text-white/70" />
+                <a href="#reviews" className="inline-flex items-center gap-2 hover:opacity-90">
+                  <StarRating value={course.rating_average ?? 0} count={course.rating_count ?? 0} size="md" labelClassName="text-white/70" />
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                    Verified
+                  </span>
+                </a>
               ) : (
                 <span className="rounded bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/70">New course</span>
               )}
@@ -149,6 +158,15 @@ export default function InstituteCourseDetail({
                   Pre-recorded Available
                 </span>
               ) : null}
+            </div>
+
+            <div id="reviews" className="scroll-mt-24">
+              <CourseReviews
+                reviews={reviews}
+                average={course.rating_average ?? 0}
+                count={course.rating_count ?? 0}
+                instituteName={institute.name}
+              />
             </div>
           </article>
 

@@ -80,11 +80,18 @@ export type DashboardPayload = {
   // The student's own rating for their enrolled course + the course aggregate,
   // so the dashboard can render a pre-filled "Rate this course" control. Null
   // when the student has no resolved course.
+  // Verified-learner reviews: average/count are verified reviews only;
+  // `eligible` says whether this student has learned enough to review yet
+  // (`missing` says what's left), and `proof` is what their review would show.
   rating?: {
     course_id: number;
     your_rating: number | null;
+    your_comment?: string | null;
     average: number;
     count: number;
+    eligible?: boolean;
+    missing?: string | null;
+    proof?: { attended: number; held: number; activities: number; finished: boolean };
   } | null;
 };
 

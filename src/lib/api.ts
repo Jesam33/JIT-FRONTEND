@@ -90,6 +90,9 @@ export const OWNER_API = {
   // Basic+ feature: a lower plan gets 402, which maybeUpgrade() turns into the
   // UpgradeModal.
   agents: api("/api/frontend/lms/owner/agents"),
+  // Verified-learner reviews of the academy's courses + the academy's public reply.
+  reviews: api("/api/frontend/lms/owner/reviews"),
+  reviewReply: (id: string | number) => api(`/api/frontend/lms/owner/reviews/${id}/reply`),
   // One agent's analytics drill-down: profile, wallet stats, referrals,
   // registrations (payment + commission state) and the payout ledger.
   agent: (id: string | number) => api(`/api/frontend/lms/owner/agents/${id}`),
@@ -208,6 +211,10 @@ export const STUDENT_API = {
   quizAnswers: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/answers`),
   quizSubmit: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/submit`),
   quizScoreboard: (quizId: string | number) => api(`/api/frontend/lms/quizzes/${quizId}/scoreboard`),
+  // Live quiz during a live class: follow it, and answer.
+  liveQuiz: (classType: string, classId: string | number) =>
+    api(`/api/frontend/lms/live-quiz?class_type=${encodeURIComponent(classType)}&class_id=${classId}`),
+  liveQuizAnswer: (runId: string | number) => api(`/api/frontend/lms/live-quiz/${runId}/answer`),
   // Extra sessions: POST {sessions} → Paystack checkout; verify on return.
   oneOnOneExtras: api("/api/frontend/lms/one-on-one/extras"),
   oneOnOneExtrasVerify: (reference: string) => api(`/api/frontend/lms/one-on-one/extras/verify?reference=${encodeURIComponent(reference)}`),
@@ -371,6 +378,18 @@ export const STAFF_API = {
   quizClose: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/close`),
   quizDelete: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}`),
   quizResults: (quizId: string | number) => api(`/api/frontend/lms/staff/quizzes/${quizId}/results`),
+  // Live quiz control panel (Kahoot-style rounds inside a live class).
+  liveQuizClass: (classType: string, classId: string | number) =>
+    api(`/api/frontend/lms/staff/live-quiz/class?class_type=${encodeURIComponent(classType)}&class_id=${classId}`),
+  liveQuizRounds: api("/api/frontend/lms/staff/live-quiz/rounds"),
+  liveQuizRound: (roundId: string | number) => api(`/api/frontend/lms/staff/live-quiz/rounds/${roundId}`),
+  liveQuizStart: (classType: string, classId: string | number) =>
+    api(`/api/frontend/lms/staff/live-quiz/runs?class_type=${encodeURIComponent(classType)}&class_id=${classId}`),
+  liveQuizRun: (runId: string | number) => api(`/api/frontend/lms/staff/live-quiz/runs/${runId}`),
+  liveQuizNext: (runId: string | number) => api(`/api/frontend/lms/staff/live-quiz/runs/${runId}/next`),
+  liveQuizReveal: (runId: string | number) => api(`/api/frontend/lms/staff/live-quiz/runs/${runId}/reveal`),
+  liveQuizFinish: (runId: string | number) => api(`/api/frontend/lms/staff/live-quiz/runs/${runId}/finish`),
+  liveQuizAutoAdvance: (runId: string | number) => api(`/api/frontend/lms/staff/live-quiz/runs/${runId}/auto-advance`),
   // Self-booking: my weekly availability (GET/PUT), days off, per-student switch.
   oneOnOneAvailability: api("/api/frontend/lms/staff/one-on-one/availability"),
   oneOnOneTimeOff: api("/api/frontend/lms/staff/one-on-one/time-off"),

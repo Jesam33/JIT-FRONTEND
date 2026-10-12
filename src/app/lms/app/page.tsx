@@ -20,6 +20,8 @@ export default function StudentDashboardPage() {
   const [joining, setJoining] = useState<number | null>(null);
   const [ratingBusy, setRatingBusy] = useState(false);
   const [ratingMsg, setRatingMsg] = useState("");
+  // The open review box (stars + comment) once the student picks a star.
+  const [draft, setDraft] = useState<{ rating: number; comment: string } | null>(null);
 
   const token = useMemo(() => getToken(), []);
 
@@ -115,21 +117,24 @@ export default function StudentDashboardPage() {
     router.push("/lms/app/materials");
   }
 
-  // Submit (or update) the student's 1 to 5 rating for their enrolled course. The
-  // backend enforces enrollment + one-row-per-student; we optimistically show the
-  // chosen value and reconcile from the returned aggregate.
-  async function submitRating(n: number) {
+  // Verified-learner review: picking a star opens the review box (stars +
+  // optional comment); posting saves it. The backend enforces enrollment, the
+  // "learned enough" proof and one review per student.
+  function startReview(n: number) {
+    setRatingMsg("");
+    setDraft({ rating: n, comment: draft?.comment ?? data.rating?.your_comment ?? "" });
+  }
+
+  async function submitRating(n: number, comment: string) {
     const rating = data.rating;
     if (!rating || ratingBusy) return;
     setRatingBusy(true);
     setRatingMsg("");
-    // Show the picked star immediately; the response confirms the aggregate.
-    setData((prev) => (prev.rating ? { ...prev, rating: { ...prev.rating, your_rating: n } } : prev));
     try {
       const response = await apiFetch(STUDENT_API.rateCourse(rating.course_id), {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ rating: n }),
+        body: JSON.stringify({ rating: n, comment: comment.trim() || null }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
@@ -143,13 +148,15 @@ export default function StudentDashboardPage() {
               rating: {
                 ...prev.rating,
                 your_rating: payload?.your_rating ?? n,
+                your_comment: payload?.your_comment ?? null,
                 average: payload?.rating_average ?? prev.rating.average,
                 count: payload?.rating_count ?? prev.rating.count,
               },
             }
           : prev,
       );
-      setRatingMsg("Thanks for rating!");
+      setDraft(null);
+      setRatingMsg("Thanks! Your verified review is live.");
     } catch {
       setRatingMsg("Couldn't save your rating. Please try again.");
     } finally {
@@ -231,15 +238,63 @@ export default function StudentDashboardPage() {
             <h1 className="text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>{data.profile?.course_title ?? "No course selected yet"}</h1>
             {/* Rating, inline: one star row + aggregate, no boxed section. */}
             {data.rating ? (
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
-                <StarRating value={data.rating.your_rating ?? 0} size="md" onRate={submitRating} disabled={ratingBusy} />
-                <span className="text-xs text-white/50">
-                  {data.rating.count > 0
-                    ? `${data.rating.average.toFixed(1)} · ${data.rating.count} rating${data.rating.count === 1 ? "" : "s"}`
-                    : "Be the first to rate this course"}
-                </span>
-                {ratingMsg ? <span className="text-xs text-emerald-300">{ratingMsg}</span> : null}
-              </div>
+              <>
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
+                  <StarRating
+                    value={draft?.rating ?? data.rating.your_rating ?? 0}
+                    size="md"
+                    onRate={data.rating.eligible === false ? undefined : startReview}
+                    disabled={ratingBusy || data.rating.eligible === false}
+                    hideValue
+                  />
+                  <span className="text-xs text-white/50">
+                    {data.rating.count > 0
+                      ? `${data.rating.average.toFixed(1)} · ${data.rating.count} verified review${data.rating.count === 1 ? "" : "s"}`
+                      : data.rating.eligible === false
+                        ? "No verified reviews yet"
+                        : "Be the first to review this course"}
+                  </span>
+                  {ratingMsg ? <span className="text-xs text-emerald-300">{ratingMsg}</span> : null}
+                </div>
+                {/* Not yet: reviews open once the student has learned enough. */}
+                {data.rating.eligible === false && data.rating.missing ? (
+                  <p className="mt-1 text-xs text-white/45">🔒 {data.rating.missing}</p>
+                ) : null}
+                {draft ? (
+                  <div className="mt-3 w-full max-w-md space-y-2 rounded-xl border border-white/15 bg-white/[0.04] p-3 text-left">
+                    <textarea
+                      value={draft.comment}
+                      onChange={(e) => setDraft({ ...draft, comment: e.target.value })}
+                      rows={3}
+                      maxLength={1000}
+                      placeholder="What was it like? Your review helps others choose. (optional)"
+                      className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm text-white placeholder-white/35"
+                    />
+                    {data.rating.proof ? (
+                      <p className="text-[11px] text-emerald-300/90">
+                        ✓ Shown as a verified learner
+                        {data.rating.proof.held > 0 && data.rating.proof.attended > 0
+                          ? ` · attended ${data.rating.proof.attended} of ${data.rating.proof.held} classes`
+                          : ""}
+                        {data.rating.proof.finished ? " · finished the course" : ""}
+                      </p>
+                    ) : null}
+                    <div className="flex items-center justify-end gap-2">
+                      <button type="button" onClick={() => setDraft(null)} className="rounded-lg px-3 py-1.5 text-xs text-white/60 hover:text-white">
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={ratingBusy}
+                        onClick={() => submitRating(draft.rating, draft.comment)}
+                        className="rounded-lg bg-site-primary px-4 py-1.5 text-xs font-semibold text-[#fff] disabled:opacity-50"
+                      >
+                        {ratingBusy ? "Posting…" : data.rating.your_rating ? "Update review" : "Post review"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
             ) : null}
             <p className="mt-1 hidden text-sm text-white/70 sm:block">
               Average of your modules, attendance and task scores

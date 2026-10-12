@@ -61,6 +61,7 @@ export default async function InstituteCoursePage({ params }: Props) {
       branding={data.branding}
       profile={data.profile}
       course={data.course}
+      reviews={data.reviews}
       registerSlug={data.institute.slug}
     />
   );

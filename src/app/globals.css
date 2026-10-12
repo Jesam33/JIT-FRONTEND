@@ -232,6 +232,22 @@ html.light .hero-grid::before {
   scrollbar-color: var(--color-border) transparent;
 }
 
+/* Native dropdown lists. color-scheme alone isn't enough: Chrome/Edge on
+   Windows paint the open <select> list from the select's own (here
+   translucent) background, which comes out white, and the options keep the
+   inherited white text, so the choices were invisible. Give every option a
+   solid theme surface + text colour instead (light mode follows via the
+   variables). Unlayered on purpose so it wins over component styles. */
+select option,
+select optgroup {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+select option:disabled {
+  color: var(--color-muted);
+}
+
 /* ── LMS Light Mode Styles ────────────────────────────────────────── */
 html.light {
   /* Cards background & borders */
