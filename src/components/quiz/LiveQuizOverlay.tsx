@@ -49,6 +49,8 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
   const [minimized, setMinimized] = useState(false);
   const [dismissedRun, setDismissedRun] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  // This screen's latest tap (null choice = cleared after a failed send).
+  const [pick, setPick] = useState<{ runId: number; index: number; choice: number | null } | null>(null);
   const [note, setNote] = useState("");
   const lastKey = useRef("");
 
@@ -100,10 +102,17 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
 
   if (!run || dismissedRun === run.id) return null;
 
+  // The answer to show as picked: this screen's latest tap for this question
+  // wins over a poll that left before it, else what the server has.
+  const myChoice = pick && pick.runId === run.id && pick.index === run.index ? pick.choice : run.my_choice ?? null;
+
+  // Students can change their answer until the timer ends; the last tap counts.
   const answer = async (choice: number) => {
-    if (!run || run.phase !== "question" || sending || run.my_choice != null) return;
+    if (!run || run.phase !== "question" || sending || choice === myChoice) return;
+    const previous = myChoice;
     setSending(true);
-    setRun({ ...run, my_choice: choice }); // lock it in on screen straight away
+    setNote("");
+    setPick({ runId: run.id, index: run.index, choice }); // show it straight away
     try {
       const res = await apiFetch(STUDENT_API.liveQuizAnswer(run.id), {
         method: "POST",
@@ -113,11 +122,11 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         setNote(j?.message || "That answer didn't go through.");
-        setRun((r) => (r ? { ...r, my_choice: null } : r));
+        setPick({ runId: run.id, index: run.index, choice: previous });
       }
     } catch {
       setNote("No connection. Tap again.");
-      setRun((r) => (r ? { ...r, my_choice: null } : r));
+      setPick({ runId: run.id, index: run.index, choice: previous });
     } finally {
       setSending(false);
     }
@@ -136,7 +145,7 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
         onClick={() => setMinimized(false)}
         className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-site-primary px-4 py-2 text-sm font-semibold text-[#fff] shadow-xl"
       >
-        🎯 Live quiz · {run.phase === "question" ? (run.my_choice != null ? "answered" : `${secondsLeft}s to answer`) : qLabel} · Open
+        🎯 Live quiz · {run.phase === "question" ? (myChoice != null ? `answered · ${secondsLeft}s left` : `${secondsLeft}s to answer`) : qLabel} · Open
       </button>
     );
   }
@@ -169,7 +178,7 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
       {run.phase === "lobby" ? (
         <div className="py-4 text-center">
           <p className="text-lg font-semibold">Get ready!</p>
-          <p className="mt-1 text-sm text-white/60">Your teacher is about to start the quiz. Answer fast: quicker right answers score more.</p>
+          <p className="mt-1 text-sm text-white/60">Your teacher is about to start the quiz. Quicker right answers score more, and you can change your answer until the time runs out.</p>
         </div>
       ) : null}
 
@@ -181,16 +190,17 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
           <p className="mb-3 whitespace-pre-line text-base font-semibold leading-snug">{run.question.prompt}</p>
           <div className="grid grid-cols-2 gap-2">
             {run.question.options.map((opt, i) => {
-              const picked = run.my_choice === i;
-              const locked = run.my_choice != null;
+              const picked = myChoice === i;
+              const answered = myChoice != null;
               return (
                 <button
                   key={i}
                   type="button"
-                  disabled={locked || secondsLeft === 0}
+                  disabled={secondsLeft === 0}
+                  aria-pressed={picked}
                   onClick={() => answer(i)}
                   className={`flex min-h-[64px] items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-[#fff] transition ${TILES[i].cls} ${
-                    locked && !picked ? "opacity-30" : ""
+                    answered && !picked ? "opacity-45 hover:opacity-80" : ""
                   } ${picked ? "ring-4 ring-white" : ""}`}
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/25 text-xs">{TILES[i].letter}</span>
@@ -200,7 +210,11 @@ export default function LiveQuizOverlay({ classType, classId }: { classType: str
             })}
           </div>
           <p className="mt-3 text-center text-xs text-white/55">
-            {run.my_choice != null ? "Answer locked in ✓ Waiting for the others…" : secondsLeft === 0 ? "Time's up!" : "Tap your answer"}
+            {secondsLeft === 0
+              ? "Time's up!"
+              : myChoice != null
+                ? "Answer saved ✓ Tap another answer to change it."
+                : "Tap your answer"}
           </p>
           {note ? <p className="mt-1 text-center text-xs text-amber-200">{note}</p> : null}
         </>

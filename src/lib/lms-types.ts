@@ -23,6 +23,10 @@ export type DashboardPayload = {
     task_score_total?: number;
     task_progress?: number;
     overall_progress?: number;
+    // Live class quiz participation; the bonus is already inside overall_progress.
+    live_quizzes_held?: number;
+    live_quizzes_joined?: number;
+    live_quiz_bonus?: number;
   };
   upcoming_class?: {
     id: number;

@@ -298,6 +298,7 @@ export default function StudentDashboardPage() {
             ) : null}
             <p className="mt-1 hidden text-sm text-white/70 sm:block">
               Average of your modules, attendance and task scores
+              {(data.summary?.live_quizzes_held ?? 0) > 0 ? ", plus your live quiz bonus" : ""}
             </p>
 
             {/* The three components of the overall number. Squeezed into one
@@ -343,6 +344,19 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
             </div>
+
+            {/* Live class quizzes: a participation bonus already counted in the
+                overall % above. Shown once any quiz has been played in class. */}
+            {(data.summary?.live_quizzes_held ?? 0) > 0 ? (
+              <p className="mt-3 text-xs text-white/60">
+                🎯 Live quiz bonus:{" "}
+                <span className={(data.summary?.live_quiz_bonus ?? 0) > 0 ? "font-semibold text-emerald-300" : "font-semibold text-white/70"}>
+                  +{data.summary?.live_quiz_bonus ?? 0}%
+                </span>{" "}
+                · you joined {data.summary?.live_quizzes_joined ?? 0} of {data.summary?.live_quizzes_held} class quiz
+                {data.summary?.live_quizzes_held === 1 ? "" : "zes"}
+              </p>
+            ) : null}
 
             <p className="mt-4 text-sm text-white/50">Good day, {studentName} &middot; {new Date().toLocaleDateString([], { dateStyle: "full" })}</p>
             {unreadNotifications.length ? <p className="mt-1 text-xs text-amber-200">You have {unreadNotifications.length} unread notification{unreadNotifications.length > 1 ? "s" : ""}.</p> : null}
