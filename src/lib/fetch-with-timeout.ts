@@ -1,5 +1,6 @@
 import { tenantLoginPath } from "./tenant-client";
 import { getDeviceId } from "./device-id";
+import { deviceTimezone } from "./local-time";
 
 type Portal = "student" | "staff" | "owner";
 
@@ -10,6 +11,10 @@ function withDeviceId(headers: HeadersInit | undefined): Headers {
   const merged = new Headers(headers);
   const id = getDeviceId();
   if (id && !merged.has("X-Device-Id")) merged.set("X-Device-Id", id);
+  // The device's timezone, so times in this person's emails are in their own
+  // time (saved server-side on their account; see lib/local-time).
+  const tz = deviceTimezone();
+  if (tz && !merged.has("X-Timezone")) merged.set("X-Timezone", tz);
   return merged;
 }
 

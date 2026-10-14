@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "../../../../components/LoadingSpinner";
 import { STAFF_API } from "../../../../lib/api";
 import { apiFetchStaff, getStaffToken } from "../../../../lib/fetch-with-timeout";
+import { renderTimes } from "../../../../lib/local-time";
 import { useTeachingBase } from "@/lib/teaching-base";
 
 type TeacherNotification = {
@@ -168,7 +169,7 @@ export default function StaffNotificationsPage() {
                   <p className={`text-sm ${n.is_read ? "text-white/70" : "font-semibold text-white"}`}>
                     {n.title}
                   </p>
-                  {n.body ? <p className="mt-1 text-xs text-white/50">{n.body}</p> : null}
+                  {n.body ? <p className="mt-1 text-xs text-white/50">{renderTimes(n.body)}</p> : null}
                   <p className="mt-2 text-[11px] text-white/40 capitalize">{n.type?.replace("_", " ")}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">

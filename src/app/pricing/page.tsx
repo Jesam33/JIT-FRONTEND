@@ -18,7 +18,7 @@ export default function PricingPage() {
         <PricingCards plans={pricingPlans} />
         <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-site-text/60">
           The applicable platform fee is deducted from each eligible successful course sale, never an upfront
-          charge. Prices are in Naira. Pay monthly, or yearly and save, and change plans any time.
+          charge. Pay monthly, or yearly and save, and change plans any time.
         </p>
       </div>
     </section>

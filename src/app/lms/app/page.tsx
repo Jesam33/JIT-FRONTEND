@@ -8,6 +8,7 @@ import LoadingSpinner from "../../../components/LoadingSpinner";
 import StarRating from "../../../components/ui/StarRating";
 import { STUDENT_API } from "../../../lib/api";
 import { apiFetch } from "../../../lib/fetch-with-timeout";
+import { renderTimes } from "../../../lib/local-time";
 
 export default function StudentDashboardPage() {
   const router = useRouter();
@@ -527,7 +528,7 @@ export default function StudentDashboardPage() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/80">Announcement</p>
                   ) : null}
                   <p className={`font-medium text-white ${isAnnouncement ? "mt-1" : ""}`}>{item.title}</p>
-                  {item.body ? <p className="mt-1 text-xs text-white/60">{item.body}</p> : null}
+                  {item.body ? <p className="mt-1 text-xs text-white/60">{renderTimes(item.body)}</p> : null}
                 </div>
               );
             })}

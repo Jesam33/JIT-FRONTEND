@@ -8,6 +8,8 @@ import { academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { referralCodeFor } from "@/lib/referral";
 import { useCourseMode } from "@/components/institute/course-mode";
 import { useMyEnrolment, studentPortalHref } from "@/lib/my-enrolment";
+import PhoneInput from "@/components/ui/PhoneInput";
+import { dialFor } from "@/lib/dial-codes";
 
 type CourseDetail = {
   id: number;
@@ -62,7 +64,6 @@ const qualifications = [
 type FormData = {
   first_name: string;
   last_name: string;
-  date_of_birth: string;
   qualification_level: string;
   phone_number: string;
   email: string;
@@ -74,7 +75,6 @@ type FormData = {
 const initialForm: FormData = {
   first_name: "",
   last_name: "",
-  date_of_birth: "",
   qualification_level: "",
   phone_number: "",
   email: "",
@@ -194,6 +194,22 @@ export default function CourseRegisterClient({
   // Publish the chosen delivery mode so the price headline above follows it
   // (CourseAside). Null outside a provider, so this is a no-op when the form is
   // rendered somewhere with no price panel.
+  // Country code for the phone fields: the visitor's detected country (the
+  // same country cookie the storefront prices with), else Nigeria. WhatsApp
+  // defaults to the same number, since for most people it is.
+  const [phoneCountry, setPhoneCountry] = useState("NG");
+  const [waCountry, setWaCountry] = useState("NG");
+  const [waSame, setWaSame] = useState(true);
+  useEffect(() => {
+    (async () => {
+      const detected = readCookie("country").toUpperCase();
+      if (dialFor(detected)) {
+        setPhoneCountry(detected);
+        setWaCountry(detected);
+      }
+    })();
+  }, []);
+
   const courseMode = useCourseMode();
   const publishMode = courseMode?.setMode;
   useEffect(() => {
@@ -211,6 +227,7 @@ export default function CourseRegisterClient({
         headers: { "Content-Type": "application/json", ...tenantHeaders() },
         body: JSON.stringify({
           ...form,
+          whatsapp: waSame ? form.phone_number : form.whatsapp,
           course_id: course.id,
           course_name: course.title,
           referral_code: form.referral_code,
@@ -364,33 +381,48 @@ export default function CourseRegisterClient({
           <input required value={form.first_name} onChange={(e) => updateField("first_name", e.target.value)} placeholder="First Name" className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
           <input required value={form.last_name} onChange={(e) => updateField("last_name", e.target.value)} placeholder="Last Name" className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <input required type="date" value={form.date_of_birth} onChange={(e) => updateField("date_of_birth", e.target.value)} className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
-          <select required value={form.qualification_level} onChange={(e) => updateField("qualification_level", e.target.value)} className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white">
-            <option value="">Qualification</option>
-            {qualifications.map((q) => (
-              <option key={q} value={q}>{q}</option>
-            ))}
-          </select>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <input required value={form.phone_number} onChange={(e) => updateField("phone_number", e.target.value)} placeholder="Phone Number" className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
-          <input
+        <input
+          required
+          type="email"
+          value={form.email}
+          onChange={(e) => {
+            updateField("email", e.target.value);
+            // A different email gets a fresh check when the field is left.
+            if (enrolledNotice) setEnrolledNotice(null);
+            lastCheckedEmail.current = "";
+          }}
+          onBlur={(e) => checkEmail(e.target.value)}
+          placeholder="Email"
+          className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white"
+        />
+        <PhoneInput
+          required
+          value={form.phone_number}
+          onChange={(v) => updateField("phone_number", v)}
+          country={phoneCountry}
+          onCountryChange={setPhoneCountry}
+          placeholder="Phone number"
+        />
+        <label className="flex items-center gap-2 text-xs text-white/70">
+          <input type="checkbox" checked={waSame} onChange={(e) => setWaSame(e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+          My WhatsApp number is the same
+        </label>
+        {!waSame ? (
+          <PhoneInput
             required
-            type="email"
-            value={form.email}
-            onChange={(e) => {
-              updateField("email", e.target.value);
-              // A different email gets a fresh check when the field is left.
-              if (enrolledNotice) setEnrolledNotice(null);
-              lastCheckedEmail.current = "";
-            }}
-            onBlur={(e) => checkEmail(e.target.value)}
-            placeholder="Email"
-            className="rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white"
+            value={form.whatsapp}
+            onChange={(v) => updateField("whatsapp", v)}
+            country={waCountry}
+            onCountryChange={setWaCountry}
+            placeholder="WhatsApp number"
           />
-        </div>
-        <input required value={form.whatsapp} onChange={(e) => updateField("whatsapp", e.target.value)} placeholder="WhatsApp Number" className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white" />
+        ) : null}
+        <select required value={form.qualification_level} onChange={(e) => updateField("qualification_level", e.target.value)} className="w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white">
+          <option value="">Highest qualification</option>
+          {qualifications.map((q) => (
+            <option key={q} value={q}>{q}</option>
+          ))}
+        </select>
         <div className="flex flex-wrap gap-3">
           <label className="flex items-center gap-2 rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-white">
             <input type="radio" name="mode" value="live" checked={form.learning_mode === "live"} onChange={() => updateField("learning_mode", "live")} />
@@ -462,6 +494,13 @@ export default function CourseRegisterClient({
                 : `Register & Pay ${formatPrice(chargePrice, chargeCurrency)}`}
         </button>
         {message ? <p className="text-xs text-rose-200">{message}</p> : null}
+        {/* Returning students land here from links and search too. */}
+        <p className="text-center text-xs text-white/60">
+          Already registered for this course?{" "}
+          <a href={loginHref("/lms/app")} className="font-semibold text-white underline underline-offset-2 hover:text-white/80">
+            Log in here
+          </a>
+        </p>
       </form>
     </div>
   );

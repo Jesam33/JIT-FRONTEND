@@ -17,10 +17,9 @@ export default function CourseDescription({ text }: { text: string }) {
 
   return (
     <div className="mt-6 text-sm leading-7 text-white/85">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 className="text-lg font-semibold text-white">About This Course</h2>
-        <span className="shrink-0 text-xs text-white/45">{wordCount} words</span>
-      </div>
+      <h2 className="mb-3 text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
+        About this course
+      </h2>
       <p className="whitespace-pre-line">{shown}</p>
       {isLong ? (
         <button

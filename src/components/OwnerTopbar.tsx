@@ -7,6 +7,7 @@ import { OWNER_API } from "@/lib/api";
 import { ownerAuthHeaders, clearOwnerToken } from "@/lib/owner-client";
 import { DEFAULT_BRANDING, academyLabel, type OwnerBranding } from "@/lib/owner-branding";
 import { tenantLoginPath } from "@/lib/tenant-client";
+import { renderTimes } from "@/lib/local-time";
 
 type OwnerNotification = {
   id: string;
@@ -356,7 +357,7 @@ export default function OwnerTopbar({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-white [html.light_&]:text-black">{n.title}</p>
-                      <p className="truncate text-xs text-white/60 [html.light_&]:text-black/60">{n.body}</p>
+                      <p className="truncate text-xs text-white/60 [html.light_&]:text-black/60">{renderTimes(n.body)}</p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1.5">
                       <span className="text-[10px] text-white/40 [html.light_&]:text-black/40">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AGENT_API } from "../../../../lib/api";
 import { fetchWithTimeout } from "../../../../lib/fetch-with-timeout";
+import { renderTimes } from "../../../../lib/local-time";
 
 type Notification = {
   id: number; type: string; title: string; body: string | null;
@@ -108,7 +109,7 @@ export default function AgentNotificationsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className={`text-sm ${n.is_read ? "text-site-text/60" : "text-site-text font-medium"}`}>{n.title}</p>
-                  {n.body ? <p className="mt-1 text-xs text-site-text/50">{n.body}</p> : null}
+                  {n.body ? <p className="mt-1 text-xs text-site-text/50">{renderTimes(n.body)}</p> : null}
                   <p className="mt-1 text-[10px] text-site-text/30">{new Date(n.created_at).toLocaleString()}</p>
                 </div>
                 <button

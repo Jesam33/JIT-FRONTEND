@@ -53,7 +53,9 @@ export default function CourseRequirements({ text }: { text: string }) {
 
   return (
     <div className="mt-6 text-sm leading-7 text-white/85">
-      <h2 className="mb-2 text-lg font-semibold text-white">Requirements</h2>
+      <h2 className="mb-3 text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
+        Requirements
+      </h2>
       <ul className="list-none space-y-1.5">
         {shown.map((line, i) => (
           <li key={i} className="flex gap-2.5">
